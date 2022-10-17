@@ -2,22 +2,27 @@
 
 namespace world {
 
-std::vector<int> investor_env::get_action_space() {
-    return {
-        investor_action::RISKY,
-        investor_action::SAFE
-        };
+const std::vector<int>& investor_env::get_action_space() const {
+    return action_space;
 }
 
-int investor_env::get_state() {
+std::vector<int> investor_env::get_next_states(const int&, const int& action) const {
+    if (action == RISKY) {
+        return {wealth + 12, wealth - 2};
+    } else {
+        return {wealth + 1, wealth - 1};
+    }
+}
+
+const int& investor_env::get_state() const {
     return wealth;
 }
 
-bool investor_env::is_over() {
+bool investor_env::is_over() const {
     return wealth >= target || wealth <= 0;
 }
 
-std::tuple<int, float, float, bool> investor_env::play_action(int action, int) {
+std::tuple<int, float, float, bool> investor_env::play_action(const int& action, int) {
     if (action == RISKY) {
         if (bernoulli(0.2)) {
             wealth += 12;

@@ -20,6 +20,18 @@ using outcome_t = std::tuple<S, float, float, bool>;
  */
 template <typename S, typename A>
 class environment {
+private:
+    /**
+     * @brief Make a checkpoint of the environment
+     * 
+     */
+    virtual void make_checkpoint() = 0;
+
+    /**
+     * @brief Reset the environment
+     * 
+     */
+    virtual void reset() = 0;
 public:
     /**
      * @brief Construct a new environment object
@@ -34,51 +46,45 @@ public:
     virtual ~environment() = default;
 
     /**
-     * @brief Get the action space of the environment
+     * @brief Get constant refference to the action space of the environment
      * 
-     * @return std::vector<A> 
+     * @return const std::vector<A>&
      */
-    virtual std::vector<A> get_action_space() = 0;
+    virtual const std::vector<A>& get_action_space() const = 0;
+
+    /**
+     * @brief Get the set of possible states after playing an action
+     * 
+     */
+    virtual std::vector<S> get_next_states(const S& state, const A& action) const = 0;
 
     /**
      * @brief Get current state of the environment
      * 
      * @return S 
      */
-    virtual S get_state() = 0;
+    virtual const S& get_state() const = 0;
 
     /**
      * @brief Return boolean indicating if the environment is over
      * 
      * @return bool
      */
-    virtual bool is_over() = 0;
+    virtual bool is_over() const = 0;
 
     /**
      * @brief Play an action in the environment
      * 
-     * Returns the next state, the reward and punishment, and a boolean indicating whether the episode is over
+     * Returns the next state, the reward and penalty, and a boolean indicating whether the episode is over
      * @return outcome_t
      */
-    virtual outcome_t<S> play_action(A action, int) = 0;
-
-    /**
-     * @brief Make a checkpoint of the environment
-     * 
-     */
-    virtual void make_checkpoint() = 0;
+    virtual outcome_t<S> play_action(const A& action, int) = 0;
 
     /**
      * @brief Restore the environment to the last checkpoint
      * 
      */
     virtual void restore_checkpoint() = 0;
-
-    /**
-     * @brief Reset the environment
-     * 
-     */
-    virtual void reset() = 0;
 };
 
 
@@ -88,6 +94,11 @@ private:
     int wealth;
     int target;
     int checkpoint;
+
+    std::vector<int> action_space = { RISKY, SAFE };
+
+    void make_checkpoint() override;
+    void reset() override;
 public:
     enum investor_action {
         RISKY,
@@ -102,13 +113,12 @@ public:
 
     ~investor_env() = default;
 
-    std::vector<int> get_action_space() override;
-    int get_state() override;
-    bool is_over() override;
-    outcome_t<int> play_action(int action, int player = 0) override;
-    void make_checkpoint() override;
+    const std::vector<int>& get_action_space() const override;
+    std::vector<int> get_next_states(const int& state, const int& action) const override;
+    const int& get_state() const override;
+    bool is_over() const override;
+    outcome_t<int> play_action(const int& action, int player = 0) override;
     void restore_checkpoint() override;
-    void reset() override;
 };
 
 
@@ -137,12 +147,12 @@ public:
      * @param state 
      * @return A 
      */
-    virtual A get_action() = 0;
+    virtual const A& get_action() = 0;
 
     /**
      * @brief Pass action outcome to the agent
      * 
-     * @param outcome A tuple consisting of state, reward, punishment, over
+     * @param outcome A tuple consisting of state, reward, penalty, over
      */
     virtual void pass_outcome(outcome_t<S> outcome) = 0;
 
@@ -151,15 +161,23 @@ public:
      * 
      */
     virtual void reset() = 0;
+
+    /**
+     * @brief Train the agent
+     * 
+     */
+    virtual void train() {};
+
+    /**
+     * @brief Return boolean indicating if the agent is trainable
+     * 
+     */
+    virtual bool is_trainable() const {
+        return false;
+    }
 };
 
 
-/**
- * @brief Agent that plays random actions
- * 
- * @tparam S 
- * @tparam A 
- */
 template <typename S, typename A>
 class random_agent : public agent<S, A> {
 private:
@@ -170,7 +188,7 @@ public:
     random_agent(S initial_state, std::vector<A> action_space) : state(initial_state), action_space(action_space) {}
     ~random_agent() = default;
 
-    A get_action() override {
+    const A& get_action() override {
         return action_space[unif_int(action_space.size())];
     }
 

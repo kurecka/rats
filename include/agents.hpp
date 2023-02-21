@@ -23,6 +23,7 @@ public:
 
     void reset() override {
         logger.debug("Resetting agent");
+        agent<S>::reset();
         state = agent<S>::handler.current_state();
         logger.debug("  Current state: " + std::to_string(state));
     }

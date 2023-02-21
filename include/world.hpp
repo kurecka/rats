@@ -83,6 +83,10 @@ class environment_handler {
 private:
     environment<S>* env;
     bool is_simulating = false;
+
+    float reward;
+    float penalty;
+    int num_steps;
 public:
     // environment_handler(environment<S>* env) : env(env) {}
     environment_handler() = default;
@@ -92,6 +96,23 @@ public:
     ~environment_handler() = default;
 
     environment_handler& operator=(const environment_handler&) = default;
+
+    float get_reward() const {
+        return reward;
+    }
+
+    float get_penalty() const {
+        return penalty;
+    }
+
+    int get_num_steps() const {
+        return num_steps;
+    }
+
+    void reset() {
+        logger.debug("Resetting handler");
+        reward = penalty = num_steps = 0;
+    }
 
     /**
      * @brief Play an action in the environment
@@ -104,7 +125,14 @@ public:
             env->restore_checkpoint();
             is_simulating = false;
         }
-        return env->play_action(action);
+        outcome_t<S> o = env->play_action(action);
+        float r = std::get<1>(o);
+        float p = std::get<2>(o);
+        ++num_steps;
+        reward += r;
+        penalty += p; 
+
+        return o;
     };
 
     /**
@@ -149,6 +177,8 @@ public:
 /*************************************************************************
  * AGENT INTERFACE
  *************************************************************************/
+template<typename S>
+class orchestrator;
 
 template <typename S>
 class agent {
@@ -176,6 +206,10 @@ public:
         env.reset();
     }
 
+    const environment_handler<S>& get_handler() const {
+        return handler;
+    }
+
     /**
      * @brief 
      * 
@@ -192,7 +226,9 @@ public:
      * @brief Reset the agent
      * 
      */
-    virtual void reset() = 0;
+    virtual void reset() {
+        handler.reset();
+    }
 
     /**
      * @brief Play throygh the environment handler

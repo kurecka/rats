@@ -31,6 +31,7 @@ std::vector<arg_spec> get_arg_spec() {
     std::vector<arg_spec> spec;
     spec.push_back({"-d", "--depth", "max depth of the MC tree", "10", 0});
     spec.push_back({"-n", "--num_sim", "number of simulation runs per decision", "100", 0});
+    spec.push_back({"-e", "--num_episodes", "number of episodes", "100", 0});
     spec.push_back({"-r", "--risk_thd", "risk threshold", "0.1", 0});
     spec.push_back({"-s", "--seed", "seed of the random number generator", "-1", 0});
     spec.push_back({"-l", "--loglevel", "log level", "INFO", 0});
@@ -136,6 +137,8 @@ int main(int argc, char *argv[]) {
         set_seed(std::stoi(args["--seed"]));
     }
 
+    int num_episodes = std::stoi(args["--num_episodes"]);
+
     // Run the simulation
     int initial_state = 5;
 
@@ -143,5 +146,5 @@ int main(int argc, char *argv[]) {
     o.load_environment(new world::investor_env(initial_state, 20));
     o.load_agent(new world::randomized_agent<int>());
     
-    o.run(2, 0);
+    o.run(num_episodes, 0);
 }

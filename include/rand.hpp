@@ -34,7 +34,7 @@ int unif_int(int min, int max);
  * 
  * @return float 
  */
-float rand_float();
+float unif_float();
 
 /**
  * @brief Get a random float in [0, max]
@@ -42,7 +42,7 @@ float rand_float();
  * @param max
  * @return float 
  */
-float rand_float(float max);
+float unif_float(float max);
 
 /**
  * @brief Get a random float in [min, max]
@@ -51,7 +51,7 @@ float rand_float(float max);
  * @param max
  * @return float 
  */
-float rand_float(float min, float max);
+float unif_float(float min, float max);
 
 /**
  * @brief Get a random boolean with distribution Bernoulli(p)

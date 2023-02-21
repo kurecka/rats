@@ -13,6 +13,11 @@
 #include "rand.hpp"
 #include "exampleConfig.h"
 #include "world.hpp"
+#include "envs.hpp"
+#include "agents.hpp"
+#include "kernell.hpp"
+#include "logging.hpp"
+// #include "ralph.hpp"
 
 struct arg_spec {
     std::string name;
@@ -28,9 +33,9 @@ std::vector<arg_spec> get_arg_spec() {
     spec.push_back({"-n", "--num_sim", "number of simulation runs per decision", "100", 0});
     spec.push_back({"-r", "--risk_thd", "risk threshold", "0.1", 0});
     spec.push_back({"-s", "--seed", "seed of the random number generator", "-1", 0});
+    spec.push_back({"-l", "--loglevel", "log level", "INFO", 0});
 
     spec.push_back({"-v", "--version", "print version", "false", 1});
-    spec.push_back({"", "--verbose", "enable verbose mode", "false", 1});
     spec.push_back({"-h", "--help", "print this help", "false", 1});
     return spec;
 }
@@ -108,22 +113,23 @@ int main(int argc, char *argv[]) {
     std::map<std::string, std::string> args = load_args(argc, argv, arg_spec);
     
     if (args["--help"] == "true") {
-        std::cout << get_help(arg_spec);
+        std::cout << get_help(arg_spec) << std::endl;
         return 0;
     }
 
     if (args["--version"] == "true") {
-        std::cout << get_version();
+        std::cout << get_version() << std::endl;
         return 0;
     }
 
-    if (args["--verbose"] == "true") {
-        std::cout << "Verbose mode enabled" << std::endl;
-        std::cout << "Arguments:" << std::endl;
-        for (auto arg : args) {
-            if (arg.first == "--help" || arg.first == "--verbose" || arg.first == "--version") continue;
-            std::cout << arg.first << " = " << arg.second << std::endl;
-        }
+    if (args["--loglevel"] != "") {
+        logger.set_level(args["--loglevel"]);
+    }
+
+    logger.info("Arguments:");
+    for (auto arg : args) {
+        if (arg.first == "--help" || arg.first == "--verbose" || arg.first == "--version") continue;
+        logger.info(arg.first + " = " + arg.second);
     }
 
     if (std::stoi(args["--seed"]) >= 0) {
@@ -132,11 +138,10 @@ int main(int argc, char *argv[]) {
 
     // Run the simulation
     int initial_state = 5;
-    world::investor_env game(initial_state, 20);
-    world::random_agent<int, int> a(game.get_state(), game.get_action_space());
 
-    while (!game.is_over()) {
-        a.pass_outcome(game.play_action(a.get_action()));
-        std::cout << "State: " << game.get_state() << std::endl;
-    }
+    orchestrator<int> o;
+    o.load_environment(new world::investor_env(initial_state, 20));
+    o.load_agent(new world::randomized_agent<int>());
+    
+    o.run(2, 0);
 }

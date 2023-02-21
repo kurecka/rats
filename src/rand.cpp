@@ -20,15 +20,15 @@ int unif_int(int min, int max) {
     return min + int_uni_dist(engine) % (max - min);
 }
 
-float rand_float() {
+float unif_float() {
     return uni_dist(engine);
 }
 
-float rand_float(float max) {
+float unif_float(float max) {
     return uni_dist(engine) * max;
 }
 
-float rand_float(float min, float max) {
+float unif_float(float min, float max) {
     return min + uni_dist(engine) * (max - min);
 }
 

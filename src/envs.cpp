@@ -1,20 +1,8 @@
-#include "world.hpp"
+#include "envs.hpp"
 
 namespace world {
 
-const std::vector<int>& investor_env::get_action_space() const {
-    return action_space;
-}
-
-std::vector<int> investor_env::get_next_states(const int&, const int& action) const {
-    if (action == RISKY) {
-        return {wealth + 12, wealth - 2};
-    } else {
-        return {wealth + 1, wealth - 1};
-    }
-}
-
-const int& investor_env::get_state() const {
+int investor_env::current_state() const {
     return wealth;
 }
 
@@ -22,7 +10,7 @@ bool investor_env::is_over() const {
     return wealth >= target || wealth <= 0;
 }
 
-std::tuple<int, float, float, bool> investor_env::play_action(const int& action, int) {
+outcome_t<int> investor_env::play_action(action_t action) {
     if (action == RISKY) {
         if (bernoulli(0.2)) {
             wealth += 12;
@@ -61,6 +49,7 @@ void investor_env::restore_checkpoint() {
 }
 
 void investor_env::reset() {
+    logger.debug("Reset environment");
     wealth = initial_wealth;
 }
 

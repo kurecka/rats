@@ -6,122 +6,77 @@
 #include <map>
 
 namespace world {
-namespace st {
-
-
-template <typename S, typename A, typename N_DATA>
-struct node {
-    node *parent = nullptr;
-    A const* incoming_action = nullptr;
-    S const* state = nullptr;
-
-    float reward = 0;
-    float penalty = 0;
-
-    // predicted expected future reward and penalty
-    float future_reward = 0;
-    float future_penalty = 0;
-
-    int num_visits = 0;
-
-    N_DATA data;
-    std::map<std::pair<A, S>, node> children;
-
-    bool is_leaf() const {
-        return children.empty();
-    }
-
-    bool is_root() const {
-        return parent == nullptr;
-    }
-};
+namespace ts {
 
 /*********************************************************************
  * @brief Search tree
  * 
  * @tparam S type of states
- * @tparam A type of actions
+ * @tparam SN type of state nodes
+ * @tparam AN type of action nodes
  */
-template <typename S, typename A, typename N_DATA>
-class search_tree : public agent<S, A> {
+template <typename S, template <typename> class SN, template <typename> class AN>
+class tree_search : public agent<S> {
 public:
-    using node_t = node<S, A, N_DATA>;
-    using env_t = environment<S, A>;
+    using state_node_t = SN<S>;
+    using action_node_t = AN<S>;
+    using env_t = environment<S>;
+    using handler_t = environment_handler<S>;
 protected:
     int max_depth;
     int num_sim;
+    float risk_thd; // risk threshold
+    float gamma; // discount factor
 
-    // discount factor
-    float gamma;
-
-    node_t root;
-    environment<S, A> *env;
-    A const* last_action;
-    std::vector<node_t> history;
+    state_node_t root;
 
     /**
-     * @brief Simulate a game from the current root node till a leaf node or max_depth is reached
+     * @brief Select a leaf node to expand
      * 
+     * @return state_node_t*
      */
-    void simulate();
-
-    /**
-     * @brief Backpropagate the result of a simulation from the leaf node to the root
-     * 
-     * @param nod
-     */
-    void backprop(node_t *nod);
-
-    /**
-     * @brief Backpropagate the result of a simulation from a child node to its parent
-     * 
-     * @param child
-     * @param val
-     * @param reg
-     */
-    virtual void _backprop(node_t *child, float val, float reg);
-
-    /**
-     * @brief Get the best action from a given node
-     * 
-     * @return const A& 
-     */
-    virtual const A& select_action(node_t *nod) = 0;
-
-    /**
-     * @brief Get an explorative action a given node used during the simulation
-     * 
-     * @return const A& 
-     */
-    virtual const A& explore_action(node_t *nod) = 0;
+    state_node_t* select();
 
     /**
      * @brief Expand a leaf node
      * 
      * @param nod 
      */
-    void expand(node_t *nod);
-    
+    void expand(state_node_t* leaf);
+
     /**
-     * @brief Initialize a successor node
+     * @brief Propagate the result of a simulation from the leaf node back to the root
      * 
-     * @param parent
-     * @param state
-     * @param action
+     * @param nod
      */
-    virtual void init_node(node_t *parent, const S& state, const A& action) = 0;
+    void propagate(state_node_t* leaf);
 
-    void prune(const S& state);
+    /**
+     * @brief Prune the search tree by making a step from the root to state `s` along action `a`. S is a new root of the tree
+     * 
+     * @param a Action taken
+     * @param s State reached
+     */
+    void descent(action_t a, S s);
+
 public:
-    /* Constructors */
-    search_tree(env_t* env);
-    virtual ~search_tree() = default;
+    /**
+     * @brief Construct a new search tree object
+     * 
+     * @param max_depth Maximum depth of the search tree
+     * @param num_sim Number of simulations to run at each leaf node
+     * @param gamma Discount factor
+     */
+    tree_search(int max_depth, int num_sim, float risk_thd, float gamma)
+    : agent<S>(), max_depth(max_depth), num_sim(num_sim), risk_thd(risk_thd), gamma(gamma) {
+        root.parent = nullptr;
+    }
 
+    void play() override;
 
-    /* Agent interface */
-    const A& get_action() override;
-    void pass_outcome(outcome_t<S> outcome) override;
-    virtual void reset() override = 0;
+    std::string name() const override {
+        return "Tree Search";
+    }
 };
 
 } // namespace st

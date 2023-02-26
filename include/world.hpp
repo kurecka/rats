@@ -24,6 +24,8 @@ using action_t = int;
 template <typename S>
 class environment {
 public:
+    virtual ~environment() = default;
+
     virtual std::string name() const = 0;
 
     /**
@@ -231,15 +233,14 @@ public:
     }
 
     /**
-     * @brief Play throygh the environment handler
+     * @brief Play through the environment handler
      * 
-     * @param state 
      * @return A 
      */
     virtual void play() = 0;
 
     /**
-     * @brief Train the agent
+     * @brief Train the agent after the episode is over
      * 
      */
     virtual void train() {};

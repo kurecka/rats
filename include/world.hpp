@@ -152,6 +152,17 @@ public:
     };
 
     /**
+     * @brief Restore the environment to the last checkpoint
+     * 
+     */
+    void sim_reset() {
+        if (is_simulating) {
+            env->restore_checkpoint();
+            is_simulating = false;
+        }
+    }
+
+    /**
      * @brief Get the number of possible actions
      * 
      * @return int 

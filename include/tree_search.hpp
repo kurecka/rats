@@ -1,6 +1,7 @@
 #pragma once
 
 #include "world.hpp"
+#include "tree_logger.hpp"
 
 #include <vector>
 #include <map>
@@ -26,6 +27,7 @@ protected:
     int max_depth;
     int num_sim;
     float risk_thd; // risk threshold
+    float step_risk_thd; // current risk threshold during the search
     float gamma; // discount factor
 
     state_node_t root;
@@ -73,6 +75,14 @@ public:
     }
 
     void play() override;
+
+    void reset() override {
+        agent<S>::reset();
+
+        root = state_node_t();
+        root.parent = nullptr;
+        step_risk_thd = risk_thd;
+    }
 
     std::string name() const override {
         return "Tree Search";

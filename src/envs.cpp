@@ -26,9 +26,6 @@ outcome_t<int> investor_env::play_action(action_t action) {
     }
     
     float reward = -1;
-    if (wealth >= target) {
-        reward = 1;
-    }
 
     float punishment = 0;
     if (wealth <= 0) {

@@ -54,7 +54,9 @@ std::pair<float, float> orchestrator<S>::episode() {
     const world::environment_handler<S>& handler = agent->get_handler();
     logger.debug("Run episode");
     env->reset();
+    logger.debug("Environment prepared");
     agent->reset();
+    logger.debug("Agent prepared");
 
     while (!env->is_over()) {
         agent->play();

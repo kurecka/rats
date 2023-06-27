@@ -30,7 +30,7 @@ protected:
     float step_risk_thd; // current risk threshold during the search
     float gamma; // discount factor
 
-    state_node_t root;
+    std::unique_ptr<state_node_t> root;
 
     /**
      * @brief Select a leaf node to expand
@@ -71,7 +71,7 @@ public:
      */
     tree_search(int max_depth, int num_sim, float risk_thd, float gamma)
     : agent<S>(), max_depth(max_depth), num_sim(num_sim), risk_thd(risk_thd), gamma(gamma) {
-        root.parent = nullptr;
+        reset();
     }
 
     void play() override;
@@ -79,8 +79,8 @@ public:
     void reset() override {
         agent<S>::reset();
 
-        root = state_node_t();
-        root.parent = nullptr;
+        root = std::make_unique<state_node_t>();
+        root->parent = nullptr;
         step_risk_thd = risk_thd;
     }
 

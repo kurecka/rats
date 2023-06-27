@@ -18,6 +18,7 @@
 #include "kernell.hpp"
 #include "logging.hpp"
 #include "tree_search.hpp"
+#include "uct.hpp"
 // #include "ralph.hpp"
 
 struct arg_spec {
@@ -155,6 +156,6 @@ int main(int argc, char *argv[]) {
     o.load_agent(new world::constant_agent<int>(1));
     o.run(num_episodes, 0);
 
-    o.load_agent(new world::ts::simple_tree_search<int>(std::stoi(args["--depth"]), std::stoi(args["--num_sim"]), std::stof(args["--risk_thd"]), 0.99));
+    o.load_agent(new world::ts::UCT<int>(std::stoi(args["--depth"]), std::stoi(args["--num_sim"]), std::stof(args["--risk_thd"]), 0.99));
     o.run(num_episodes, 0);
 }

@@ -17,16 +17,16 @@ public:
         SAFE = 1
     };
 
-    investor_env(int initial_wealth, int target)
-    : initial_wealth(initial_wealth)
-    , target(target)
+    investor_env(int _initial_wealth, int _target)
+    : initial_wealth(_initial_wealth)
+    , target(_target)
     {}
 
-    ~investor_env() = default;
+    ~investor_env() override = default;
 
-    std::string name() const override { return "InvestorEnv"; };
+    std::string name() const override { return "InvestorEnv"; }
 
-    int num_actions() const override { return 2; };
+    size_t num_actions() const override { return 2; }
     int current_state() const override;
     bool is_over() const override;
     outcome_t<int> play_action(action_t action) override;

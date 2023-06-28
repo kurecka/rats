@@ -2,61 +2,123 @@
 
 #include <random>
 
-extern std::random_device rd;
-extern std::mt19937 engine;
+class rng {
+private:
+    static unsigned int _seed;
+    static std::random_device rd;
+    static std::mt19937 engine;
 
-/**
- * @brief Set the seed of the random number generator
- * 
- * @param seed 
- */
-void set_seed(int seed);
+    static std::uniform_int_distribution<int> int_uni_dist;
+    static std::uniform_real_distribution<float> f_uni_dist;
+    static std::uniform_real_distribution<double> d_uni_dist;
 
-/**
- * @brief Get a random integer in [0, max-1]
- * 
- * @param max
- * @return int 
- */
-int unif_int(int max);
 
-/**
- * @brief Get a random integer in [min, max-1]
- * 
- * @param min
- * @param max
- * @return int 
- */
-int unif_int(int min, int max);
+    public:
+    static void init(unsigned int seed = 0) {
+      _seed = seed;
+      engine.seed(_seed);
+    }
 
-/**
- * @brief Get a random float in [0, 1]
- * 
- * @return float 
- */
-float unif_float();
+    /**
+     * @brief Set the seed of the random number generator
+     * 
+     * @param seed seed for the random number generator
+     */
+    static void set_seed(unsigned int seed) {
+        engine.seed(seed);
+    }
 
-/**
- * @brief Get a random float in [0, max]
- * 
- * @param max
- * @return float 
- */
-float unif_float(float max);
+    /**
+     * @brief Get a random integer in [0, max-1]
+     * 
+     * @param max upper bound on the random number
+     * @return int 
+     */
+    template <typename T>
+    static T unif_int(T max) {
+        return static_cast<T>(int_uni_dist(engine)) % max;
+    }
 
-/**
- * @brief Get a random float in [min, max]
- * 
- * @param min
- * @param max
- * @return float 
- */
-float unif_float(float min, float max);
+    /**
+     * @brief Get a random integer in [min, max-1]
+     * 
+     * @param min lower bound on the random number (included)
+     * @param max upper bound on the random number (excluded)
+     * @return int 
+     */
+    template <typename T>
+    static T unif_int(T min, T max) {
+        return static_cast<T>(int_uni_dist(engine)) % (max - min) + min;
+    }
 
-/**
- * @brief Get a random boolean with distribution Bernoulli(p)
- * 
- * @param p
- * @return bool
- */
-bool bernoulli(float p);
+    /**
+     * @brief Get a random float in [0, 1]
+     * 
+     * @return float 
+     */
+    static float unif_float() {
+        return f_uni_dist(engine);
+    }
+
+    /**
+     * @brief Get a random float in [0, max]
+     * 
+     * @param max upper bound on the random number
+     * @return float 
+     */
+    static float unif_float(float max) {
+        return f_uni_dist(engine) * max;
+    }
+
+    /**
+     * @brief Get a random float in [min, max]
+     * 
+     * @param min lower bound on the random number
+     * @param max upper bound on the random number
+     * @return float 
+     */
+    static float unif_float(float min, float max) {
+        return min + f_uni_dist(engine) * (max - min);
+    }
+
+    /**
+     * @brief Get a random double in [0, 1]
+     * 
+     * @return double 
+     */
+    static double unif_double() {
+        return d_uni_dist(engine);
+    }
+
+    /**
+     * @brief Get a random double in [0, max]
+     * 
+     * @param max upper bound on the random number
+     * @return double 
+     */
+    static double unif_double(double max) {
+        return d_uni_dist(engine) * max;
+    }
+
+    /**
+     * @brief Get a random double in [min, max]
+     * 
+     * @param min lower bound on the random number
+     * @param max upper bound on the random number
+     * @return double 
+     */
+    static double unif_double(double min, double max) {
+        return min + d_uni_dist(engine) * (max - min);
+    }
+
+    /**
+     * @brief Get a random boolean with distribution Bernoulli(p)
+     * 
+     * @param p probability of getting true
+     * @return bool
+     */
+    template <typename T>
+    static bool bernoulli(T p) {
+        return d_uni_dist(engine) < p;
+    }
+};

@@ -16,9 +16,9 @@ std::string state_node<S>::to_string() const {
 }
 
 template <typename S>
-void state_node<S>::expand(int num_actions) {
+void state_node<S>::expand(size_t num_actions) {
     children.resize(num_actions);
-    for (int i = 0; i < num_actions; ++i) {
+    for (size_t i = 0; i < num_actions; ++i) {
         children[i].parent = this;
     }
 }
@@ -35,24 +35,25 @@ action_t state_node<S>::select_action(float risk_thd, bool explore) {
         min_r = std::min(min_r, children[i].expected_reward);
         max_r = std::max(max_r, children[i].expected_reward);
     }
-    if (min_r == max_r) max_r += 1;
+    if (min_r >= max_r) max_r += 1;
 
     for (size_t i = 0; i < children.size(); ++i) {
-        float ucb = children[i].expected_reward + explore * 5 * (max_r - min_r) * sqrt(log(num_visits + 1) / (children[i].num_visits + 0.0001));
-        float lcb = children[i].expected_penalty - explore * 5 * sqrt(log(num_visits + 1) / (children[i].num_visits + 0.0001));
-
-        // logger.debug("Action: " + std::to_string(i) + " UCB: " + std::to_string(ucb) + " LCB: " + std::to_string(lcb));
-        // logger.debug("Action: " + std::to_string(i) + " R: " + std::to_string(children[i].expected_reward) + " P: " + std::to_string(children[i].expected_penalty));
+        float ucb = children[i].expected_reward + explore * 5 * (max_r - min_r) * static_cast<float>(
+            sqrt(log(num_visits + 1) / (children[i].num_visits + 0.0001))
+        );
+        float lcb = children[i].expected_penalty - explore * 5 * static_cast<float>(
+            sqrt(log(num_visits + 1) / (children[i].num_visits + 0.0001))
+        );
 
         if ((ucb > best_reward && lcb < best_penalty) || (best_penalty > risk_thd && lcb < best_penalty)) {
             best_reward = ucb;
             best_penalty = lcb;
-            best_action = i;
+            best_action = static_cast<action_t>(i);
         }
     }
 
-    if (explore && unif_float() < 0.1) {
-        return unif_int(0, children.size());
+    if (explore && rng::unif_float() < 0.1f) {
+        return rng::unif_int(children.size());
     } else {
         return best_action;
     }

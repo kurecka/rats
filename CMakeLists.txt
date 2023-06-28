@@ -34,6 +34,12 @@ include(Warnings)
 # Check for LTO support.
 find_lto(CXX)
 
+if(NOT TARGET spdlog)
+    # Stand-alone build
+    find_package(spdlog REQUIRED)
+endif()
+
+
 # --------------------------------------------------------------------------------
 #                         Locate files (change as needed).
 # --------------------------------------------------------------------------------
@@ -43,7 +49,6 @@ set(SOURCES          # All .cpp files in src/
     # src/ralph.cpp
     src/envs.cpp
     src/rand.cpp
-    src/logging.cpp
 )
 set(TESTFILES        # All .cpp files in tests/
     tests/main.cpp
@@ -62,15 +67,22 @@ target_include_directories(${LIBRARY_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 # There's also (probably) doctests within the library, so we need to see this as well.
 target_link_libraries(${LIBRARY_NAME} PUBLIC doctest)
 
+# Link the logging library
+target_link_libraries(${LIBRARY_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
 # Set the compile options you want (change as needed).
 target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-# target_compile_options(${LIBRARY_NAME} ... )  # For setting manually.
+target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors)
 
 # Add an executable for the file app/main.cpp.
 # If you add more executables, copy these lines accordingly.
 add_executable(ralph app/main.cpp)   # Name of exec. and location of file.
 target_link_libraries(ralph PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
-target_set_warnings(ralph ENABLE ALL AS_ERROR ALL DISABLE Annoying) # Set warnings (if needed).
+target_link_libraries(ralph PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+target_set_warnings(ralph ENABLE ALL AS_ERROR ALL DISABLE Annoying)
+
+target_compile_options(ralph PRIVATE -Wno-missing-prototypes)
+
 target_enable_lto(ralph optimized)  # enable link-time-optimization if available for non-debug configurations
 
 # Set the properties you require, e.g. what C++ standard to use. Here applied to library and main (change as needed).

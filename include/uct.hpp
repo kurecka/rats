@@ -16,7 +16,7 @@ struct action_node;
 /**
  * @brief State node
  * 
- * @tparam S 
+ * @tparam S State type
  */
 template<typename S>
 struct state_node {
@@ -41,7 +41,7 @@ public:
 
     std::string to_string() const;
 
-    void expand(int num_actions);
+    void expand(size_t num_actions);
     action_t select_action(float risk_thd, bool explore);
     void propagate(action_node<S>* child, float gamma);
 
@@ -53,7 +53,7 @@ public:
 /**
  * @brief Action node
  * 
- * @tparam S 
+ * @tparam S State type
  */
 template<typename S>
 struct action_node {
@@ -78,14 +78,14 @@ public:
 /*********************************************************************
  * @brief Simple tree search
  * 
- * @tparam S 
+ * @tparam S State type
  *********************************************************************/
 
 template <typename S>
 class UCT : public tree_search<S, state_node, action_node> {
 public:
-    UCT(int max_depth, int num_sim, float risk_thd, float gamma)
-    : tree_search<S, state_node, action_node>(max_depth, num_sim, risk_thd, gamma) {}
+    UCT(int _max_depth, int _num_sim, float _risk_thd, float _gamma)
+    : tree_search<S, state_node, action_node>(_max_depth, _num_sim, _risk_thd, _gamma) {}
 
     std::string name() const override {
         return "UCT";

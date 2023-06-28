@@ -1,6 +1,7 @@
 #pragma once
 
 #include "world.hpp"
+#include "rand.hpp"
 
 namespace world {
 
@@ -12,20 +13,20 @@ public:
     // randomized_agent(environment_handler<S> handler) : agent<S>(handler) {}
     randomized_agent() : agent<S>() {}
 
-    ~randomized_agent() = default;
+    ~randomized_agent() override = default;
 
     void play() override {
-        int action = unif_int(agent<S>::handler.num_actions());
-        logger.debug("Play action: " + std::to_string(action));
+        action_t action = static_cast<action_t>(rng::unif_int(static_cast<int>(agent<S>::handler.num_actions())));
+        spdlog::debug("Play action: " + std::to_string(action));
         outcome_t<S> outcome = agent<S>::handler.play_action(action);
-        logger.debug("  Result: s=" + std::to_string(std::get<0>(outcome)) + ", r=" + std::to_string(std::get<1>(outcome)) + ", p=" + std::to_string(std::get<2>(outcome)));
+        spdlog::debug("  Result: s=" + std::to_string(std::get<0>(outcome)) + ", r=" + std::to_string(std::get<1>(outcome)) + ", p=" + std::to_string(std::get<2>(outcome)));
     }
 
     void reset() override {
-        logger.debug("Resetting agent");
+        spdlog::debug("Resetting agent");
         agent<S>::reset();
         state = agent<S>::handler.current_state();
-        logger.debug("  Current state: " + std::to_string(state));
+        spdlog::debug("  Current state: " + std::to_string(state));
     }
 
     std::string name() const override {
@@ -42,19 +43,19 @@ private:
 public:
     constant_agent(action_t a) : agent<S>(), action(a) {}
 
-    ~constant_agent() = default;
+    ~constant_agent() override = default;
 
     void play() override {
-        logger.debug("Play action: " + std::to_string(action));
+        spdlog::debug("Play action: " + std::to_string(action));
         outcome_t<S> outcome = agent<S>::handler.play_action(action);
-        logger.debug("  Result: s=" + std::to_string(std::get<0>(outcome)) + ", r=" + std::to_string(std::get<1>(outcome)) + ", p=" + std::to_string(std::get<2>(outcome)));
+        spdlog::debug("  Result: s=" + std::to_string(std::get<0>(outcome)) + ", r=" + std::to_string(std::get<1>(outcome)) + ", p=" + std::to_string(std::get<2>(outcome)));
     }
 
     void reset() override {
-        logger.debug("Resetting agent");
+        spdlog::debug("Resetting agent");
         agent<S>::reset();
         state = agent<S>::handler.current_state();
-        logger.debug("  Current state: " + std::to_string(state));
+        spdlog::debug("  Current state: " + std::to_string(state));
     }
 
     std::string name() const override {

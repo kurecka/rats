@@ -27,7 +27,7 @@ SN<S>* tree_search<S, SN, AN>::select() {
         int state_visits = current_state->num_visits;
         int action_visits = current_action->num_visits;
 
-        run_risk_thd *= action_visits / (float) (state_visits + 0.0001);
+        run_risk_thd *= action_visits / static_cast<float>(state_visits + 0.0001);
 
         depth++;
     }
@@ -62,7 +62,7 @@ void tree_search<S, SN, AN>::descent(action_t a, S s) {
     int action_visits = root->children[a].num_visits;
     std::unique_ptr<SN<S>> new_root = std::move(root->children[a].children[s]);
     int state_visits = new_root->num_visits;
-    step_risk_thd *= action_visits / ((float) state_visits + 0.0001);
+    step_risk_thd *= action_visits / (static_cast<float>(state_visits) + 0.0001f);
     root = std::move(new_root);
     root->parent = nullptr;
     for (auto& child : root->children) {
@@ -72,9 +72,9 @@ void tree_search<S, SN, AN>::descent(action_t a, S s) {
 
 template <typename S, template <typename> class SN, template <typename> class AN>
 void tree_search<S, SN, AN>::play() {
-    logger.debug("Running simulations");
+    spdlog::debug("Running simulations");
     for (int i = 0; i < num_sim; i++) {
-        logger.debug("Simulation " + std::to_string(i));
+        spdlog::debug("Simulation " + std::to_string(i));
         SN<S>* leaf = select();
         expand(leaf);
         propagate(leaf);
@@ -82,9 +82,9 @@ void tree_search<S, SN, AN>::play() {
 
     action_t a = root->select_action(risk_thd, false);
 
-    logger.debug("Play action: " + std::to_string(a));
+    spdlog::debug("Play action: " + std::to_string(a));
     auto [s, r, p, e] = agent<S>::handler.play_action(a);
-    logger.debug("  Result: s=" + std::to_string(s) + ", r=" + std::to_string(r) + ", p=" + std::to_string(p));
+    spdlog::debug("  Result: s=" + std::to_string(s) + ", r=" + std::to_string(r) + ", p=" + std::to_string(p));
     
     root->children[a].add_outcome(s, r, p, e);
 

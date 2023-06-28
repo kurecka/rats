@@ -16,10 +16,10 @@
 #include "envs.hpp"
 #include "agents.hpp"
 #include "kernell.hpp"
-#include "logging.hpp"
 #include "tree_search.hpp"
 #include "uct.hpp"
-// #include "ralph.hpp"
+
+#include "spdlog/spdlog.h"
 
 struct arg_spec {
     std::string name;
@@ -112,6 +112,8 @@ std::map<std::string, std::string> load_args(int argc, char *argv[], const std::
 }
 
 int main(int argc, char *argv[]) {
+    rng::init();
+
     std::vector arg_spec = get_arg_spec();
     std::map<std::string, std::string> args = load_args(argc, argv, arg_spec);
     
@@ -126,17 +128,27 @@ int main(int argc, char *argv[]) {
     }
 
     if (args["--loglevel"] != "") {
-        logger.set_level(args["--loglevel"]);
+        std::map<std::string, spdlog::level::level_enum> level_map = {
+            {"trace", spdlog::level::trace},
+            {"debug", spdlog::level::debug},
+            {"info", spdlog::level::info},
+            {"warn", spdlog::level::warn},
+            {"err", spdlog::level::err},
+            {"critical", spdlog::level::critical},
+            {"off", spdlog::level::off}
+        };
+        spdlog::set_level(level_map[args["--loglevel"]]);
     }
 
-    logger.info("Arguments:");
+    spdlog::info("Arguments:");
     for (auto arg : args) {
         if (arg.first == "--help" || arg.first == "--verbose" || arg.first == "--version") continue;
-        logger.info(arg.first + " = " + arg.second);
+        spdlog::info(arg.first + " = " + arg.second);
     }
 
     if (std::stoi(args["--seed"]) >= 0) {
-        set_seed(std::stoi(args["--seed"]));
+        // string to unsigned int
+        // set_seed(static_cast<size_t>(std::stoi(args["--seed"])));
     }
 
     int num_episodes = std::stoi(args["--num_episodes"]);
@@ -156,6 +168,6 @@ int main(int argc, char *argv[]) {
     o.load_agent(new world::constant_agent<int>(1));
     o.run(num_episodes, 0);
 
-    o.load_agent(new world::ts::UCT<int>(std::stoi(args["--depth"]), std::stoi(args["--num_sim"]), std::stof(args["--risk_thd"]), 0.99));
+    o.load_agent(new world::ts::UCT<int>(std::stoi(args["--depth"]), std::stoi(args["--num_sim"]), std::stof(args["--risk_thd"]), 0.99f));
     o.run(num_episodes, 0);
 }

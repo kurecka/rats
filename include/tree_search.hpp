@@ -14,7 +14,17 @@ namespace ts {
  * 
  * @tparam S type of states
  * @tparam SN type of state nodes
+ * Should support:
+ * - num_visits
+ * - parent
+ * - children
+ * - select_action(risk_thd, explore)
  * @tparam AN type of action nodes
+ * Shoul supper:
+ * - num_visits
+ * - children
+ * - add_outcome(state, reward, penalty, terminal)
+ * - propagate(state_node, gamma);
  */
 template <typename S, template <typename> class SN, template <typename> class AN>
 class tree_search : public agent<S> {
@@ -33,31 +43,31 @@ protected:
     std::unique_ptr<state_node_t> root;
 
     /**
-     * @brief Select a leaf node to expand
+     * @brief Select a leaf node to expand.
      * 
      * @return state_node_t*
      */
     state_node_t* select();
 
     /**
-     * @brief Expand a leaf node
+     * @brief Expand a leaf node.
      * 
-     * @param nod 
+     * @param leaf A leaf node to be expanded
      */
     void expand(state_node_t* leaf);
 
     /**
-     * @brief Propagate the result of a simulation from the leaf node back to the root
+     * @brief Propagate the result of a simulation from the leaf node back to the root.
      * 
-     * @param nod
+     * @param leaf A leaf node whose value is to be propagated
      */
     void propagate(state_node_t* leaf);
 
     /**
-     * @brief Prune the search tree by making a step from the root to state `s` along action `a`. S is a new root of the tree
+     * @brief Prune the search tree by making a step from the root to state `s` along action `a`. S is a new root of the tree.
      * 
-     * @param a Action taken
-     * @param s State reached
+     * @param a Action taken.
+     * @param s State reached.
      */
     void descent(action_t a, S s);
 
@@ -65,12 +75,12 @@ public:
     /**
      * @brief Construct a new search tree object
      * 
-     * @param max_depth Maximum depth of the search tree
-     * @param num_sim Number of simulations to run at each leaf node
-     * @param gamma Discount factor
+     * @param _max_depth Maximum depth of the search tree
+     * @param _num_sim Number of simulations to run at each leaf node
+     * @param _gamma Discount factor
      */
-    tree_search(int max_depth, int num_sim, float risk_thd, float gamma)
-    : agent<S>(), max_depth(max_depth), num_sim(num_sim), risk_thd(risk_thd), gamma(gamma) {
+    tree_search(int _max_depth, int _num_sim, float _risk_thd, float _gamma)
+    : agent<S>(), max_depth(_max_depth), num_sim(_num_sim), risk_thd(_risk_thd), gamma(_gamma) {
         reset();
     }
 

@@ -5,13 +5,13 @@
 #include <memory>
 
 #include "rand.hpp"
-#include "logging.hpp"
+#include "spdlog/spdlog.h"
 
 namespace world {
 
 template <typename S>
 using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, is_over
-using action_t = int;
+using action_t = size_t;
 
 /*************************************************************************
  * ENVIRONTMENT INTERFACE
@@ -33,7 +33,7 @@ public:
      * 
      * @return const int 
      */
-    virtual int num_actions() const = 0;
+    virtual size_t num_actions() const = 0;
 
     /**
      * @brief Get current state of the environment
@@ -92,7 +92,7 @@ private:
 public:
     // environment_handler(environment<S>* env) : env(env) {}
     environment_handler() = default;
-    environment_handler(environment<S>& env) : env(&env) {}
+    environment_handler(environment<S>& _env) : env(&_env) {}
     environment_handler(const environment_handler&) = default;
 
     ~environment_handler() = default;
@@ -112,7 +112,7 @@ public:
     }
 
     void reset() {
-        logger.debug("Resetting handler");
+        spdlog::debug("Resetting handler");
         reward = penalty = num_steps = 0;
     }
 
@@ -135,7 +135,7 @@ public:
         penalty += p; 
 
         return o;
-    };
+    }
 
     /**
      * @brief Simulate an action in the environment
@@ -149,7 +149,7 @@ public:
             is_simulating = true;
         }
         return env->play_action(action);
-    };
+    }
 
     /**
      * @brief Restore the environment to the last checkpoint
@@ -165,9 +165,9 @@ public:
     /**
      * @brief Get the number of possible actions
      * 
-     * @return int 
+     * @return size_t
      */
-    int num_actions() const {
+    size_t num_actions() const {
         return env->num_actions();
     }
 
@@ -201,22 +201,22 @@ public:
     /**
      * @brief Set the handler object
      * 
-     * @param handler 
+     * @param _handler the handler that controls the environment
      */
-    void set_handler(environment_handler<S> handler) {
-        logger.info("Setting agent handler");
-        handler = handler;
+    void set_handler(environment_handler<S> _handler) {
+        spdlog::info("Setting agent handler");
+        handler = _handler;
     }
 
     /**
      * @brief Set the handler object
      * 
-     * @param env 
+     * @param _env environment that is xontrolled by the handler
      */
-    void set_handler(environment<S>& env) {
-        logger.info("Setting agent handler");
-        handler = environment_handler<S>(env);
-        env.reset();
+    void set_handler(environment<S>& _env) {
+        spdlog::info("Setting agent handler");
+        handler = environment_handler<S>(_env);
+        _env.reset();
     }
 
     const environment_handler<S>& get_handler() const {
@@ -224,10 +224,10 @@ public:
     }
 
     /**
-     * @brief 
+     * @brief Construct a new agent object 
      * 
      */
-    agent() {};
+    agent() {}
 
     /**
      * @brief Destroy the agent object
@@ -245,8 +245,7 @@ public:
 
     /**
      * @brief Play through the environment handler
-     * 
-     * @return A 
+     *
      */
     virtual void play() = 0;
 
@@ -254,7 +253,7 @@ public:
      * @brief Train the agent after the episode is over
      * 
      */
-    virtual void train() {};
+    virtual void train() {}
 
     /**
      * @brief Return boolean indicating if the agent is trainable

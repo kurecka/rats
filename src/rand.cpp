@@ -3,35 +3,10 @@
 #include <iostream>
 #include "rand.hpp"
 
-std::random_device rd;
-std::mt19937 engine(rd());
-std::uniform_real_distribution<> uni_dist(0, 1);
-std::uniform_int_distribution<int> int_uni_dist(0, 1000000000);
+unsigned int rng::_seed = 0;
+std::random_device rng::rd = std::random_device();
+std::mt19937 rng::engine = std::mt19937(rng::rd());
 
-void set_seed(int seed) {
-    engine.seed(seed);
-}
-
-int unif_int(int max) {
-    return int_uni_dist(engine) % max;
-}
-
-int unif_int(int min, int max) {
-    return min + int_uni_dist(engine) % (max - min);
-}
-
-float unif_float() {
-    return uni_dist(engine);
-}
-
-float unif_float(float max) {
-    return uni_dist(engine) * max;
-}
-
-float unif_float(float min, float max) {
-    return min + uni_dist(engine) * (max - min);
-}
-
-bool bernoulli(float p) {
-    return uni_dist(engine) < p;
-}
+std::uniform_int_distribution<int> rng::int_uni_dist;
+std::uniform_real_distribution<float> rng::f_uni_dist;
+std::uniform_real_distribution<double> rng::d_uni_dist;

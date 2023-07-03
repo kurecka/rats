@@ -45,9 +45,7 @@ endif()
 # --------------------------------------------------------------------------------
 set(SOURCES          # All .cpp files in src/
     src/example.cpp
-    # src/tree_search.cpp
-    # src/ralph.cpp
-    src/envs.cpp
+    src/envs/investor_env.cpp
     src/rand.cpp
 )
 set(TESTFILES        # All .cpp files in tests/

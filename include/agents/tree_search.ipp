@@ -1,12 +1,11 @@
 #pragma once
 
-#include "world.hpp"
-
 #include <vector>
 #include <map>
 #include <cassert>
 
-namespace world {
+
+namespace gym {
 namespace ts {
 
 template <typename S, typename A, typename SN, typename AN>
@@ -40,7 +39,7 @@ SN* tree_search<S, A, SN, AN>::select() {
 template <typename S, typename A, typename SN, typename AN>
 requires CompatibleNodes<S, A, SN, AN>
 void tree_search<S, A, SN, AN>::expand(SN* leaf) {
-    leaf->expand(agent<S, A>::handler.num_actions());
+    leaf->expand(agent<S, A>::handler.num_actions(agent<S, A>::handler.current_state()));
 }
 
 template <typename S, typename A, typename SN, typename AN>
@@ -97,4 +96,4 @@ void tree_search<S, A, SN, AN>::play() {
 }
 
 } // namespace ts
-} // namespace world
+} // namespace gym

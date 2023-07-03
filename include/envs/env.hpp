@@ -7,7 +7,8 @@
 #include "rand.hpp"
 #include "spdlog/spdlog.h"
 
-namespace world {
+
+namespace gym {
 
 template <typename S>
 using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, is_over
@@ -19,6 +20,9 @@ using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, 
 /**
  * @brief Abstract environment class
  * 
+ * TODO: add
+ * - probabilities
+ * - templated multireward
  */
 template <typename S, typename A>
 class environment {
@@ -29,20 +33,32 @@ public:
 
     /**
      * @brief Get the number of possible actions
+     * 
+     * @param state current state
      */
-    virtual size_t num_actions() const = 0;
+    virtual size_t num_actions(S state) const = 0;
 
     /**
      * @brief Get the vector of all possible actions
+     * 
+     * @param state current state
      */
-    virtual std::vector<A> possible_actions() const = 0;
+    virtual std::vector<A> possible_actions(S state) const = 0;
 
     /**
      * @brief Get the ith action
      * 
+     * @param state current state
      * @param i index of the action
      */
-    virtual A get_action(size_t i) const = 0;
+    virtual A get_action(S state, size_t i) const = 0;
+
+    /**
+     * @brief Get the bounds on the reward
+     * 
+     * @return std::pair<float, float> minimal and maximal reward
+     */
+    virtual std::pair<float, float> reward_range() const = 0;
 
     /**
      * @brief Get current state of the environment
@@ -70,13 +86,13 @@ public:
      * @brief Make a checkpoint of the environment
      * 
      */
-    virtual void make_checkpoint() = 0;
+    virtual void make_checkpoint(size_t id) = 0;
 
     /**
      * @brief Restore the environment to the last checkpoint
      * 
      */
-    virtual void restore_checkpoint() = 0;
+    virtual void restore_checkpoint(size_t id) = 0;
 
     /**
      * @brief Reset the environment
@@ -133,7 +149,7 @@ public:
      */
     outcome_t<S> play_action(A action) {
         if (is_simulating) {
-            env->restore_checkpoint();
+            env->restore_checkpoint(0);
             is_simulating = false;
         }
         outcome_t<S> o = env->play_action(action);
@@ -154,7 +170,7 @@ public:
      */
     outcome_t<S> sim_action(A action) {
         if (!is_simulating) {
-            env->make_checkpoint();
+            env->make_checkpoint(0);
             is_simulating = true;
         }
         return env->play_action(action);
@@ -166,30 +182,53 @@ public:
      */
     void sim_reset() {
         if (is_simulating) {
-            env->restore_checkpoint();
+            env->restore_checkpoint(0);
             is_simulating = false;
         }
     }
 
     /**
-     * @brief Get the number of possible actions
+     * @brief Get the bounds on the reward
      * 
-     * @return size_t
+     * @return std::pair<float, float> minimal and maximal reward
      */
-    size_t num_actions() const {
-        return env->num_actions();
-    }
-
-    std::vector<A> possible_actions() const {
-        return env->possible_actions();
-    }
-
-    A get_action(size_t i) const {
-        return env->get_action(i);
+    std::pair<float, float> reward_range() const {
+        return env->reward_range();
     }
 
     /**
-     * @brief Get current state of the environment
+     * @brief Get the number of possible actions
+     * 
+     * @param state current state
+     * @return size_t
+     */
+    size_t num_actions(S state) const {
+        return env->num_actions(state);
+    }
+
+    /**
+     * @brief Get the vector of all possible actions
+     * 
+     * @param state current state
+     * @return std::vector<A>
+     */
+    std::vector<A> possible_actions(S state) const {
+        return env->possible_actions(state);
+    }
+
+    /**
+     * @brief Get the ith action
+     * 
+     * @param state current state
+     * @param i index of the action
+     * @return A
+     */
+    A get_action(S state, size_t i) const {
+        return env->get_action(state, i);
+    }
+
+    /**
+     * @brief Get the current state of the environment
      * 
      * @return S 
      */
@@ -202,91 +241,4 @@ public:
         return env;
     }
 };
-
-
-/*************************************************************************
- * AGENT INTERFACE
- *************************************************************************/
-template<typename S, typename A>
-class orchestrator;
-
-template <typename S, typename A>
-class agent {
-protected:
-    environment_handler<S, A> handler;
-public:
-    /**
-     * @brief Set the handler object
-     * 
-     * @param _handler the handler that controls the environment
-     */
-    void set_handler(environment_handler<S, A> _handler) {
-        spdlog::info("Setting agent handler");
-        handler = _handler;
-    }
-
-    /**
-     * @brief Set the handler object
-     * 
-     * @param _env environment that is xontrolled by the handler
-     */
-    void set_handler(environment<S, A>& _env) {
-        spdlog::info("Setting agent handler");
-        handler = environment_handler<S, A>(_env);
-        _env.reset();
-    }
-
-    const environment_handler<S, A>& get_handler() const {
-        return handler;
-    }
-
-    /**
-     * @brief Construct a new agent object 
-     * 
-     */
-    agent() {}
-
-    /**
-     * @brief Destroy the agent object
-     * 
-     */
-    virtual ~agent() = default;
-
-    /**
-     * @brief Reset the agent
-     * 
-     */
-    virtual void reset() {
-        handler.reset();
-    }
-
-    /**
-     * @brief Play through the environment handler
-     *
-     */
-    virtual void play() = 0;
-
-    /**
-     * @brief Train the agent after the episode is over
-     * 
-     */
-    virtual void train() {}
-
-    /**
-     * @brief Return boolean indicating if the agent is trainable
-     * 
-     */
-    constexpr virtual bool is_trainable() const {
-        // TODO: make this into a trait?
-        return false;
-    }
-
-    /**
-     * @brief Get the name of the agent
-     * 
-     * @return std::string 
-     */
-    virtual std::string name() const = 0;
-};
-
-} // namespace world
+} // namespace gym

@@ -1,6 +1,6 @@
-#include "envs.hpp"
+#include "envs/investor_env.hpp"
 
-namespace world {
+namespace gym {
 
 int investor_env::current_state() const {
     return wealth;
@@ -37,12 +37,20 @@ outcome_t<int> investor_env::play_action(size_t action) {
     return {wealth, reward, punishment, over};
 }
 
-void investor_env::make_checkpoint() {
-    checkpoint = wealth;
+void investor_env::make_checkpoint(size_t id) {
+    if (id == 0) {
+        checkpoint = wealth;
+    } else {
+        checkpoints[id] = wealth;
+    }
 }
 
-void investor_env::restore_checkpoint() {
-    wealth = checkpoint;
+void investor_env::restore_checkpoint(size_t id) {
+    if (id == 0) {
+        wealth = checkpoint;
+    } else {
+        wealth = checkpoints[id];
+    }
 }
 
 void investor_env::reset() {
@@ -50,4 +58,4 @@ void investor_env::reset() {
     wealth = initial_wealth;
 }
 
-} // namespace world
+} // namespace gym

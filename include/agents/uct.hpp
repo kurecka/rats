@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace world {
+namespace gym {
 namespace ts {
 
 /*********************************************************************
@@ -93,6 +93,6 @@ public:
 };
 
 } // namespace ts
-} // namespace world
+} // namespace gym
 
 #include "uct.ipp"

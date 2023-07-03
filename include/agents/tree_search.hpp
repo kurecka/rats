@@ -1,12 +1,11 @@
 #pragma once
 
-#include "world.hpp"
 #include "tree_logger.hpp"
 
 #include <vector>
 #include <map>
 
-namespace world {
+namespace gym {
 namespace ts {
 
 template<typename S, typename A, typename SN, typename AN>
@@ -32,6 +31,7 @@ concept CompatibleNodes = requires (S s, A a, SN sn, AN an)
  * - parent
  * - children
  * - select_action(risk_thd, explore)
+ * - expand(num_actions)
  * @tparam AN type of action nodes
  * Shoul supper:
  * - num_visits
@@ -114,6 +114,6 @@ public:
 };
 
 } // namespace st
-} // namespace world
+} // namespace gym
 
 #include "tree_search.ipp"

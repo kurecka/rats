@@ -1,11 +1,11 @@
 #pragma once
 
-#include "world.hpp"
+#include "gym.hpp"
 #include "tree_search.hpp"
 #include "rand.hpp"
 #include <cmath>
 
-namespace world {
+namespace gym {
 namespace st {
 
 struct A_DATA {
@@ -106,4 +106,4 @@ std::tuple<float, float, std::vector<float>> ralph<S, A>::predict(node<S, A, nod
 }
 
 }   // namespace st
-}   // namespace world
+}   // namespace gym

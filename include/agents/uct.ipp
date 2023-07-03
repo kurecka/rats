@@ -1,4 +1,4 @@
-namespace world {
+namespace gym {
 namespace ts {
 
 /***************************************************
@@ -118,4 +118,4 @@ void action_node<S, A>::validate() const {
 }
 
 } // namespace ts
-} // namespace world
+} // namespace gym

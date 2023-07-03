@@ -89,7 +89,7 @@ target_enable_lto(ralph optimized)  # enable link-time-optimization if available
 set_target_properties(
     ${LIBRARY_NAME} ralph
       PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
 )

@@ -9,6 +9,19 @@
 namespace world {
 namespace ts {
 
+template<typename S, typename A, typename SN, typename AN>
+concept CompatibleNodes = requires (S s, A a, SN sn, AN an)
+{
+    {an.num_visits} -> std::same_as<int&>;
+    {sn.num_visits} -> std::same_as<int&>;
+    {sn.children[a]};
+    {an.children[s]};
+    {sn.parent} -> std::same_as<AN*&>;
+    {sn.select_action(0.0f, true)} -> std::same_as<A>;
+    {an.add_outcome(s, 0.0f, 0.0f, true)};
+    {an.propagate(&sn, 0.0f)};
+};
+
 /*********************************************************************
  * @brief Search tree
  * 
@@ -26,13 +39,14 @@ namespace ts {
  * - add_outcome(state, reward, penalty, terminal)
  * - propagate(state_node, gamma);
  */
-template <typename S, template <typename> class SN, template <typename> class AN>
-class tree_search : public agent<S> {
+template <typename S, typename A, typename SN, typename AN>
+requires CompatibleNodes<S, A, SN, AN>
+class tree_search : public agent<S, A> {
 public:
-    using state_node_t = SN<S>;
-    using action_node_t = AN<S>;
-    using env_t = environment<S>;
-    using handler_t = environment_handler<S>;
+    using state_node_t = SN;
+    using action_node_t = AN;
+    using env_t = environment<S, A>;
+    using handler_t = environment_handler<S, A>;
 protected:
     int max_depth;
     int num_sim;
@@ -69,7 +83,7 @@ protected:
      * @param a Action taken.
      * @param s State reached.
      */
-    void descent(action_t a, S s);
+    void descent(A a, S s);
 
 public:
     /**
@@ -80,14 +94,14 @@ public:
      * @param _gamma Discount factor
      */
     tree_search(int _max_depth, int _num_sim, float _risk_thd, float _gamma)
-    : agent<S>(), max_depth(_max_depth), num_sim(_num_sim), risk_thd(_risk_thd), gamma(_gamma) {
+    : agent<S, A>(), max_depth(_max_depth), num_sim(_num_sim), risk_thd(_risk_thd), gamma(_gamma) {
         reset();
     }
 
     void play() override;
 
     void reset() override {
-        agent<S>::reset();
+        agent<S, A>::reset();
 
         root = std::make_unique<state_node_t>();
         root->parent = nullptr;

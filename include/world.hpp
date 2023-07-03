@@ -11,7 +11,6 @@ namespace world {
 
 template <typename S>
 using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, is_over
-using action_t = size_t;
 
 /*************************************************************************
  * ENVIRONTMENT INTERFACE
@@ -21,7 +20,7 @@ using action_t = size_t;
  * @brief Abstract environment class
  * 
  */
-template <typename S>
+template <typename S, typename A>
 class environment {
 public:
     virtual ~environment() = default;
@@ -30,10 +29,20 @@ public:
 
     /**
      * @brief Get the number of possible actions
-     * 
-     * @return const int 
      */
     virtual size_t num_actions() const = 0;
+
+    /**
+     * @brief Get the vector of all possible actions
+     */
+    virtual std::vector<A> possible_actions() const = 0;
+
+    /**
+     * @brief Get the ith action
+     * 
+     * @param i index of the action
+     */
+    virtual A get_action(size_t i) const = 0;
 
     /**
      * @brief Get current state of the environment
@@ -55,7 +64,7 @@ public:
      * Returns the next state, the reward and penalty, and a boolean indicating whether the episode is over
      * @return outcome_t
      */
-    virtual outcome_t<S> play_action(action_t action) = 0;
+    virtual outcome_t<S> play_action(A action) = 0;
 
     /**
      * @brief Make a checkpoint of the environment
@@ -80,19 +89,19 @@ public:
 /*************************************************************************
  * ENVIRONMENT HANDLER
  *************************************************************************/
-template<typename S>
+template<typename S, typename A>
 class environment_handler {
 private:
-    environment<S>* env;
+    environment<S, A>* env;
     bool is_simulating = false;
 
     float reward;
     float penalty;
     int num_steps;
 public:
-    // environment_handler(environment<S>* env) : env(env) {}
+    // environment_handler(environment<S, A>* env) : env(env) {}
     environment_handler() = default;
-    environment_handler(environment<S>& _env) : env(&_env) {}
+    environment_handler(environment<S, A>& _env) : env(&_env) {}
     environment_handler(const environment_handler&) = default;
 
     ~environment_handler() = default;
@@ -122,7 +131,7 @@ public:
      * Returns the next state, the reward and penalty, and a boolean indicating whether the episode is over
      * @return outcome_t
      */
-    outcome_t<S> play_action(action_t action) {
+    outcome_t<S> play_action(A action) {
         if (is_simulating) {
             env->restore_checkpoint();
             is_simulating = false;
@@ -143,7 +152,7 @@ public:
      * Returns the next state, the reward and penalty, and a boolean indicating whether the episode is over
      * @return outcome_t
      */
-    outcome_t<S> sim_action(action_t action) {
+    outcome_t<S> sim_action(A action) {
         if (!is_simulating) {
             env->make_checkpoint();
             is_simulating = true;
@@ -171,6 +180,14 @@ public:
         return env->num_actions();
     }
 
+    std::vector<A> possible_actions() const {
+        return env->possible_actions();
+    }
+
+    A get_action(size_t i) const {
+        return env->get_action(i);
+    }
+
     /**
      * @brief Get current state of the environment
      * 
@@ -190,20 +207,20 @@ public:
 /*************************************************************************
  * AGENT INTERFACE
  *************************************************************************/
-template<typename S>
+template<typename S, typename A>
 class orchestrator;
 
-template <typename S>
+template <typename S, typename A>
 class agent {
 protected:
-    environment_handler<S> handler;
+    environment_handler<S, A> handler;
 public:
     /**
      * @brief Set the handler object
      * 
      * @param _handler the handler that controls the environment
      */
-    void set_handler(environment_handler<S> _handler) {
+    void set_handler(environment_handler<S, A> _handler) {
         spdlog::info("Setting agent handler");
         handler = _handler;
     }
@@ -213,13 +230,13 @@ public:
      * 
      * @param _env environment that is xontrolled by the handler
      */
-    void set_handler(environment<S>& _env) {
+    void set_handler(environment<S, A>& _env) {
         spdlog::info("Setting agent handler");
-        handler = environment_handler<S>(_env);
+        handler = environment_handler<S, A>(_env);
         _env.reset();
     }
 
-    const environment_handler<S>& get_handler() const {
+    const environment_handler<S, A>& get_handler() const {
         return handler;
     }
 
@@ -259,7 +276,8 @@ public:
      * @brief Return boolean indicating if the agent is trainable
      * 
      */
-    virtual bool is_trainable() const {
+    constexpr virtual bool is_trainable() const {
+        // TODO: make this into a trait?
         return false;
     }
 

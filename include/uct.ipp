@@ -5,8 +5,8 @@ namespace ts {
  * State node implementation
  * *************************************************/
 
-template <typename S>
-std::string state_node<S>::to_string() const {
+template <typename S, typename A>
+std::string state_node<S, A>::to_string() const {
     std::string s = "State node: ";
     s += "R: " + std::to_string(observed_reward) + " P: " + std::to_string(observed_penalty) + "\\n";
     s += "E[R]: " + std::to_string(expected_reward) + " E[P]: " + std::to_string(expected_penalty) + "\\n";
@@ -15,19 +15,19 @@ std::string state_node<S>::to_string() const {
     return s;
 }
 
-template <typename S>
-void state_node<S>::expand(size_t num_actions) {
+template <typename S, typename A>
+void state_node<S, A>::expand(size_t num_actions) {
     children.resize(num_actions);
     for (size_t i = 0; i < num_actions; ++i) {
         children[i].parent = this;
     }
 }
 
-template <typename S>
-action_t state_node<S>::select_action(float risk_thd, bool explore) {
+template <typename S, typename A>
+A state_node<S, A>::select_action(float risk_thd, bool explore) {
     // best safe action
     float best_reward = -1e9;
-    action_t best_action = 0;
+    A best_action = 0;
     float best_penalty = 1;
     float min_r = children[0].expected_reward;
     float max_r = min_r;
@@ -48,7 +48,7 @@ action_t state_node<S>::select_action(float risk_thd, bool explore) {
         if ((ucb > best_reward && lcb < best_penalty) || (best_penalty > risk_thd && lcb < best_penalty)) {
             best_reward = ucb;
             best_penalty = lcb;
-            best_action = static_cast<action_t>(i);
+            best_action = static_cast<A>(i);
         }
     }
 
@@ -59,8 +59,8 @@ action_t state_node<S>::select_action(float risk_thd, bool explore) {
     }
 }
 
-template <typename S>
-void state_node<S>::propagate(action_node<S>* child, float gamma) {
+template <typename S, typename A>
+void state_node<S, A>::propagate(action_node<S, A>* child, float gamma) {
     if (child) {
         num_visits++;
         expected_reward += (gamma * child->expected_reward - expected_reward) / num_visits;
@@ -68,8 +68,8 @@ void state_node<S>::propagate(action_node<S>* child, float gamma) {
     }
 }
 
-template <typename S>
-void state_node<S>::validate() const {
+template <typename S, typename A>
+void state_node<S, A>::validate() const {
 
     int s = 0;
     for (const auto& c : children) {
@@ -86,8 +86,8 @@ void state_node<S>::validate() const {
  * Action node implementation
  * *************************************************/
 
-template <typename S>
-void action_node<S>::add_outcome(S s, float r, float p, bool t) {
+template <typename S, typename A>
+void action_node<S, A>::add_outcome(S s, float r, float p, bool t) {
     children[s]->observed_reward = r;
     children[s]->observed_penalty = p;
 
@@ -95,23 +95,23 @@ void action_node<S>::add_outcome(S s, float r, float p, bool t) {
     children[s]->is_terminal = t;
 }
 
-template <typename S>
-void action_node<S>::propagate(state_node<S>* child, float gamma) {
+template <typename S, typename A>
+void action_node<S, A>::propagate(state_node<S, A>* child, float gamma) {
     num_visits++;
     expected_reward += (gamma * (child->expected_reward + child->observed_reward) - expected_reward) / num_visits;
     expected_penalty += (gamma * (child->expected_penalty + child->observed_penalty) - expected_penalty) / num_visits;
 }
 
-template <typename S>
-std::string action_node<S>::to_string() const {
+template <typename S, typename A>
+std::string action_node<S, A>::to_string() const {
     std::string s = "Action node: ";
     s += "E[R]: " + std::to_string(expected_reward) + " E[P]: " + std::to_string(expected_penalty) + " ";
     s += "V: " + std::to_string(num_visits) + " ";
     return s;
 }
 
-template <typename S>
-void action_node<S>::validate() const {
+template <typename S, typename A>
+void action_node<S, A>::validate() const {
     for (const auto& [state, node] : children) {
         node->validate();
     }

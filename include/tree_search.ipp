@@ -9,8 +9,9 @@
 namespace world {
 namespace ts {
 
-template <typename S, template <typename> class SN, template <typename> class AN>
-SN<S>* tree_search<S, SN, AN>::select() {
+template <typename S, typename A, typename SN, typename AN>
+requires CompatibleNodes<S, A, SN, AN>
+SN* tree_search<S, A, SN, AN>::select() {
     state_node_t* current_state = root.get();
 
     int depth = 0;
@@ -18,9 +19,9 @@ SN<S>* tree_search<S, SN, AN>::select() {
     float run_risk_thd = step_risk_thd;
 
     while (!current_state->is_leaf() && depth < max_depth && !current_state->is_terminal) {
-        action_t action = current_state->select_action(run_risk_thd, true);
+        A action = current_state->select_action(run_risk_thd, true);
         action_node_t *current_action = &current_state->children[action];
-        auto [s, r, p, t] = agent<S>::handler.sim_action(action);
+        auto [s, r, p, t] = agent<S, A>::handler.sim_action(action);
         current_action->add_outcome(s, r, p, t);
         current_state = current_action->children[s].get();
 
@@ -32,17 +33,19 @@ SN<S>* tree_search<S, SN, AN>::select() {
         depth++;
     }
 
-    agent<S>::handler.sim_reset();
+    agent<S, A>::handler.sim_reset();
     return current_state;
 }
 
-template <typename S, template <typename> class SN, template <typename> class AN>
-void tree_search<S, SN, AN>::expand(SN<S>* leaf) {
-    leaf->expand(agent<S>::handler.num_actions());
+template <typename S, typename A, typename SN, typename AN>
+requires CompatibleNodes<S, A, SN, AN>
+void tree_search<S, A, SN, AN>::expand(SN* leaf) {
+    leaf->expand(agent<S, A>::handler.num_actions());
 }
 
-template <typename S, template <typename> class SN, template <typename> class AN>
-void tree_search<S, SN, AN>::propagate(state_node_t* leaf) {
+template <typename S, typename A, typename SN, typename AN>
+requires CompatibleNodes<S, A, SN, AN>
+void tree_search<S, A, SN, AN>::propagate(state_node_t* leaf) {
     action_node_t* prev_action = nullptr;
     state_node_t* current_state = leaf;
 
@@ -57,10 +60,11 @@ void tree_search<S, SN, AN>::propagate(state_node_t* leaf) {
     current_state->propagate(prev_action, gamma);
 }
 
-template <typename S, template <typename> class SN, template <typename> class AN>
-void tree_search<S, SN, AN>::descent(action_t a, S s) {
+template <typename S, typename A, typename SN, typename AN>
+requires CompatibleNodes<S, A, SN, AN>
+void tree_search<S, A, SN, AN>::descent(A a, S s) {
     int action_visits = root->children[a].num_visits;
-    std::unique_ptr<SN<S>> new_root = std::move(root->children[a].children[s]);
+    std::unique_ptr<SN> new_root = std::move(root->children[a].children[s]);
     int state_visits = new_root->num_visits;
     step_risk_thd *= action_visits / (static_cast<float>(state_visits) + 0.0001f);
     root = std::move(new_root);
@@ -70,20 +74,21 @@ void tree_search<S, SN, AN>::descent(action_t a, S s) {
     }
 }
 
-template <typename S, template <typename> class SN, template <typename> class AN>
-void tree_search<S, SN, AN>::play() {
+template <typename S, typename A, typename SN, typename AN>
+requires CompatibleNodes<S, A, SN, AN>
+void tree_search<S, A, SN, AN>::play() {
     spdlog::debug("Running simulations");
     for (int i = 0; i < num_sim; i++) {
         spdlog::debug("Simulation " + std::to_string(i));
-        SN<S>* leaf = select();
+        SN* leaf = select();
         expand(leaf);
         propagate(leaf);
     }
 
-    action_t a = root->select_action(risk_thd, false);
+    A a = root->select_action(risk_thd, false);
 
     spdlog::debug("Play action: " + std::to_string(a));
-    auto [s, r, p, e] = agent<S>::handler.play_action(a);
+    auto [s, r, p, e] = agent<S, A>::handler.play_action(a);
     spdlog::debug("  Result: s=" + std::to_string(s) + ", r=" + std::to_string(r) + ", p=" + std::to_string(p));
     
     root->children[a].add_outcome(s, r, p, e);

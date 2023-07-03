@@ -10,7 +10,7 @@ bool investor_env::is_over() const {
     return wealth >= target || wealth <= 0;
 }
 
-outcome_t<int> investor_env::play_action(action_t action) {
+outcome_t<int> investor_env::play_action(size_t action) {
     if (action == RISKY) {
         if (rng::bernoulli(0.2)) {
             wealth += 12;

@@ -9,7 +9,7 @@ namespace ts {
 /*********************************************************************
  * NODE INTERFACE
  *********************************************************************/
-template<typename S>
+template<typename S, typename A>
 struct action_node;
 
 
@@ -18,11 +18,11 @@ struct action_node;
  * 
  * @tparam S State type
  */
-template<typename S>
+template<typename S, typename A>
 struct state_node {
 public:
-    action_node<S> *parent;
-    std::vector<action_node<S>> children;
+    action_node<S, A> *parent;
+    std::vector<action_node<S, A>> children;
     
     float observed_reward = 0;
     float observed_penalty = 0;
@@ -42,8 +42,8 @@ public:
     std::string to_string() const;
 
     void expand(size_t num_actions);
-    action_t select_action(float risk_thd, bool explore);
-    void propagate(action_node<S>* child, float gamma);
+    A select_action(float risk_thd, bool explore);
+    void propagate(action_node<S, A>* child, float gamma);
 
 public:
     void validate() const;
@@ -55,11 +55,11 @@ public:
  * 
  * @tparam S State type
  */
-template<typename S>
+template<typename S, typename A>
 struct action_node {
 public:
-    state_node<S> *parent;
-    std::map<S, std::unique_ptr<state_node<S>>> children;
+    state_node<S, A> *parent;
+    std::map<S, std::unique_ptr<state_node<S, A>>> children;
     
     float expected_reward = 0;
     float expected_penalty = 0;
@@ -68,7 +68,7 @@ public:
 
 public:
     void add_outcome(S s, float r, float p, bool t);
-    void propagate(state_node<S>* child, float gamma);
+    void propagate(state_node<S, A>* child, float gamma);
     std::string to_string() const;
 
 public:
@@ -81,11 +81,11 @@ public:
  * @tparam S State type
  *********************************************************************/
 
-template <typename S>
-class UCT : public tree_search<S, state_node, action_node> {
+template <typename S, typename A>
+class UCT : public tree_search<S, A, state_node<S, A>, action_node<S, A>> {
 public:
     UCT(int _max_depth, int _num_sim, float _risk_thd, float _gamma)
-    : tree_search<S, state_node, action_node>(_max_depth, _num_sim, _risk_thd, _gamma) {}
+    : tree_search<S, A, state_node<S, A>, action_node<S, A>>(_max_depth, _num_sim, _risk_thd, _gamma) {}
 
     std::string name() const override {
         return "UCT";

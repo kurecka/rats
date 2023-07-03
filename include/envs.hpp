@@ -4,7 +4,7 @@
 
 namespace world {
 
-class investor_env : public environment<int> {
+class investor_env : public environment<int, size_t> {
 private:
     int initial_wealth;
     int wealth;
@@ -27,9 +27,11 @@ public:
     std::string name() const override { return "InvestorEnv"; }
 
     size_t num_actions() const override { return 2; }
+    std::vector<size_t> possible_actions() const override { return {RISKY, SAFE}; }
+    size_t get_action(size_t i) const override { return i; }
     int current_state() const override;
     bool is_over() const override;
-    outcome_t<int> play_action(action_t action) override;
+    outcome_t<int> play_action(size_t action) override;
 
     void restore_checkpoint() override;
     void make_checkpoint() override;

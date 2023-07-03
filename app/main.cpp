@@ -156,18 +156,18 @@ int main(int argc, char *argv[]) {
     // Run the simulation
     int initial_state = 2;
 
-    orchestrator<int> o;
+    orchestrator<int, size_t> o;
     o.load_environment(new world::investor_env(initial_state, 20));
 
-    o.load_agent(new world::randomized_agent<int>());
+    o.load_agent(new world::randomized_agent<int, size_t>());
     o.run(num_episodes, 0);
 
-    o.load_agent(new world::constant_agent<int>(0));
+    o.load_agent(new world::constant_agent<int, size_t>(0));
     o.run(num_episodes, 0);
 
-    o.load_agent(new world::constant_agent<int>(1));
+    o.load_agent(new world::constant_agent<int, size_t>(1));
     o.run(num_episodes, 0);
 
-    o.load_agent(new world::ts::UCT<int>(std::stoi(args["--depth"]), std::stoi(args["--num_sim"]), std::stof(args["--risk_thd"]), 0.99f));
+    o.load_agent(new world::ts::UCT<int, size_t>(std::stoi(args["--depth"]), std::stoi(args["--num_sim"]), std::stof(args["--risk_thd"]), 0.99f));
     o.run(num_episodes, 0);
 }

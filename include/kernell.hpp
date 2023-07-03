@@ -5,24 +5,24 @@
 #include "world.hpp"
 
 
-template <typename S>
+template <typename S, typename A>
 class orchestrator {
 private:
-    std::unique_ptr<world::environment<S>> env;
-    std::unique_ptr<world::agent<S>> agent;
+    std::unique_ptr<world::environment<S, A>> env;
+    std::unique_ptr<world::agent<S, A>> agent;
 
 public:
-    void load_environment(std::unique_ptr<world::environment<S>> env);
-    void load_environment(world::environment<S>* env);
-    void load_agent(std::unique_ptr<world::agent<S>> agent);
-    void load_agent(world::agent<S>* agent);
+    void load_environment(std::unique_ptr<world::environment<S, A>> env);
+    void load_environment(world::environment<S, A>* env);
+    void load_agent(std::unique_ptr<world::agent<S, A>> agent);
+    void load_agent(world::agent<S, A>* agent);
 
     std::pair<float, float> episode();
     void run(int num_episodes, int num_train_episodes);
 };
 
-template <typename S>
-void orchestrator<S>::load_environment(std::unique_ptr<world::environment<S>> _env) {
+template <typename S, typename A>
+void orchestrator<S, A>::load_environment(std::unique_ptr<world::environment<S, A>> _env) {
     spdlog::info("Load environment: " + _env->name());
     env = std::move(_env);
     if (agent) {
@@ -30,13 +30,13 @@ void orchestrator<S>::load_environment(std::unique_ptr<world::environment<S>> _e
     }
 }
 
-template <typename S>
-void orchestrator<S>::load_environment(world::environment<S>* _env) {
-    load_environment(std::unique_ptr<world::environment<S>>(_env));
+template <typename S, typename A>
+void orchestrator<S, A>::load_environment(world::environment<S, A>* _env) {
+    load_environment(std::unique_ptr<world::environment<S, A>>(_env));
 }
 
-template <typename S>
-void orchestrator<S>::load_agent(std::unique_ptr<world::agent<S>> _agent) {
+template <typename S, typename A>
+void orchestrator<S, A>::load_agent(std::unique_ptr<world::agent<S, A>> _agent) {
     spdlog::info("Load agent: " +_agent->name());
     agent = std::move(_agent);
     if (env) {
@@ -44,14 +44,14 @@ void orchestrator<S>::load_agent(std::unique_ptr<world::agent<S>> _agent) {
     }
 }
 
-template <typename S>
-void orchestrator<S>::load_agent(world::agent<S>* _agent) {
-    this->load_agent(std::unique_ptr<world::agent<S>>(_agent));
+template <typename S, typename A>
+void orchestrator<S, A>::load_agent(world::agent<S, A>* _agent) {
+    this->load_agent(std::unique_ptr<world::agent<S, A>>(_agent));
 }
 
-template <typename S>
-std::pair<float, float> orchestrator<S>::episode() {
-    const world::environment_handler<S>& handler = agent->get_handler();
+template <typename S, typename A>
+std::pair<float, float> orchestrator<S, A>::episode() {
+    const world::environment_handler<S, A>& handler = agent->get_handler();
     spdlog::debug("Run episode");
     env->reset();
     spdlog::debug("Environment prepared");
@@ -70,8 +70,8 @@ std::pair<float, float> orchestrator<S>::episode() {
     return {handler.get_reward(), handler.get_penalty()};
 }
 
-template <typename S>
-void orchestrator<S>::run(int num_episodes, int num_train_episodes) {
+template <typename S, typename A>
+void orchestrator<S, A>::run(int num_episodes, int num_train_episodes) {
     spdlog::info("Started");
     spdlog::info("  Agent: " + agent->name());
     spdlog::info("  Environmentx: " + env->name());

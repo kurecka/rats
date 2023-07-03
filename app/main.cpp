@@ -13,11 +13,8 @@
 #include "rand.hpp"
 #include "exampleConfig.h"
 #include "kernell.hpp"
-#include "envs/investor_env.hpp"
-#include "agents/uct.hpp"
-#include "agents/constant_agent.hpp"
-#include "agents/randomized_agent.hpp"
-
+#include "envs.hpp"
+#include "agents.hpp"
 #include "spdlog/spdlog.h"
 
 struct arg_spec {

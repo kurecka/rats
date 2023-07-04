@@ -5,8 +5,8 @@ namespace ts {
  * State node implementation
  * *************************************************/
 
-template <typename S, typename A>
-std::string uct_state<S, A>::to_string() const {
+template <typename S, typename A, typename DATA>
+std::string uct_state<S, A, DATA>::to_string() const {
     std::string s = "State node: ";
     s += "R: " + std::to_string(observed_reward) + " P: " + std::to_string(observed_penalty) + "\\n";
     s += "E[R]: " + std::to_string(expected_reward) + " E[P]: " + std::to_string(expected_penalty) + "\\n";
@@ -15,17 +15,19 @@ std::string uct_state<S, A>::to_string() const {
     return s;
 }
 
-template <typename S, typename A>
-void uct_state<S, A>::expand(std::vector<A> _actions) {
-    children.resize(_actions.size());
-    actions = _actions;
-    for (size_t i = 0; i < _actions.size(); ++i) {
+template <typename S, typename A, typename DATA>
+void uct_state<S, A, DATA>::expand(DATA* _common_data) {
+    common_data = _common_data;
+    actions = common_data->handler.possible_actions();
+    children.resize(actions.size());
+    for (size_t i = 0; i < actions.size(); ++i) {
         children[i].parent = this;
+        children[i].common_data = common_data;
     }
 }
 
-template <typename S, typename A>
-A uct_state<S, A>::select_action(float risk_thd, bool explore) {
+template <typename S, typename A, typename DATA>
+A uct_state<S, A, DATA>::select_action(float risk_thd, bool explore) {
     // best safe action
     float best_reward = -1e9;
     A best_action = 0;
@@ -60,8 +62,8 @@ A uct_state<S, A>::select_action(float risk_thd, bool explore) {
     }
 }
 
-template <typename S, typename A>
-void uct_state<S, A>::propagate(uct_action<S, A>* child, float gamma) {
+template <typename S, typename A, typename DATA>
+void uct_state<S, A, DATA>::propagate(uct_action<S, A, DATA>* child, float gamma) {
     if (child) {
         num_visits++;
         expected_reward += (gamma * child->expected_reward - expected_reward) / num_visits;
@@ -74,10 +76,10 @@ void uct_state<S, A>::propagate(uct_action<S, A>* child, float gamma) {
  * Action node implementation
  * *************************************************/
 
-template <typename S, typename A>
-void uct_action<S, A>::add_outcome(S s, float r, float p, bool t) {
+template <typename S, typename A, typename DATA>
+void uct_action<S, A, DATA>::add_outcome(S s, float r, float p, bool t) {
     if (children.find(s) == children.end()) {
-        children[s] = std::make_unique<uct_state<S, A>>();
+        children[s] = std::make_unique<uct_state<S, A, DATA>>();
     }
     children[s]->observed_reward = r;
     children[s]->observed_penalty = p;
@@ -86,19 +88,52 @@ void uct_action<S, A>::add_outcome(S s, float r, float p, bool t) {
     children[s]->terminal = t;
 }
 
-template <typename S, typename A>
-void uct_action<S, A>::propagate(uct_state<S, A>* child, float gamma) {
+template <typename S, typename A, typename DATA>
+void uct_action<S, A, DATA>::propagate(uct_state<S, A, DATA>* child, float gamma) {
     num_visits++;
     expected_reward += (gamma * (child->expected_reward + child->observed_reward) - expected_reward) / num_visits;
     expected_penalty += (gamma * (child->expected_penalty + child->observed_penalty) - expected_penalty) / num_visits;
 }
 
-template <typename S, typename A>
-std::string uct_action<S, A>::to_string() const {
+template <typename S, typename A, typename DATA>
+std::string uct_action<S, A, DATA>::to_string() const {
     std::string s = "Action node: ";
     s += "E[R]: " + std::to_string(expected_reward) + " E[P]: " + std::to_string(expected_penalty) + " ";
     s += "V: " + std::to_string(num_visits) + " ";
     return s;
+}
+
+
+/***************************************************
+ * UCT implementation
+ * *************************************************/
+
+template <typename S, typename A>
+void UCT<S, A>::play() {
+    spdlog::debug("Running simulations");
+    for (int i = 0; i < num_sim; i++) {
+        spdlog::trace("Simulation " + std::to_string(i));
+        uct_state<S, A, data_t>* leaf = ts.select();
+        leaf->expand(&common_data);
+        ts.propagate(leaf);
+    }
+
+    uct_state<S, A, data_t>* root = ts.get_root();
+    A a = root->select_action(risk_thd, false);
+
+    spdlog::trace("Play action: " + std::to_string(a));
+    auto [s, r, p, e] = agent<S, A>::handler.play_action(a);
+    spdlog::trace("  Result: s=" + std::to_string(s) + ", r=" + std::to_string(r) + ", p=" + std::to_string(p));
+    
+    root->get_child(a)->add_outcome(s, r, p, e);
+
+    ts.descent(a, s);
+}
+
+template <typename S, typename A>
+void UCT<S, A>::reset() {
+    agent<S, A>::reset();
+    ts.reset();
 }
 
 } // namespace ts

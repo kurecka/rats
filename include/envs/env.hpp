@@ -33,25 +33,20 @@ public:
 
     /**
      * @brief Get the number of possible actions
-     * 
-     * @param state current state
      */
-    virtual size_t num_actions(S state) const = 0;
+    virtual size_t num_actions() const = 0;
 
     /**
      * @brief Get the vector of all possible actions
-     * 
-     * @param state current state
      */
-    virtual std::vector<A> possible_actions(S state) const = 0;
+    virtual std::vector<A> possible_actions() const = 0;
 
     /**
      * @brief Get the ith action
      * 
-     * @param state current state
      * @param i index of the action
      */
-    virtual A get_action(S state, size_t i) const = 0;
+    virtual A get_action(size_t i) const = 0;
 
     /**
      * @brief Get the bounds on the reward
@@ -199,32 +194,29 @@ public:
     /**
      * @brief Get the number of possible actions
      * 
-     * @param state current state
      * @return size_t
      */
-    size_t num_actions(S state) const {
-        return env->num_actions(state);
+    size_t num_actions() const {
+        return env->num_actions();
     }
 
     /**
      * @brief Get the vector of all possible actions
      * 
-     * @param state current state
      * @return std::vector<A>
      */
-    std::vector<A> possible_actions(S state) const {
-        return env->possible_actions(state);
+    std::vector<A> possible_actions() const {
+        return env->possible_actions();
     }
 
     /**
      * @brief Get the ith action
      * 
-     * @param state current state
      * @param i index of the action
      * @return A
      */
-    A get_action(S state, size_t i) const {
-        return env->get_action(state, i);
+    A get_action(size_t i) const {
+        return env->get_action(i);
     }
 
     /**

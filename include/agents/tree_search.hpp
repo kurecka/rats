@@ -11,7 +11,6 @@ namespace ts {
 template<typename S, typename A, typename SN, typename AN>
 concept CompatibleNodes = requires (S s, A a, SN sn, AN an, float f, bool b, size_t n)
 {
-    {sn.expand(std::vector<A>{a})};
     {sn.select_action(f, b)} -> std::same_as<A>;
     {sn.propagate(&an, f)};
     {sn.get_child(a)} -> std::same_as<AN*>;
@@ -50,22 +49,32 @@ bool is_leaf(SN* sn) {
  * @tparam SN type of state nodes
  * @tparam AN type of action nodes
  */
-template <typename S, typename A, typename SN, typename AN>
+template <typename S, typename A, typename SN, typename AN, typename DATA>
 requires CompatibleNodes<S, A, SN, AN>
-class tree_search : public agent<S, A> {
+class tree_search {
 public:
     using state_node_t = SN;
     using action_node_t = AN;
     using env_t = environment<S, A>;
     using handler_t = environment_handler<S, A>;
-protected:
+
+private:
     int max_depth;
-    int num_sim;
     float risk_thd; // risk threshold
     float step_risk_thd; // current risk threshold during the search
     float gamma; // discount factor
 
     std::unique_ptr<state_node_t> root;
+
+    DATA* common_data;
+
+public:
+    /**
+     * @brief Get the root node of the search tree
+     * 
+     * @return state_node_t*
+     */
+    state_node_t* get_root() { return root.get(); }
 
     /**
      * @brief Select a leaf node to expand.
@@ -73,13 +82,6 @@ protected:
      * @return state_node_t*
      */
     state_node_t* select();
-
-    /**
-     * @brief Expand a leaf node.
-     * 
-     * @param leaf A leaf node to be expanded
-     */
-    void expand(state_node_t* leaf);
 
     /**
      * @brief Propagate the result of a simulation from the leaf node back to the root.
@@ -101,26 +103,18 @@ public:
      * @brief Construct a new search tree object
      * 
      * @param _max_depth Maximum depth of the search tree
-     * @param _num_sim Number of simulations to run at each leaf node
+     * @param _risk_thd Risk threshold
      * @param _gamma Discount factor
      */
-    tree_search(int _max_depth, int _num_sim, float _risk_thd, float _gamma)
-    : agent<S, A>(), max_depth(_max_depth), num_sim(_num_sim), risk_thd(_risk_thd), gamma(_gamma) {
+    tree_search( int _max_depth, float _risk_thd, float _gamma, DATA* _common_data)
+    : max_depth(_max_depth), risk_thd(_risk_thd), gamma(_gamma), common_data(_common_data) {
         reset();
     }
 
-    void play() override;
-
-    void reset() override {
-        agent<S, A>::reset();
-
+    void reset() {
         root = std::make_unique<state_node_t>();
         root->get_parent() = nullptr;
         step_risk_thd = risk_thd;
-    }
-
-    std::string name() const override {
-        return "Tree Search";
     }
 };
 

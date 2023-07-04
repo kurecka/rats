@@ -16,7 +16,7 @@ public:
 
     void play() override {
         A action = agent<S, A>::handler.get_action(
-            state, rng::unif_int(agent<S, A>::handler.num_actions(state))
+            rng::unif_int(agent<S, A>::handler.num_actions())
         );
         spdlog::debug("Play action: " + std::to_string(action));
         outcome_t<S> outcome = agent<S, A>::handler.play_action(action);

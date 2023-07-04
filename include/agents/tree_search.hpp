@@ -9,35 +9,46 @@ namespace gym {
 namespace ts {
 
 template<typename S, typename A, typename SN, typename AN>
-concept CompatibleNodes = requires (S s, A a, SN sn, AN an)
+concept CompatibleNodes = requires (S s, A a, SN sn, AN an, float f, bool b, size_t n)
 {
-    {an.num_visits} -> std::same_as<int&>;
-    {sn.num_visits} -> std::same_as<int&>;
-    {sn.children[a]};
-    {an.children[s]};
-    {sn.parent} -> std::same_as<AN*&>;
-    {sn.select_action(0.0f, true)} -> std::same_as<A>;
-    {an.add_outcome(s, 0.0f, 0.0f, true)};
-    {an.propagate(&sn, 0.0f)};
+    {sn.expand(std::vector<A>{a})};
+    {sn.select_action(f, b)} -> std::same_as<A>;
+    {sn.propagate(&an, f)};
+    {sn.get_child(a)} -> std::same_as<AN*>;
+    {sn.get_parent()} -> std::same_as<AN*&>;
+    {sn.get_num_visits()} -> std::same_as<size_t>;
+    {sn.is_terminal()} -> std::same_as<bool>;
+    {sn.to_string()} -> std::same_as<std::string>;
+
+    {an.add_outcome(s, f, f, b)};
+    {an.propagate(&sn, f)};
+    {an.get_child(s)} -> std::same_as<SN*>;
+    {an.get_child_unique_ptr(s)} -> std::same_as<std::unique_ptr<SN>&&>;
+    {an.get_parent()} -> std::same_as<SN*&>;
+    {an.get_num_visits()} -> std::same_as<size_t>;
+    {an.to_string()} -> std::same_as<std::string>;
 };
+
+template<typename S, typename A, typename SN, typename AN>
+requires CompatibleNodes<S, A, SN, AN>
+bool is_root(SN* sn) {
+    return sn->get_parent() == nullptr;
+}
+
+template<typename S, typename A, typename SN, typename AN>
+requires CompatibleNodes<S, A, SN, AN>
+bool is_leaf(SN* sn) {
+    return sn->children.empty();
+}
+
+
 
 /*********************************************************************
  * @brief Search tree
  * 
  * @tparam S type of states
  * @tparam SN type of state nodes
- * Should support:
- * - num_visits
- * - parent
- * - children
- * - select_action(risk_thd, explore)
- * - expand(num_actions)
  * @tparam AN type of action nodes
- * Shoul supper:
- * - num_visits
- * - children
- * - add_outcome(state, reward, penalty, terminal)
- * - propagate(state_node, gamma);
  */
 template <typename S, typename A, typename SN, typename AN>
 requires CompatibleNodes<S, A, SN, AN>
@@ -104,7 +115,7 @@ public:
         agent<S, A>::reset();
 
         root = std::make_unique<state_node_t>();
-        root->parent = nullptr;
+        root->get_parent() = nullptr;
         step_risk_thd = risk_thd;
     }
 

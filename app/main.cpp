@@ -124,6 +124,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (args["--loglevel"] != "") {
+        std::string level = args["--loglevel"];
+        std::transform(level.begin(), level.end(), level.begin(), 
+            [](unsigned char c){ return std::tolower(c); }
+        );
         std::map<std::string, spdlog::level::level_enum> level_map = {
             {"trace", spdlog::level::trace},
             {"debug", spdlog::level::debug},
@@ -133,7 +137,7 @@ int main(int argc, char *argv[]) {
             {"critical", spdlog::level::critical},
             {"off", spdlog::level::off}
         };
-        spdlog::set_level(level_map[args["--loglevel"]]);
+        spdlog::set_level(level_map[level]);
     }
 
     spdlog::info("Arguments:");

@@ -18,15 +18,15 @@ SN* tree_search<S, A, SN, AN>::select() {
 
     float run_risk_thd = step_risk_thd;
 
-    while (!current_state_node->is_leaf() && depth < max_depth && !current_state_node->is_terminal) {
+    while (!is_leaf<S, A, SN, AN>(current_state_node) && depth < max_depth && !current_state_node->is_terminal()) {
         A action = current_state_node->select_action(run_risk_thd, true);
-        action_node_t *current_action_node = &current_state_node->children[action];
+        action_node_t *current_action_node = current_state_node->get_child(action);
         auto [s, r, p, t] = agent<S, A>::handler.sim_action(action);
         current_action_node->add_outcome(s, r, p, t);
-        current_state_node = current_action_node->children[s].get();
+        current_state_node = current_action_node->get_child(s);
 
-        int state_visits = current_state_node->num_visits;
-        int action_visits = current_action_node->num_visits;
+        size_t state_visits = current_state_node->get_num_visits();
+        size_t action_visits = current_action_node->get_num_visits();
 
         run_risk_thd *= action_visits / static_cast<float>(state_visits + 0.0001);
 
@@ -41,7 +41,7 @@ template <typename S, typename A, typename SN, typename AN>
 requires CompatibleNodes<S, A, SN, AN>
 void tree_search<S, A, SN, AN>::expand(SN* leaf) {
     spdlog::trace("Expanding node");
-    leaf->expand(agent<S, A>::handler.num_actions(agent<S, A>::handler.current_state()));
+    leaf->expand(agent<S, A>::handler.possible_actions(agent<S, A>::handler.current_state()));
 }
 
 template <typename S, typename A, typename SN, typename AN>
@@ -51,11 +51,11 @@ void tree_search<S, A, SN, AN>::propagate(state_node_t* leaf) {
     action_node_t* prev_action_node = nullptr;
     state_node_t* current_state_node = leaf;
 
-    while (!current_state_node->is_root()) {
+    while (!is_root<S, A, SN, AN>(current_state_node)) {
         current_state_node->propagate(prev_action_node, gamma);
-        action_node_t* current_action_node = current_state_node->parent;
+        action_node_t* current_action_node = current_state_node->get_parent();
         current_action_node->propagate(current_state_node, gamma);
-        current_state_node = current_action_node->parent;
+        current_state_node = current_action_node->get_parent();
         prev_action_node = current_action_node;
     }
 
@@ -66,12 +66,13 @@ template <typename S, typename A, typename SN, typename AN>
 requires CompatibleNodes<S, A, SN, AN>
 void tree_search<S, A, SN, AN>::descent(A a, S s) {
     spdlog::trace("Descending tree");
-    int action_visits = root->children[a].num_visits;
-    std::unique_ptr<SN> new_root = std::move(root->children[a].children[s]);
-    int state_visits = new_root->num_visits;
+    action_node_t* action_node = root->get_child(a);
+    size_t action_visits = action_node->get_num_visits();
+    std::unique_ptr<SN> new_root = action_node->get_child_unique_ptr(s);
+    size_t state_visits = new_root->get_num_visits();
     step_risk_thd *= action_visits / (static_cast<float>(state_visits) + 0.0001f);
     root = std::move(new_root);
-    root->parent = nullptr;
+    root->get_parent() = nullptr;
     for (auto& child : root->children) {
         child.parent = root.get();
     }

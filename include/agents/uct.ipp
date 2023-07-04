@@ -88,6 +88,9 @@ void state_node<S, A>::validate() const {
 
 template <typename S, typename A>
 void action_node<S, A>::add_outcome(S s, float r, float p, bool t) {
+    if (children.find(s) == children.end()) {
+        children[s] = std::make_unique<state_node<S, A>>();
+    }
     children[s]->observed_reward = r;
     children[s]->observed_penalty = p;
 

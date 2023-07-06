@@ -17,6 +17,7 @@ void primal_uct<S, A>::play() {
     }
 
     uct_state<S, A, data_t, mode>* root = ts.get_root();
+    common_data.sample_risk_thd = common_data.risk_thd;
     A a = root->select_action(false);
 
     spdlog::trace("Play action: " + std::to_string(a));

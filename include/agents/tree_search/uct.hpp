@@ -7,8 +7,10 @@ namespace gym {
 namespace ts {
 
 enum uct_mode {
-    PRIMAL = 0,
-    DUAL = 1,
+    PRIMAL,
+    DUAL,
+    DPRIMAL,
+    DDUAL
 };
 
 /*********************************************************************
@@ -22,8 +24,8 @@ concept CompatibleDataMode = requires (DATA d) {
     d.exploration_constant;
 } &&
 (
-    MODE == PRIMAL ||
-    (MODE == DUAL && requires (DATA d) {d.lambda;})
+    MODE == PRIMAL || MODE == DPRIMAL ||
+    ((MODE == DDUAL || MODE == DUAL) && requires (DATA d) {d.lambda;})
 );
 
 template<typename S, typename A, typename DATA, int MODE>

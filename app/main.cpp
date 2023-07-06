@@ -109,8 +109,6 @@ std::map<std::string, std::string> load_args(int argc, char *argv[], const std::
 }
 
 int main(int argc, char *argv[]) {
-    rng::init();
-
     std::vector arg_spec = get_arg_spec();
     std::map<std::string, std::string> args = load_args(argc, argv, arg_spec);
     
@@ -147,9 +145,11 @@ int main(int argc, char *argv[]) {
         spdlog::info(arg.first + " = " + arg.second);
     }
 
+    rng::init();
     if (std::stoi(args["--seed"]) >= 0) {
-        // string to unsigned int
-        // set_seed(static_cast<size_t>(std::stoi(args["--seed"])));
+        rng::set_seed(static_cast<unsigned int>(stoi(args["--seed"])));
+    } else {
+        rng::set_seed(static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));
     }
 
     int num_episodes = std::stoi(args["--num_episodes"]);
@@ -174,18 +174,18 @@ int main(int argc, char *argv[]) {
             args["--depth"]),
             std::stoi(args["--num_sim"]),
             std::stof(args["--risk_thd"]),
-            0.9f,
+            0.99f,
             std::stof(args["--expl_const"])
         )
     );
     o.run(num_episodes, 0);
 
-    o.load_agent(new gym::ts::dual_uct<int, size_t>(
-        std::stoi(args["--depth"]),
-        std::stoi(args["--num_sim"]),
-        std::stof(args["--risk_thd"]),
-        0.9f,
-        std::stof(args["--expl_const"])
-    ));
-    o.run(num_episodes, 0);
+    // o.load_agent(new gym::ts::dual_uct<int, size_t>(
+    //     std::stoi(args["--depth"]),
+    //     std::stoi(args["--num_sim"]),
+    //     std::stof(args["--risk_thd"]),
+    //     0.9f,
+    //     std::stof(args["--expl_const"])
+    // ));
+    // o.run(num_episodes, 0);
 }

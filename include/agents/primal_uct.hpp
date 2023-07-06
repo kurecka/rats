@@ -26,7 +26,7 @@ struct primal_uct_data {
 template <typename S, typename A>
 class primal_uct : public agent<S, A> {
     using data_t = primal_uct_data<S, A>;
-    constexpr static int mode = PRIMAL;
+    constexpr static int mode = DPRIMAL;
 private:
     int num_sim;
     float risk_thd;

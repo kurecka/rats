@@ -7,7 +7,7 @@ namespace gym {
 namespace ts {
 
 enum uct_mode {
-    PRIMAL_DETERMINISTIC = 0,
+    PRIMAL = 0,
     DUAL = 1,
 };
 
@@ -15,7 +15,19 @@ enum uct_mode {
  * NODE INTERFACE
  *********************************************************************/
 
+template<typename DATA, int MODE>
+concept CompatibleDataMode = requires (DATA d) {
+    d.risk_thd;
+    d.sample_risk_thd;
+    d.exploration_constant;
+} &&
+(
+    MODE == PRIMAL ||
+    (MODE == DUAL && requires (DATA d) {d.lambda;})
+);
+
 template<typename S, typename A, typename DATA, int MODE>
+requires CompatibleDataMode<DATA, MODE>
 struct uct_action;
 
 /**
@@ -24,6 +36,7 @@ struct uct_action;
  * @tparam S State type
  */
 template<typename S, typename A, typename DATA, int MODE>
+requires CompatibleDataMode<DATA, MODE>
 struct uct_state {
 public:
     uct_action<S, A, DATA, MODE> *parent;
@@ -38,12 +51,16 @@ public:
     size_t num_visits = 0;
 
     DATA* common_data;
+
+    A select_action_primal(bool explore);
+    A select_action_dual(bool explore);
 public:
     void expand(DATA* _common_data);
-    A select_action(float risk_thd, bool explore);
+    A select_action(bool explore);
     void propagate(uct_action<S, A, DATA, MODE>* child, float gamma);
     uct_action<S, A, DATA, MODE>* get_child(A a) {return &children[a];}
     uct_action<S, A, DATA, MODE>*& get_parent() {return parent;}
+    void descend_update(A a, S s, bool is_sim);
 
     size_t get_num_visits() const {return num_visits;}
     bool is_terminal() const {return terminal;}
@@ -57,6 +74,7 @@ public:
  * @tparam S State type
  */
 template<typename S, typename A, typename DATA, int MODE>
+requires CompatibleDataMode<DATA, MODE>
 struct uct_action {
 public:
     uct_state<S, A, DATA, MODE> *parent;

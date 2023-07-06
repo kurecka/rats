@@ -6,17 +6,25 @@ namespace ts {
  * *************************************************/
 
 template <typename S, typename A>
-void primal_uct<S, A>::play() {
+void dual_uct<S, A>::play() {
+    uct_state<S, A, data_t, mode>* root = ts.get_root();
+
     spdlog::debug("Running simulations");
     for (int i = 0; i < num_sim; i++) {
         spdlog::trace("Simulation " + std::to_string(i));
-        common_data.sample_risk_thd = common_data.risk_thd;
         uct_state<S, A, data_t, mode>* leaf = ts.select();
         leaf->expand(&common_data);
         ts.propagate(leaf);
+
+        A a = root->select_action(false);
+        uct_action<S, A, data_t, mode>* action_node = root->get_child(a);
+
+        common_data.lambda += lr * (action_node->expected_penalty - common_data.risk_thd);
+        if (common_data.lambda < 0) {
+            common_data.lambda = 0;
+        }
     }
 
-    uct_state<S, A, data_t, mode>* root = ts.get_root();
     A a = root->select_action(false);
 
     spdlog::trace("Play action: " + std::to_string(a));
@@ -29,9 +37,10 @@ void primal_uct<S, A>::play() {
 }
 
 template <typename S, typename A>
-void primal_uct<S, A>::reset() {
+void dual_uct<S, A>::reset() {
     agent<S, A>::reset();
     ts.reset();
+    common_data.lambda = 0;
     common_data.risk_thd = risk_thd;
 }
 

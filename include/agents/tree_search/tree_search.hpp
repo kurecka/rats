@@ -11,13 +11,14 @@ namespace ts {
 template<typename S, typename A, typename SN, typename AN>
 concept CompatibleNodes = requires (S s, A a, SN sn, AN an, float f, bool b, size_t n)
 {
-    {sn.select_action(f, b)} -> std::same_as<A>;
+    {sn.select_action(b)} -> std::same_as<A>;
     {sn.propagate(&an, f)};
     {sn.get_child(a)} -> std::same_as<AN*>;
     {sn.get_parent()} -> std::same_as<AN*&>;
     {sn.get_num_visits()} -> std::same_as<size_t>;
     {sn.is_terminal()} -> std::same_as<bool>;
     {sn.to_string()} -> std::same_as<std::string>;
+    {sn.descend_update(a, s, b)};
 
     {an.add_outcome(s, f, f, b)};
     {an.propagate(&sn, f)};
@@ -60,8 +61,6 @@ public:
 
 private:
     int max_depth;
-    float risk_thd; // risk threshold
-    float step_risk_thd; // current risk threshold during the search
     float gamma; // discount factor
 
     std::unique_ptr<state_node_t> root;
@@ -103,18 +102,16 @@ public:
      * @brief Construct a new search tree object
      * 
      * @param _max_depth Maximum depth of the search tree
-     * @param _risk_thd Risk threshold
      * @param _gamma Discount factor
      */
-    tree_search( int _max_depth, float _risk_thd, float _gamma, DATA* _common_data)
-    : max_depth(_max_depth), risk_thd(_risk_thd), gamma(_gamma), common_data(_common_data) {
+    tree_search( int _max_depth, float _gamma, DATA* _common_data)
+    : max_depth(_max_depth), gamma(_gamma), common_data(_common_data) {
         reset();
     }
 
     void reset() {
         root = std::make_unique<state_node_t>();
         root->get_parent() = nullptr;
-        step_risk_thd = risk_thd;
     }
 };
 

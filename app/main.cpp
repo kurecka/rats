@@ -33,6 +33,7 @@ std::vector<arg_spec> get_arg_spec() {
     spec.push_back({"-r", "--risk_thd", "risk threshold", "0.1", 0});
     spec.push_back({"-s", "--seed", "seed of the random number generator", "-1", 0});
     spec.push_back({"-l", "--loglevel", "log level", "INFO", 0});
+    spec.push_back({"-x", "--expl_const", "exploration constant", "1", 0});
 
     spec.push_back({"-v", "--version", "print version", "false", 1});
     spec.push_back({"-h", "--help", "print this help", "false", 1});
@@ -168,6 +169,23 @@ int main(int argc, char *argv[]) {
     o.load_agent(new gym::constant_agent<int, size_t>(1));
     o.run(num_episodes, 0);
 
-    o.load_agent(new gym::ts::primal_uct<int, size_t>(std::stoi(args["--depth"]), std::stoi(args["--num_sim"]), std::stof(args["--risk_thd"]), 0.99f));
+    o.load_agent(new gym::ts::primal_uct<int, size_t>(
+        std::stoi(
+            args["--depth"]),
+            std::stoi(args["--num_sim"]),
+            std::stof(args["--risk_thd"]),
+            0.9f,
+            std::stof(args["--expl_const"])
+        )
+    );
+    o.run(num_episodes, 0);
+
+    o.load_agent(new gym::ts::dual_uct<int, size_t>(
+        std::stoi(args["--depth"]),
+        std::stoi(args["--num_sim"]),
+        std::stof(args["--risk_thd"]),
+        0.9f,
+        std::stof(args["--expl_const"])
+    ));
     o.run(num_episodes, 0);
 }

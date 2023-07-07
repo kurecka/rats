@@ -159,25 +159,25 @@ int main(int argc, char *argv[]) {
 
     orchestrator<int, size_t> o;
     o.load_environment(new gym::investor_env(initial_state, 20));
+    auto h = o.get_handler();
 
-    o.load_agent(new gym::randomized_agent<int, size_t>());
+    o.load_agent(new gym::randomized_agent<int, size_t>(h));
     o.run(num_episodes, 0);
 
-    o.load_agent(new gym::constant_agent<int, size_t>(0));
+    o.load_agent(new gym::constant_agent<int, size_t>(h, 0));
     o.run(num_episodes, 0);
 
-    o.load_agent(new gym::constant_agent<int, size_t>(1));
+    o.load_agent(new gym::constant_agent<int, size_t>(h, 1));
     o.run(num_episodes, 0);
 
     o.load_agent(new gym::ts::primal_uct<int, size_t>(
-        std::stoi(
-            args["--depth"]),
-            std::stoi(args["--num_sim"]),
-            std::stof(args["--risk_thd"]),
-            0.99f,
-            std::stof(args["--expl_const"])
-        )
-    );
+        h,
+        std::stoi(args["--depth"]),
+        std::stoi(args["--num_sim"]),
+        std::stof(args["--risk_thd"]),
+        0.99f,
+        std::stof(args["--expl_const"])
+    ));
     o.run(num_episodes, 0);
 
     // o.load_agent(new gym::ts::dual_uct<int, size_t>(

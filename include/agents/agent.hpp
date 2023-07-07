@@ -54,6 +54,9 @@ public:
      * @brief Construct a new agent object 
      * 
      */
+    agent(environment_handler<S, A> _handler)
+    : handler(_handler) {}
+
     agent() {}
 
     /**

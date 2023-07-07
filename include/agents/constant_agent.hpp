@@ -11,7 +11,8 @@ private:
     S state;
     A action;
 public:
-    constant_agent(A a) : agent<S, A>(), action(a) {}
+    constant_agent(environment_handler<S, A> _handler, A a)
+    : agent<S, A>(_handler), action(a) {}
 
     ~constant_agent() override = default;
 

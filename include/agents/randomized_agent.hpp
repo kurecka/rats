@@ -10,7 +10,7 @@ class randomized_agent : public agent<S, A> {
 private:
     S state;
 public:
-    randomized_agent() : agent<S, A>() {}
+    randomized_agent(environment_handler<S, A> _handler) : agent<S, A>(_handler) {}
 
     ~randomized_agent() override = default;
 

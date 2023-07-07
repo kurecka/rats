@@ -17,6 +17,7 @@ public:
     void load_environment(gym::environment<S, A>* env);
     void load_agent(std::unique_ptr<gym::agent<S, A>> agent);
     void load_agent(gym::agent<S, A>* agent);
+    gym::environment_handler<S, A> get_handler() const;
 
     std::pair<float, float> episode();
     void run(int num_episodes, int num_train_episodes);
@@ -34,6 +35,11 @@ void orchestrator<S, A>::load_environment(std::unique_ptr<gym::environment<S, A>
 template <typename S, typename A>
 void orchestrator<S, A>::load_environment(gym::environment<S, A>* _env) {
     load_environment(std::unique_ptr<gym::environment<S, A>>(_env));
+}
+
+template <typename S, typename A>
+gym::environment_handler<S, A> orchestrator<S, A>::get_handler() const {
+    return gym::environment_handler<S, A>(*env);
 }
 
 template <typename S, typename A>
@@ -75,7 +81,7 @@ template <typename S, typename A>
 void orchestrator<S, A>::run(int num_episodes, int num_train_episodes) {
     spdlog::info("Started");
     spdlog::info("  Agent: " + agent->name());
-    spdlog::info("  Environmentx: " + env->name());
+    spdlog::info("  Environment: " + env->name());
     if (agent->is_trainable()) {
         spdlog::info("Training phase");
         for (int i = 0; i < num_train_episodes; i++) {

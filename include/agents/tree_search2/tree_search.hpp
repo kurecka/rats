@@ -27,6 +27,7 @@ template<typename S, typename A, typename DATA, typename V, typename Q>
 struct state_node {
     using action_node_t = action_node<S, A, DATA, V, Q>;
 public:
+    S state;
     action_node_t *parent;
     std::vector<action_node_t> children;
     std::vector<A> actions;
@@ -61,6 +62,7 @@ template<typename S, typename A, typename DATA, typename V, typename Q>
 struct action_node {
     using state_node_t = state_node<S, A, DATA, V, Q>;
 public:
+    A action;
     state_node_t *parent;
     std::map<S, std::unique_ptr<state_node_t>> children;
 
@@ -83,12 +85,14 @@ public:
 template<typename S, typename A, typename DATA, typename V, typename Q>
 std::unique_ptr<state_node<S, A, DATA, V, Q>> expand(
     action_node<S, A, DATA, V, Q>* parent,
+    S state,
     DATA* common_data,
     float r, float p, bool t
 ) {
     using state_node_t = state_node<S, A, DATA, V, Q>;
 
     std::unique_ptr<state_node_t> new_sn = std::make_unique<state_node_t>();
+    new_sn->state = state;
     new_sn->parent = parent;
     new_sn->common_data = common_data;
     new_sn->observed_reward = r;
@@ -97,10 +101,10 @@ std::unique_ptr<state_node<S, A, DATA, V, Q>> expand(
 
     new_sn->actions = common_data->handler.possible_actions();
     new_sn->children.resize(new_sn->actions.size());
-    for (auto& ch : new_sn->children) {
-        ch.parent = new_sn.get();
-
-        ch.common_data = common_data;
+    for (size_t i = 0; i < new_sn->actions.size(); ++i) {
+        new_sn->children[i].action = new_sn->actions[i];
+        new_sn->children[i].parent = new_sn.get();
+        new_sn->children[i].common_data = common_data;
     }
 
     return new_sn;
@@ -126,7 +130,7 @@ state_node<S, A, DATA, V, Q>* select_leaf(
         action_node_t *an = sn->get_child(action);
         auto [s, r, p, t] = sn->common_data->handler.sim_action(action);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand(an, an->common_data, r, p, t);
+            an->children[s] = expand(an, s, an->common_data, r, p, t);
         }
         state_node_t* new_sn = an->get_child(s);
         // descend_callback(sn, action, an, s, new_sn);
@@ -195,7 +199,7 @@ A select_action_primal(state_node<S, A, DATA, V, point_value>* node, bool explor
         ucts[i] = children[i].q.first + explore * c * (max_r - min_r) * static_cast<float>(
             sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
         );
-        lcts[i] = children[i].q.second - explore * c * (max_p - min_p) * static_cast<float>(
+        lcts[i] = children[i].q.second - explore * c * static_cast<float>(
             sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
         );
         if (lcts[i] < 0) lcts[i] = 0;

@@ -1,5 +1,6 @@
 #pragma once
 #include "tree_search2/tree_search.hpp"
+#include "tree_search2/string_utils.hpp"
 #include <string>
 #include <vector>
 
@@ -74,12 +75,22 @@ public:
         common_data.sample_risk_thd = common_data.risk_thd;
         A a = select_action_primal<S, A, data_t, v_t, true>(root.get(), false);
 
+        static bool logged = false;
+        if (!logged) {
+            spdlog::get("graphviz")->info(to_graphviz_tree(*root.get(), 9));
+            logged = true;
+        }
+
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
 
         uct_action_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand(an, an->common_data, r, p, t);
+            an->children[s] = expand(an, s, an->common_data, r, p, t);
         }
+
+        // size_t action_visits = an->num_visits;
+        // size_t state_visits = an->get_child(s)->num_visits;
+        // common_data.risk_thd *= action_visits / static_cast<float>(state_visits + 0.0001);
 
         std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
@@ -90,7 +101,7 @@ public:
         spdlog::debug("Reset: {}", name());
         agent<S, A>::reset();
         common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
-        root = expand<S, A, data_t, v_t, q_t>(nullptr, &common_data, 0.0, 0.0, false);
+        root = expand<S, A, data_t, v_t, q_t>(nullptr, agent<S, A>::handler.get_current_state(), &common_data, 0.0, 0.0, false);
     }
 
     std::string name() const override {

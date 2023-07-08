@@ -66,6 +66,7 @@ std::pair<float, float> orchestrator<S, A>::episode() {
     spdlog::debug("Agent prepared");
 
     while (!env->is_over()) {
+        spdlog::debug("Step {}: state={}", handler.get_num_steps(), handler.get_current_state());
         agent->play();
     }
 

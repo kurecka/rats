@@ -16,6 +16,8 @@
 #include "envs.hpp"
 #include "agents.hpp"
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/fmt/ostr.h"
 
 struct arg_spec {
     std::string name;
@@ -34,6 +36,9 @@ std::vector<arg_spec> get_arg_spec() {
     spec.push_back({"-s", "--seed", "seed of the random number generator", "-1", 0});
     spec.push_back({"-l", "--loglevel", "log level", "INFO", 0});
     spec.push_back({"-x", "--expl_const", "exploration constant", "1", 0});
+    spec.push_back({"", "--log_file", "log file", "log.txt", 0});
+    spec.push_back({"", "--graphviz_file", "graphivz file", "", 0});
+    spec.push_back({"-a", "--algorithm", "algorithm", "randomized", 0});
 
     spec.push_back({"-v", "--version", "print version", "false", 1});
     spec.push_back({"-h", "--help", "print this help", "false", 1});
@@ -139,6 +144,24 @@ int main(int argc, char *argv[]) {
         spdlog::set_level(level_map[level]);
     }
 
+    // if (args["--log_file"] != "") {
+    //     std::string log_file = args["--log_file"];
+    //     auto file_logger = spdlog::basic_logger_mt("basic_logger", log_file);
+    //     spdlog::set_default_logger(file_logger);
+    // }
+
+    if (args["--graphviz_file"] != "") {
+        std::ofstream file(args["--graphviz_file"], std::ofstream::out | std::ofstream::trunc);
+        file.close();
+        auto graph_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(args["--graphviz_file"]);
+        auto logger = std::make_shared<spdlog::logger>("graphviz", graph_sink);
+        logger->set_pattern("%v");
+        spdlog::register_logger(logger);
+    } else {
+        auto logger = std::make_shared<spdlog::logger>("graphviz");
+        spdlog::register_logger(logger);
+    }
+
     spdlog::info("Arguments:");
     for (auto arg : args) {
         if (arg.first == "--help" || arg.first == "--verbose" || arg.first == "--version") continue;
@@ -161,23 +184,25 @@ int main(int argc, char *argv[]) {
     o.load_environment(new gym::investor_env(initial_state, 20));
     auto h = o.get_handler();
 
-    o.load_agent(new gym::randomized_agent<int, size_t>(h));
-    o.run(num_episodes, 0);
-
-    o.load_agent(new gym::constant_agent<int, size_t>(h, 0));
-    o.run(num_episodes, 0);
-
-    o.load_agent(new gym::constant_agent<int, size_t>(h, 1));
-    o.run(num_episodes, 0);
-
-    o.load_agent(new gym::ts::primal_uct<int, size_t>(
-        h,
-        std::stoi(args["--depth"]),
-        std::stoi(args["--num_sim"]),
-        std::stof(args["--risk_thd"]),
-        0.99f,
-        std::stof(args["--expl_const"])
-    ));
+    if (args["--algorithm"] == "randomized") {
+        o.load_agent(new gym::randomized_agent<int, size_t>(h));
+    }
+    if (args["--algorithm"] == "c0") {
+        o.load_agent(new gym::constant_agent<int, size_t>(h, 0));
+    }
+    if (args["--algorithm"] == "c1") {
+        o.load_agent(new gym::constant_agent<int, size_t>(h, 1));
+    }
+    if (args["--algorithm"] == "ts") {
+        o.load_agent(new gym::ts::primal_uct<int, size_t>(
+            h,
+            std::stoi(args["--depth"]),
+            std::stoi(args["--num_sim"]),
+            std::stof(args["--risk_thd"]),
+            0.99f,
+            std::stof(args["--expl_const"])
+        ));
+    }
     o.run(num_episodes, 0);
 
     // o.load_agent(new gym::ts::dual_uct<int, size_t>(

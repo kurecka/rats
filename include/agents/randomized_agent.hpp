@@ -26,7 +26,7 @@ public:
     void reset() override {
         spdlog::debug("Resetting agent");
         agent<S, A>::reset();
-        state = agent<S, A>::handler.current_state();
+        state = agent<S, A>::handler.get_current_state();
         spdlog::debug("  Current state: " + std::to_string(state));
     }
 

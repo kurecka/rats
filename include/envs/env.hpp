@@ -224,7 +224,7 @@ public:
      * 
      * @return S 
      */
-    S current_state() const {
+    S get_current_state() const {
         return env->current_state();
     }
 

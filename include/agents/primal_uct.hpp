@@ -64,8 +64,10 @@ public:
         spdlog::debug("Play: {}", name());
 
         for (int i = 0; i < num_sim; i++) {
+            spdlog::trace("Simulation {}", i);
             common_data.sample_risk_thd = common_data.risk_thd;
             uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
+            expand_state(leaf);
             // TODO
             // rollout(leaf);
             propagate_f(leaf, gamma);
@@ -82,15 +84,13 @@ public:
         }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
+        spdlog::debug("Play action: {}", a);
+        spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
 
         uct_action_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand(an, s, an->common_data, r, p, t);
+            an->children[s] = expand_action(an, s, r, p, t);
         }
-
-        // size_t action_visits = an->num_visits;
-        // size_t state_visits = an->get_child(s)->num_visits;
-        // common_data.risk_thd *= action_visits / static_cast<float>(state_visits + 0.0001);
 
         std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
@@ -101,7 +101,8 @@ public:
         spdlog::debug("Reset: {}", name());
         agent<S, A>::reset();
         common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
-        root = expand<S, A, data_t, v_t, q_t>(nullptr, agent<S, A>::handler.get_current_state(), &common_data, 0.0, 0.0, false);
+        root = std::make_unique<uct_state_t>();
+        root->common_data = &common_data;
     }
 
     std::string name() const override {

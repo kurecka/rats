@@ -83,29 +83,31 @@ public:
  * TREE SEARCH
  *********************************************************************/
 template<typename S, typename A, typename DATA, typename V, typename Q>
-std::unique_ptr<state_node<S, A, DATA, V, Q>> expand(
-    action_node<S, A, DATA, V, Q>* parent,
-    S state,
-    DATA* common_data,
-    float r, float p, bool t
+// std::unique_ptr<state_node<S, A, DATA, V, Q>>
+void expand_state(state_node<S, A, DATA, V, Q>* sn) {
+    sn->actions = sn->common_data->handler.possible_actions();
+    sn->children.resize(sn->actions.size());
+    for (size_t i = 0; i < sn->actions.size(); ++i) {
+        sn->children[i].action = sn->actions[i];
+        sn->children[i].parent = sn;
+        sn->children[i].common_data = sn->common_data;
+    }
+}
+
+template<typename S, typename A, typename DATA, typename V, typename Q>
+std::unique_ptr<state_node<S, A, DATA, V, Q>> expand_action(
+    action_node<S, A, DATA, V, Q>* an,
+    S s, float r, float p, bool t
 ) {
     using state_node_t = state_node<S, A, DATA, V, Q>;
 
     std::unique_ptr<state_node_t> new_sn = std::make_unique<state_node_t>();
-    new_sn->state = state;
-    new_sn->parent = parent;
-    new_sn->common_data = common_data;
+    new_sn->state = s;
+    new_sn->parent = an;
+    new_sn->common_data = an->common_data;
     new_sn->observed_reward = r;
     new_sn->observed_penalty = p;
     new_sn->terminal = t;
-
-    new_sn->actions = common_data->handler.possible_actions();
-    new_sn->children.resize(new_sn->actions.size());
-    for (size_t i = 0; i < new_sn->actions.size(); ++i) {
-        new_sn->children[i].action = new_sn->actions[i];
-        new_sn->children[i].parent = new_sn.get();
-        new_sn->children[i].common_data = common_data;
-    }
 
     return new_sn;
 }
@@ -125,12 +127,11 @@ state_node<S, A, DATA, V, Q>* select_leaf(
     int depth = 0;
 
     while (!sn->is_leaf() && depth < max_depth && !sn->is_terminal()) {
-
         A action = select(sn, explore);
         action_node_t *an = sn->get_child(action);
         auto [s, r, p, t] = sn->common_data->handler.sim_action(action);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand(an, s, an->common_data, r, p, t);
+            an->children[s] = expand_action(an, s, r, p, t);
         }
         state_node_t* new_sn = an->get_child(s);
         // descend_callback(sn, action, an, s, new_sn);
@@ -199,7 +200,7 @@ A select_action_primal(state_node<S, A, DATA, V, point_value>* node, bool explor
         ucts[i] = children[i].q.first + explore * c * (max_r - min_r) * static_cast<float>(
             sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
         );
-        lcts[i] = children[i].q.second - explore * c * static_cast<float>(
+        lcts[i] = children[i].q.second - explore * c * (max_p - min_p) * static_cast<float>(
             sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
         );
         if (lcts[i] < 0) lcts[i] = 0;
@@ -207,12 +208,13 @@ A select_action_primal(state_node<S, A, DATA, V, point_value>* node, bool explor
 
     auto [a1, p2, a2] = greedy_mix(ucts, lcts, risk_thd);
     if (!explore) {
-        spdlog::debug("a1: {}, p2: {}, a2: {}", a1, p2, a2);
         std::string ucts_str = "";
         for (auto u : ucts) ucts_str += std::to_string(u) + ", ";
         std::string lcts_str = "";
         for (auto l : lcts) lcts_str += std::to_string(l) + ", ";
-        spdlog::debug("ucts: {}, lcts: {}", ucts_str, lcts_str);
+        spdlog::trace("ucts: {}", ucts_str);
+        spdlog::trace("lcts: {}", lcts_str);
+        spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", a1, p2, a2, risk_thd);
     }
 
     if constexpr (deterministic) {

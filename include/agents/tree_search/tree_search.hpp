@@ -34,6 +34,8 @@ public:
     
     float observed_reward = 0;
     float observed_penalty = 0;
+    float rollout_reward = 0;
+    float rollout_penalty = 0;
     bool terminal = false;
     size_t num_visits = 0;
 
@@ -67,6 +69,9 @@ public:
     std::map<S, std::unique_ptr<state_node_t>> children;
 
     size_t num_visits = 0;
+
+    float rollout_reward = 0;
+    float rollout_penalty = 0;
 
     DATA* common_data;
     Q q;
@@ -143,8 +148,8 @@ state_node<S, A, DATA, V, Q>* select_leaf(
 
 template<
 typename S, typename A, typename DATA, typename V, typename Q,
-    void (*prop_v)(state_node<S, A, DATA, V, Q>*, action_node<S, A, DATA, V, Q>*, float),
-    void (*prop_q)(action_node<S, A, DATA, V, Q>*, state_node<S, A, DATA, V, Q>*, float)
+    void (*prop_v)(state_node<S, A, DATA, V, Q>*, float, float),
+    void (*prop_q)(action_node<S, A, DATA, V, Q>*, float, float)
 >
 void propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
     using state_node_t = state_node<S, A, DATA, V, Q>;
@@ -153,15 +158,20 @@ void propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
     action_node_t* prev_an = nullptr;
     state_node_t* current_sn = leaf;
 
+    float disc_r = leaf->rollout_reward;
+    float disc_p = leaf->rollout_penalty;
+
     while (!current_sn->is_root()) {
-        prop_v(current_sn, prev_an, gamma);
+        prop_v(current_sn,  disc_r, disc_p);
+        disc_r = current_sn->observed_reward + gamma * disc_r;
+        disc_p = current_sn->observed_penalty + gamma * disc_p;
         action_node_t* current_an = current_sn->get_parent();
-        prop_q(current_an, current_sn, gamma);
+        prop_q(current_an, disc_r, disc_p);
         current_sn = current_an->get_parent();
         prev_an = current_an;
     }
 
-    prop_v(current_sn, prev_an, gamma);
+    prop_v(current_sn, disc_r, disc_p);
 }
 
 /*********************************************************************
@@ -184,26 +194,22 @@ void void_rollout(state_node<S, A, DATA, V, Q>*) {}
 template<typename S, typename A, typename DATA>
 void uct_prop_v_value(
     state_node<S, A, DATA, point_value, point_value>* sn,
-    action_node<S, A, DATA, point_value, point_value>* child,
-    float gamma
+    float disc_r, float disc_p
 ) {
-    if (child) {
-        sn->num_visits++;
-        sn->v.first += (gamma * child->q.first - sn->v.first) / sn->num_visits;
-        sn->v.second += (gamma * child->q.second - sn->v.second) / sn->num_visits;
-    }
+    sn->num_visits++;
+    sn->v.first += (disc_r - sn->v.first) / sn->num_visits;
+    sn->v.second += (disc_p - sn->v.second) / sn->num_visits;
 }
 
 
 template<typename S, typename A, typename DATA>
 void uct_prop_q_value(
     action_node<S, A, DATA, point_value, point_value>* an,
-    state_node<S, A, DATA, point_value, point_value>* child,
-    float gamma
+    float disc_r, float disc_p
 ) {
     an->num_visits++;
-    an->q.first += (gamma * (child->v.first + child->observed_reward) - an->q.first) / an->num_visits;
-    an->q.second += (gamma * (child->v.second + child->observed_penalty) - an->q.second) / an->num_visits;
+    an->q.first += (disc_r - an->q.first) / an->num_visits;
+    an->q.second += (disc_p - an->q.second) / an->num_visits;
 }
 
 } // namespace ts

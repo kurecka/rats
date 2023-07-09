@@ -17,6 +17,61 @@ struct dual_uct_data {
 };
 
 
+template<typename S, typename A, typename DATA, typename V>
+A select_action_dual(state_node<S, A, DATA, V, point_value>* node, bool explore) {
+    float risk_thd = node->common_data->sample_risk_thd;
+    float lambda = node->common_data->lambda;
+    float c = node->common_data->exploration_constant;
+
+    auto& children = node->children;
+    
+    float min_v = children[0].q.first - lambda * children[0].q.second;
+    float max_v = min_v;
+    std::vector<float> uct_values(children.size());
+    for (size_t i = 0; i < children.size(); ++i) {
+        float val = children[i].q.first - lambda * children[i].q.second;
+        min_v = std::min(min_v, val);
+        max_v = std::max(max_v, val);
+        uct_values[i] = val;
+    }
+    if (min_v >= max_v) max_v = min_v + 1;
+
+    for (size_t i = 0; i < children.size(); ++i) {
+        uct_values[i] += explore * c * (max_v - min_v) * static_cast<float>(
+            sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
+        );
+    }
+
+    float best_reward = *std::max_element(uct_values.begin(), uct_values.end());
+    float eps = (max_v - min_v) * 0.1f;
+    std::vector<size_t> eps_best_actions;
+    for (size_t i = 0; i < children.size(); ++i) {
+        if (uct_values[i] >= best_reward - eps) {
+            eps_best_actions.push_back(i);
+        }
+    }
+    
+    std::vector<float> rs(eps_best_actions.size());
+    for (size_t idx : eps_best_actions) {
+        rs[idx] = children[idx].q.first;
+    }
+
+    std::vector<float> ps(eps_best_actions.size());
+    for (size_t idx : eps_best_actions) {
+        ps[idx] = children[idx].q.second;
+    }
+
+    auto [a1, p2, a2] = greedy_mix(rs, ps, risk_thd);
+    a1 = eps_best_actions[a1];
+    a2 = eps_best_actions[a2];
+    if (rng::unif_float() < p2) {
+        return node->actions[a2];
+    } else {
+        return node->actions[a1];
+    }
+}
+
+
 /*********************************************************************
  * @brief dual uct agent
  * 
@@ -37,8 +92,8 @@ class dual_uct : public agent<S, A> {
     using uct_state_t = state_node<S, A, data_t, v_t, q_t>;
     using uct_action_t = action_node<S, A, data_t, v_t, q_t>;
     
-    constexpr auto static select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_dual<S, A, data_t, v_t>, descend_callback_void<S, A, data_t, v_t, q_t>>;
-    constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, prop_v_value<S, A, data_t>, prop_q_value<S, A, data_t>>;
+    constexpr auto static select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_dual<S, A, data_t, v_t>, void_descend_callback<S, A, data_t, v_t, q_t>>;
+    constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<S, A, data_t>, uct_prop_q_value<S, A, data_t>>;
 
 private:
     int max_depth;
@@ -78,8 +133,7 @@ public:
             common_data.sample_risk_thd = common_data.risk_thd;
             uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
             expand_state(leaf);
-            // TODO
-            // rollout(leaf);
+            void_rollout(leaf);
             propagate_f(leaf, gamma);
             agent<S, A>::handler.sim_reset();
 

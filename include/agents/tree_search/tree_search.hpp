@@ -168,129 +168,21 @@ void propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
  * SPECIFIC FUNCTIONS
  *********************************************************************/
 
-// TODO: implement
-// template<typename S, typename A, typename DATA, typename V, typename Q>
-// float rollout(state_node<S, A, DATA, V, Q>* node);
-
 using point_value = std::pair<float, float>;
 
-template<typename S, typename A, typename DATA, typename V, bool deterministic>
-A select_action_primal(state_node<S, A, DATA, V, point_value>* node, bool explore) {
-    float risk_thd = node->common_data->sample_risk_thd;
-    float c = node->common_data->exploration_constant;
-
-    auto& children = node->children;
-    auto q = children[0].q;
-    auto [min_r, min_p] = q;
-    auto [max_r, max_p] = q;
-    for (size_t i = 0; i < children.size(); ++i) {
-        auto [er, ep] = children[i].q;
-        min_r = std::min(min_r, er);
-        max_r = std::max(max_r, er);
-        min_p = std::min(min_p, ep);
-        max_p = std::max(max_p, ep);
-    }
-    if (min_r >= max_r) max_r = min_r + 0.1f;
-    if (min_p >= max_p) max_p = min_p + 0.1f;
-
-    std::vector<float> ucts(children.size());
-    std::vector<float> lcts(children.size());
-
-    for (size_t i = 0; i < children.size(); ++i) {
-        ucts[i] = children[i].q.first + explore * c * (max_r - min_r) * static_cast<float>(
-            sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-        );
-        lcts[i] = children[i].q.second - explore * c * (max_p - min_p) * static_cast<float>(
-            sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-        );
-        if (lcts[i] < 0) lcts[i] = 0;
-    }
-
-    auto [a1, p2, a2] = greedy_mix(ucts, lcts, risk_thd);
-    if (!explore) {
-        std::string ucts_str = "";
-        for (auto u : ucts) ucts_str += std::to_string(u) + ", ";
-        std::string lcts_str = "";
-        for (auto l : lcts) lcts_str += std::to_string(l) + ", ";
-        spdlog::trace("ucts: {}", ucts_str);
-        spdlog::trace("lcts: {}", lcts_str);
-        spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", a1, p2, a2, risk_thd);
-    }
-
-    if constexpr (deterministic) {
-        return node->actions[a1];
-    } else {
-        if (rng::unif_float() < p2) {
-            return node->actions[a2];
-        } else {
-            return node->actions[a1];
-        }
-    }
-}
-
-template<typename S, typename A, typename DATA, typename V>
-A select_action_dual(state_node<S, A, DATA, V, point_value>* node, bool explore) {
-    float risk_thd = node->common_data->sample_risk_thd;
-    float lambda = node->common_data->lambda;
-    float c = node->common_data->exploration_constant;
-
-    auto& children = node->children;
-    
-    float min_v = children[0].q.first - lambda * children[0].q.second;
-    float max_v = min_v;
-    std::vector<float> uct_values(children.size());
-    for (size_t i = 0; i < children.size(); ++i) {
-        float val = children[i].q.first - lambda * children[i].q.second;
-        min_v = std::min(min_v, val);
-        max_v = std::max(max_v, val);
-        uct_values[i] = val;
-    }
-    if (min_v >= max_v) max_v = min_v + 1;
-
-    for (size_t i = 0; i < children.size(); ++i) {
-        uct_values[i] += explore * c * (max_v - min_v) * static_cast<float>(
-            sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-        );
-    }
-
-    float best_reward = *std::max_element(uct_values.begin(), uct_values.end());
-    float eps = (max_v - min_v) * 0.1f;
-    std::vector<size_t> eps_best_actions;
-    for (size_t i = 0; i < children.size(); ++i) {
-        if (uct_values[i] >= best_reward - eps) {
-            eps_best_actions.push_back(i);
-        }
-    }
-    
-    std::vector<float> rs(eps_best_actions.size());
-    for (size_t idx : eps_best_actions) {
-        rs[idx] = children[idx].q.first;
-    }
-
-    std::vector<float> ps(eps_best_actions.size());
-    for (size_t idx : eps_best_actions) {
-        ps[idx] = children[idx].q.second;
-    }
-
-    auto [a1, p2, a2] = greedy_mix(rs, ps, risk_thd);
-    a1 = eps_best_actions[a1];
-    a2 = eps_best_actions[a2];
-    if (rng::unif_float() < p2) {
-        return node->actions[a2];
-    } else {
-        return node->actions[a1];
-    }
-}
 
 template<typename S, typename A, typename DATA, typename V, typename Q>
-void descend_callback_void(
+void void_descend_callback(
     state_node<S, A, DATA, V, Q>*,
     A, action_node<S, A, DATA, V, Q>*,
     S, state_node<S, A, DATA, V, Q>*
 ) {}
 
+template<typename S, typename A, typename DATA, typename V, typename Q>
+void void_rollout(state_node<S, A, DATA, V, Q>*) {}
+
 template<typename S, typename A, typename DATA>
-void prop_v_value(
+void uct_prop_v_value(
     state_node<S, A, DATA, point_value, point_value>* sn,
     action_node<S, A, DATA, point_value, point_value>* child,
     float gamma
@@ -304,7 +196,7 @@ void prop_v_value(
 
 
 template<typename S, typename A, typename DATA>
-void prop_q_value(
+void uct_prop_q_value(
     action_node<S, A, DATA, point_value, point_value>* an,
     state_node<S, A, DATA, point_value, point_value>* child,
     float gamma

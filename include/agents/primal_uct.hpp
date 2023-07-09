@@ -1,6 +1,6 @@
 #pragma once
-#include "tree_search2/tree_search.hpp"
-#include "tree_search2/string_utils.hpp"
+#include "tree_search/tree_search.hpp"
+#include "tree_search/string_utils.hpp"
 #include <string>
 #include <vector>
 

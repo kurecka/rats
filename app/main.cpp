@@ -203,14 +203,15 @@ int main(int argc, char *argv[]) {
             std::stof(args["--expl_const"])
         ));
     }
+    if (args["--algorithm"] == "dts") {
+        o.load_agent(new gym::ts::dual_uct<int, size_t>(
+            h,
+            std::stoi(args["--depth"]),
+            std::stoi(args["--num_sim"]),
+            std::stof(args["--risk_thd"]),
+            0.99f,
+            std::stof(args["--expl_const"])
+        ));
+    }
     o.run(num_episodes, 0);
-
-    // o.load_agent(new gym::ts::dual_uct<int, size_t>(
-    //     std::stoi(args["--depth"]),
-    //     std::stoi(args["--num_sim"]),
-    //     std::stof(args["--risk_thd"]),
-    //     0.9f,
-    //     std::stof(args["--expl_const"])
-    // ));
-    // o.run(num_episodes, 0);
 }

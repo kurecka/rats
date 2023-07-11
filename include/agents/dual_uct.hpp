@@ -34,7 +34,11 @@ A select_action_dual(state_node<S, A, DATA, V, point_value>* node, bool explore)
         max_v = std::max(max_v, val);
         uct_values[i] = val;
     }
-    if (min_v >= max_v) max_v = min_v + 1;
+    if (min_v < 0) {
+        max_v = 0.9f * min_v;
+    } else {
+        max_v = 1.1f * min_v;
+    }
 
     for (size_t i = 0; i < children.size(); ++i) {
         uct_values[i] += explore * c * (max_v - min_v) * static_cast<float>(

@@ -3,6 +3,7 @@
 #include "tree_search/string_utils.hpp"
 #include <string>
 #include <vector>
+#include <array>
 
 namespace gym {
 namespace ts {
@@ -32,7 +33,11 @@ A select_action_primal(state_node<S, A, DATA, V, point_value>* node, bool explor
         min_p = std::min(min_p, ep);
         max_p = std::max(max_p, ep);
     }
-    if (min_r >= max_r) max_r = min_r + 0.1f;
+    if (min_r < 0) {
+        max_r = 0.9f * min_r;
+    } else {
+        max_r = 1.1f * min_r;
+    }
     if (min_p >= max_p) max_p = min_p + 0.1f;
 
     std::vector<float> ucts(children.size());

@@ -35,8 +35,11 @@ include(Warnings)
 find_lto(CXX)
 
 if(NOT TARGET spdlog)
-    # Stand-alone build
     find_package(spdlog REQUIRED)
+endif()
+
+if(NOT TARGET Eigen3)
+    find_package(Eigen3 REQUIRED)
 endif()
 
 
@@ -68,6 +71,21 @@ target_link_libraries(${LIBRARY_NAME} PUBLIC doctest)
 
 # Link the logging library
 target_link_libraries(${LIBRARY_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+target_include_directories(${LIBRARY_NAME}
+    SYSTEM
+    PUBLIC
+    ${EIGEN3_INCLUDE_DIR}
+)
+
+target_link_libraries(${LIBRARY_NAME}
+    PUBLIC
+    Eigen3::Eigen
+)
+
+# include_directories(${EIGEN3_INCLUDE_DIR})
+# target_link_libraries(${LIBRARY_NAME} ${EIGEN3_LIBRARIES})
+# target_link_libraries(${LIBRARY_NAME} PRIVATE Eigen3::Eigen)
 
 # Set the compile options you want (change as needed).
 target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)

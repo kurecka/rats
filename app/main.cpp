@@ -38,7 +38,7 @@ std::vector<arg_spec> get_arg_spec() {
     spec.push_back({"-x", "--expl_const", "exploration constant", "1", 0});
     spec.push_back({"", "--log_file", "log file", "log.txt", 0});
     spec.push_back({"", "--graphviz_file", "graphivz file", "", 0});
-    spec.push_back({"-a", "--algorithm", "algorithm", "randomized", 0});
+    spec.push_back({"-a", "--algorithm", "randomized\n\t\t\tc0 (const 0)\n\t\t\tc1 (const 1)\n\t\t\tts (tree search)\n\t\t\tpts (pareto tree search)\n\t\t\tdts (dual tree search)\n\t\t\t", "randomized", 0});
 
     spec.push_back({"-v", "--version", "print version", "false", 1});
     spec.push_back({"-h", "--help", "print this help", "false", 1});
@@ -187,13 +187,13 @@ int main(int argc, char *argv[]) {
     if (args["--algorithm"] == "randomized") {
         o.load_agent(new gym::randomized_agent<int, size_t>(h));
     }
-    if (args["--algorithm"] == "c0") {
+    else if (args["--algorithm"] == "c0") {
         o.load_agent(new gym::constant_agent<int, size_t>(h, 0));
     }
-    if (args["--algorithm"] == "c1") {
+    else if (args["--algorithm"] == "c1") {
         o.load_agent(new gym::constant_agent<int, size_t>(h, 1));
     }
-    if (args["--algorithm"] == "ts") {
+    else if (args["--algorithm"] == "ts") {
         o.load_agent(new gym::ts::primal_uct<int, size_t>(
             h,
             std::stoi(args["--depth"]),
@@ -202,8 +202,7 @@ int main(int argc, char *argv[]) {
             0.99f,
             std::stof(args["--expl_const"])
         ));
-    }
-    if (args["--algorithm"] == "dts") {
+    } else if (args["--algorithm"] == "dts") {
         o.load_agent(new gym::ts::dual_uct<int, size_t>(
             h,
             std::stoi(args["--depth"]),
@@ -212,6 +211,20 @@ int main(int argc, char *argv[]) {
             0.99f,
             std::stof(args["--expl_const"])
         ));
+    } else if (args["--algorithm"] == "pts") {
+        o.load_agent(new gym::ts::pareto_uct<int, size_t>(
+            h,
+            std::stoi(args["--depth"]),
+            std::stoi(args["--num_sim"]),
+            std::stof(args["--risk_thd"]),
+            0.99f,
+            std::stof(args["--expl_const"])
+        ));
+    } else {
+        spdlog::error("Unknown algorithm: " + args["--algorithm"] + "\n" + get_help(arg_spec));
+        exit(1);
     }
+
+
     o.run(num_episodes, 0);
 }

@@ -3,6 +3,9 @@
 #include "utils.hpp"
 #include <string>
 #include <vector>
+#include <map>
+#include <algorithm>
+#include <string>
 
 namespace gym {
 namespace ts {

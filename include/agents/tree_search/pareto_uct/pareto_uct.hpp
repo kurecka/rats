@@ -4,9 +4,10 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <cmath>
 
 #include <Eigen/Dense>
-#include "primal_uct.hpp"
+#include "utils.hpp"
 
 namespace gym {
 namespace ts {
@@ -60,40 +61,54 @@ public:
     }
 
     float min_p() const {
+        float root;
         if (beta[2] > -1e-6f && beta[2] < 1e-6f) {
-            return -beta[0] / beta[1];
+            root = -beta[0] / beta[1];
         } else {
-            return -(beta[1] - sqrt(beta[1] * beta[1] - 4 * beta[2] * beta[0])) / (2 * beta[2]);
+            root = -(beta[1] - sqrt(beta[1] * beta[1] - 4 * beta[2] * beta[0])) / (2 * beta[2]);
         }
+
+        return std::max(0.f, std::min(1.f, root));
     }
 };
 
-std::tuple<size_t, size_t> _common_tangent(const std::vector<std::pair<float, float>>& v1, const std::vector<std::pair<float, float>>& v2) {
-    size_t idx1 = 0;
-    size_t idx2 = v2.size() - 1;
+// class softmax_pareto_curve {
+// private:
+//     std::vector<float> rs;
+//     std::vector<float> ps;
+//     float min_r = std::numeric_limits<float>::infinity();
+//     float max_r = -std::numeric_limits<float>::infinity();
+//     float l = 5;
+// public:
+//     float eval(float p, float uct = 0) const {
+//         double coeff_sum = 0;
+//         double sum = 0;
+//         for (size_t i = 0; i < rs.size(); ++i) {
+//             double coeff = exp(- l * abs(p - ps[i]));
+//             coeff_sum += coeff;
+//             sum += coeff * rs[i];
+//         }
+//         return static_cast<float>(sum / coeff_sum) + uct;
+//     }
 
-    size_t* idx = &idx1;
-    auto* v = &v1;
+//     void update(float r, float p) {
+//         rs.push_back(r);
+//         ps.push_back(p);
+//         min_r = std::min(min_r, r);
+//         max_r = std::max(max_r, r);
+//     }
 
-    bool changed;
-    do {
-        changed = false;
+//     std::pair<float, float> r_bounds() const {
+//         if (rs.size() < 2) {
+//             return {0, 1};
+//         }
+//         return {min_r, max_r};
+//     }
+// };
 
-        float slope = (v1[*idx].first - v2[*idx].first) / (v1[*idx].second - v2[*idx].second);
-        if (*idx + 1 < v->size() && (*v)[*idx + 1].first - (*v)[*idx].first > slope * ((*v)[*idx + 1].second - (*v)[*idx].second)) {
-            ++*idx;
-            changed = true;
-        }
-        if (*idx >= 1 && ((*v)[*idx].first - (*v)[*idx - 1].first) < slope * ((*v)[*idx].second - (*v)[*idx - 1].second)) {
-            --*idx;
-            changed = true;
-        }
-
-        idx = idx == &idx1 ? &idx2 : &idx1;
-        v = v == &v1 ? &v2 : &v1;
-    } while (changed);
-
-    return {idx1, idx2};
+std::string to_string(const quad_pareto_curve& c) {
+    auto beta = c.get_beta();
+    return std::to_string(beta[2]) + " * p^2 + " + std::to_string(beta[1]) + " * p + " + std::to_string(beta[0]);
 }
 
 template <typename pareto_curve>
@@ -107,6 +122,11 @@ std::tuple<float, float, float, float> mix(
 
     float lp1 = c1.min_p();
     float lp2 = c2.min_p();
+    
+    if (risk_thd < lp1 && risk_thd < lp2) {
+        return {risk_thd, lp1 < lp2, risk_thd, -std::numeric_limits<float>::infinity()};
+    }
+
     if (lp1 > lp2) {lp2 -= eps;}
     else {lp1 -= eps;}
     float rp1 = 1;
@@ -120,15 +140,22 @@ std::tuple<float, float, float, float> mix(
             v2[i] = {c2.eval(p2, uct2), p2};
         }
 
-        auto [idx1, idx2] = _common_tangent(v1, v2);
-        size_t lidx1 = idx1 >= 1 ? idx1 - 1 : 0;
-        size_t lidx2 = idx2 >= 1 ? idx2 - 1 : 0;
-        size_t ridx1 = idx1 + 1 < n ? idx1 + 1 : n - 1;
-        size_t ridx2 = idx2 + 1 < n ? idx2 + 1 : n - 1;
-        lp1 = v1[lidx1].second;
-        lp2 = v2[lidx2].second;
-        rp1 = v1[ridx1].second;
-        rp2 = v2[ridx2].second;
+        auto [idx1, idx2] = common_tangent(v1, v2);
+        if (idx1 == v1.size()) {
+            bool choose1 = c1.eval(risk_thd, uct1) > c2.eval(risk_thd, uct2);
+            lp1 = rp1 = risk_thd * choose1;
+            lp2 = rp2 = risk_thd * !choose1;
+            
+        } else {
+            size_t lidx1 = idx1 >= 1 ? idx1 - 1 : 0;
+            size_t lidx2 = idx2 >= 1 ? idx2 - 1 : 0;
+            size_t ridx1 = idx1 + 1 < n ? idx1 + 1 : n - 1;
+            size_t ridx2 = idx2 + 1 < n ? idx2 + 1 : n - 1;
+            lp1 = v1[lidx1].second;
+            lp2 = v2[lidx2].second;
+            rp1 = v1[ridx1].second;
+            rp2 = v2[ridx2].second;
+        }
     }
 
     float p1 = (lp1 + rp1) / 2;
@@ -263,8 +290,6 @@ class pareto_uct : public agent<S, A> {
     constexpr static auto descend_callback_f = descend_callback<S, A, data_t, v_t, q_t>;
     constexpr static auto select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_f, descend_callback_f>;
     constexpr static auto propagate_f = propagate<S, A, data_t, v_t, q_t, pareto_prop_v_value<S, A, data_t, quad_pareto_curve>, pareto_prop_q_value<S, A, data_t, quad_pareto_curve>>;
-    // constexpr auto static select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_primal<S, A, data_t, v_t, true>, void_descend_callback<S, A, data_t, v_t, q_t>>;
-    // constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<S, A, data_t>, uct_prop_q_value<S, A, data_t>>;
 
 private:
     int max_depth;
@@ -307,6 +332,12 @@ public:
 
         common_data.sample_risk_thd = common_data.risk_thd;
         A a = select_action_pareto<S, A, data_t, v_t, quad_pareto_curve>(root.get(), false);
+
+        static bool logged = false;
+        if (!logged) {
+            spdlog::get("graphviz")->info(to_graphviz_tree(*root.get(), 9));
+            logged = true;
+        }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         spdlog::debug("Play action: {}", a);
@@ -392,6 +423,87 @@ TEST_CASE("Test quad pareto curve: min quadratic")
     c.update(2.5f, 0.6f);
     CHECK(static_cast<double>(c.eval(c.min_p())) == doctest::Approx(0.0));
 }
+
+TEST_CASE("Test common tangent - no overlap (parabola, parabola)")
+{
+    std::vector<std::pair<float, float>> v1 = {{1, 0.1f}, {2, 0.2f}, {1, 0.3f}};
+    std::vector<std::pair<float, float>> v2 = {{1, 0.5f}, {2, 0.7f}, {1, 0.9f}};
+
+    auto [idx1, idx2] = common_tangent(v1, v2);
+    CHECK(idx1 == 1);
+    CHECK(idx2 == 1);
+}
+
+TEST_CASE("Test common tangent - no overlap (parabola, line)")
+{
+    std::vector<std::pair<float, float>> v1 = {{1, 0.1f}, {2, 0.2f}, {1, 0.3f}};
+    std::vector<std::pair<float, float>> v2 = {{1, 0.5f}, {2, 0.7f}, {3, 0.9f}};
+
+    auto [idx1, idx2] = common_tangent(v1, v2);
+    CHECK(idx1 == 1);
+    CHECK(idx2 == 2);
+}
+
+TEST_CASE("Test common tangent - no overlap (parabola, line2)")
+{
+    std::vector<std::pair<float, float>> v1 = {{1, 0.1f}, {2, 0.2f}, {1, 0.3f}};
+    std::vector<std::pair<float, float>> v2 = {{3, 0.5f}, {2, 0.7f}, {1, 0.9f}};
+
+    auto [idx1, idx2] = common_tangent(v1, v2);
+    CHECK(idx1 == 1);
+    CHECK(idx2 == 0);
+}
+
+TEST_CASE("Test common tangent - overlap (parabola, parabola)")
+{
+    std::vector<std::pair<float, float>> v1 = {{1, 0.1f}, {1.2f, 0.2f}, {1, 0.3f}, {0.5f, 0.4f}};
+    std::vector<std::pair<float, float>> v2 = {{0.1f, 0.25f}, {3, 0.5f}, {2, 0.7f}, {1, 0.9f}};
+
+    auto [idx1, idx2] = common_tangent(v1, v2);
+    CHECK(idx1 == 0);
+    CHECK(idx2 == 1);
+}
+
+TEST_CASE("Test common tangent - overlap (parabola, parabola2)")
+{
+    std::vector<std::pair<float, float>> v1 = {{1, 0.1f}, {1.2f, 0.2f}, {1, 0.3f}, {0.5f, 0.4f}};
+    std::vector<std::pair<float, float>> v2 = {{2, 0.25f}, {3, 0.5f}, {2, 0.7f}, {1, 0.9f}};
+
+    auto [idx1, idx2] = common_tangent(v1, v2);
+    CHECK(idx1 == 0);
+    CHECK(idx2 == 0);
+}
+
+TEST_CASE("Test common tangent - overlap (parabola3, parabola2)")
+{
+    std::vector<std::pair<float, float>> v1 = {{0, 0}, {1, 0.1f}, {1.2f, 0.2f}, {1, 0.3f}, {0.5f, 0.4f}};
+    std::vector<std::pair<float, float>> v2 = {{2, 0.25f}, {3, 0.5f}, {2, 0.7f}, {1, 0.9f}};
+
+    auto [idx1, idx2] = common_tangent(v1, v2);
+    CHECK(idx1 == 1);
+    CHECK(idx2 == 0);
+}
+
+TEST_CASE("Test common tangent - overlap (parabola3, line)")
+{
+    std::vector<std::pair<float, float>> v1 = {{0, 0}, {1, 0.1f}, {1.2f, 0.2f}, {1, 0.3f}, {0.5f, 0.4f}};
+    std::vector<std::pair<float, float>> v2 = {{1, 0.25f}, {1, 0.5f}, {1, 0.7f}, {1, 0.9f}};
+
+    auto [idx1, idx2] = common_tangent(v1, v2);
+    CHECK(idx1 == 2);
+    CHECK(idx2 == 3);
+}
+
+TEST_CASE("Test common tangent - overlay")
+{
+    std::vector<std::pair<float, float>> v1 = {{1, 0.1f}, {1.2f, 0.2f}, {1, 0.3f}, {0.5f, 0.4f}};
+    std::vector<std::pair<float, float>> v2 = {{2, 0}, {2, 0.5f}, {2, 0.7f}, {2, 0.9f}};
+
+    auto [idx1, idx2] = common_tangent(v1, v2);
+    CHECK(idx1 == 4);
+    CHECK(idx2 == 4);
+}
+
 #endif
 
 } // namespace ts

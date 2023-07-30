@@ -83,10 +83,6 @@ target_link_libraries(${LIBRARY_NAME}
     Eigen3::Eigen
 )
 
-# include_directories(${EIGEN3_INCLUDE_DIR})
-# target_link_libraries(${LIBRARY_NAME} ${EIGEN3_LIBRARIES})
-# target_link_libraries(${LIBRARY_NAME} PRIVATE Eigen3::Eigen)
-
 # Set the compile options you want (change as needed).
 target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
 target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors)

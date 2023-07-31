@@ -142,7 +142,7 @@ state_node<S, A, DATA, V, Q>* select_leaf(
             an->children[s] = expand_action(an, s, r, p, t);
         }
         state_node_t* new_sn = an->get_child(s);
-        // descend_callback(sn, action, an, s, new_sn);
+        descent_callback(sn, action, an, s, new_sn);
         depth++;
         sn = new_sn;
     }

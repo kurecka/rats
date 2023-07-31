@@ -59,10 +59,27 @@ public:
         if (beta[2] > -1e-6f && beta[2] < 1e-6f) {
             root = -beta[0] / beta[1];
         } else {
-            root = -(beta[1] - sqrt(beta[1] * beta[1] - 4 * beta[2] * beta[0])) / (2 * beta[2]);
+            root = (-beta[1] - sqrt(beta[1] * beta[1] - 4 * beta[2] * beta[0])) / (2 * beta[2]);
         }
 
         return std::max(0.f, std::min(1.f, root));
+    }
+
+    /**
+     * @brief Get p such that c'(p) = d, where c is the curve and d is the derivative.
+     * 
+     * d = c'(p) = 2 * beta[2] * p + beta[1]
+     * p = (d - beta[1]) / (2 * beta[2])
+     * 
+     * @param d derivative
+     * @return float
+     */
+    float inverse_derivative(float d) const {
+        return (d - beta[1]) / (2 * beta[2]);
+    }
+
+    float derivative(float p) const {
+        return 2 * beta[2] * p + beta[1];
     }
 };
 

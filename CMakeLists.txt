@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.14)
 # Set project name, version and laguages here. (change as needed)
 # Version numbers are available by including "exampleConfig.h" in
 # the source. See exampleConfig.h.in for some more details.
-project(RALPH VERSION 1.0 LANGUAGES CXX)
+project(RATS VERSION 1.0 LANGUAGES CXX)
 
 
 # Options: Things you can set via commandline options to cmake (e.g. -DENABLE_LTO=[ON|OFF])
@@ -55,7 +55,7 @@ set(SOURCES          # All .cpp files in src/
 set(TESTFILES        # All .cpp files in tests/
     tests/main.cpp
 )
-set(LIBRARY_NAME engine)  # Default name for the library built from src/*.cpp (change if you wish)
+set(LIBRARY_NAME rat_lib)  # Default name for the library built from src/*.cpp (change if you wish)
 
 # --------------------------------------------------------------------------------
 #                            Build! (Change as needed)
@@ -89,18 +89,19 @@ target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-g
 
 # Add an executable for the file app/main.cpp.
 # If you add more executables, copy these lines accordingly.
-add_executable(ralph app/main.cpp)   # Name of exec. and location of file.
-target_link_libraries(ralph PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
-target_link_libraries(ralph PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
-target_set_warnings(ralph ENABLE ALL AS_ERROR ALL DISABLE Annoying)
+set(MAIN_APP_NAME rats)
+add_executable(${MAIN_APP_NAME} app/main.cpp)   # Name of exec. and location of file.
+target_link_libraries(${MAIN_APP_NAME} PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
+target_link_libraries(${MAIN_APP_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+target_set_warnings(${MAIN_APP_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
 
-target_compile_options(ralph PRIVATE -Wno-missing-prototypes)
+target_compile_options(${MAIN_APP_NAME} PRIVATE -Wno-missing-prototypes)
 
-target_enable_lto(ralph optimized)  # enable link-time-optimization if available for non-debug configurations
+target_enable_lto(${MAIN_APP_NAME} optimized)  # enable link-time-optimization if available for non-debug configurations
 
 # Set the properties you require, e.g. what C++ standard to use. Here applied to library and main (change as needed).
 set_target_properties(
-    ${LIBRARY_NAME} ralph
+    ${LIBRARY_NAME} ${MAIN_APP_NAME}
       PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES

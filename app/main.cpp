@@ -211,15 +211,15 @@ int main(int argc, char *argv[]) {
             0.99f,
             std::stof(args["--expl_const"])
         ));
-    } else if (args["--algorithm"] == "pts") {
-        o.load_agent(new gym::ts::pareto_uct<int, size_t>(
-            h,
-            std::stoi(args["--depth"]),
-            std::stoi(args["--num_sim"]),
-            std::stof(args["--risk_thd"]),
-            0.99f,
-            std::stof(args["--expl_const"])
-        ));
+    // } else if (args["--algorithm"] == "pts") {
+    //     o.load_agent(new gym::ts::pareto_uct<int, size_t>(
+    //         h,
+    //         std::stoi(args["--depth"]),
+    //         std::stoi(args["--num_sim"]),
+    //         std::stof(args["--risk_thd"]),
+    //         0.99f,
+    //         std::stof(args["--expl_const"])
+    //     ));
     } else {
         spdlog::error("Unknown algorithm: " + args["--algorithm"] + "\n" + get_help(arg_spec));
         exit(1);

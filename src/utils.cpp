@@ -2,6 +2,31 @@
 #include <algorithm>
 #include <tuple>
 
+template<typename T>
+std::vector<std::tuple<float, float, T>> upper_hull(std::vector<std::tuple<float, float, T>> points) {
+    std::sort(points);
+    if (points.size() <= 2) {
+        return points;
+    }
+    std::vector<std::tuple<float, float, T>> hull{points[0], points[1]};
+
+    for (size_t i = 2; i < points.size(); ++i) {
+        auto [x, y, t] = points[i];
+        while (hull.size() >= 2) {
+            auto [x1, y1, t1] = hull[hull.size() - 1];
+            auto [x2, y2, t2] = hull[hull.size() - 2];
+
+            if ((x - x2) * (y1 - y2) < (y - y2) * (x1 - x2)) {
+                hull.pop_back();
+            } else {
+                break;
+            }
+        }
+        hull.push_back(points[i]);
+    }
+
+    return hull;
+}
 
 std::tuple<size_t, float, size_t> greedy_mix(const std::vector<float>& rs, const std::vector<float>& ps, float thd) {
     if (rs.size() == 1) {

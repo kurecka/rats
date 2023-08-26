@@ -181,20 +181,20 @@ int main(int argc, char *argv[]) {
     int initial_state = 2;
 
     orchestrator<int, size_t> o;
-    o.load_environment(new gym::investor_env(initial_state, 20));
+    o.load_environment(new rats::investor_env(initial_state, 20));
     auto h = o.get_handler();
 
     if (args["--algorithm"] == "randomized") {
-        o.load_agent(new gym::randomized_agent<int, size_t>(h));
+        o.load_agent(new rats::randomized_agent<int, size_t>(h));
     }
     else if (args["--algorithm"] == "c0") {
-        o.load_agent(new gym::constant_agent<int, size_t>(h, 0));
+        o.load_agent(new rats::constant_agent<int, size_t>(h, 0));
     }
     else if (args["--algorithm"] == "c1") {
-        o.load_agent(new gym::constant_agent<int, size_t>(h, 1));
+        o.load_agent(new rats::constant_agent<int, size_t>(h, 1));
     }
     else if (args["--algorithm"] == "ts") {
-        o.load_agent(new gym::ts::primal_uct<int, size_t>(
+        o.load_agent(new rats::ts::primal_uct<int, size_t>(
             h,
             std::stoi(args["--depth"]),
             std::stoi(args["--num_sim"]),
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
             std::stof(args["--expl_const"])
         ));
     } else if (args["--algorithm"] == "dts") {
-        o.load_agent(new gym::ts::dual_uct<int, size_t>(
+        o.load_agent(new rats::ts::dual_uct<int, size_t>(
             h,
             std::stoi(args["--depth"]),
             std::stoi(args["--num_sim"]),
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
             std::stof(args["--expl_const"])
         ));
     // } else if (args["--algorithm"] == "pts") {
-    //     o.load_agent(new gym::ts::pareto_uct<int, size_t>(
+    //     o.load_agent(new rats::ts::pareto_uct<int, size_t>(
     //         h,
     //         std::stoi(args["--depth"]),
     //         std::stoi(args["--num_sim"]),

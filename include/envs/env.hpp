@@ -5,10 +5,10 @@
 #include <memory>
 
 #include "rand.hpp"
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 
 
-namespace gym {
+namespace rats {
 
 template <typename S>
 using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, is_over
@@ -233,4 +233,4 @@ public:
         return env;
     }
 };
-} // namespace gym
+} // namespace rats

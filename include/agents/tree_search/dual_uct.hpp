@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace gym {
+namespace rats {
 namespace ts {
 
 template <typename S, typename A>
@@ -191,4 +191,4 @@ public:
 };
 
 } // namespace ts
-} // namespace gym
+} // namespace rats

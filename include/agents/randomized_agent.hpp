@@ -3,7 +3,12 @@
 #include "agents/agent.hpp"
 #include "rand.hpp"
 
-namespace gym {
+#ifdef PYBIND
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+#endif
+
+namespace rats {
 
 template <typename S, typename A>
 class randomized_agent : public agent<S, A> {
@@ -35,4 +40,12 @@ public:
     }
 };
 
-} // namespace gym
+#ifdef PYBIND
+template <typename S, typename A>
+void register_randomized_agent(py::module &m) {
+    py::class_<randomized_agent<S, A>, agent<S, A>>(m, "RandomizedAgent")
+        .def(py::init<environment_handler<S, A>, size_t>());
+}
+#endif
+
+} // namespace rats

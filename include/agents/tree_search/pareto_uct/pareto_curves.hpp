@@ -4,7 +4,7 @@
 #include "utils.hpp"
 
 
-namespace gym {
+namespace rats {
 namespace ts {
 
 struct EPC {
@@ -236,4 +236,4 @@ std::string to_string(const quad_pareto_curve& c) {
 // };
 
 } // namespace ts
-} // namespace gym
+} // namespace rats

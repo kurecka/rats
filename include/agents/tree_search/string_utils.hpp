@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-namespace gym::ts {
+namespace rats::ts {
     std::string to_string(const std::pair<float, float>& p) {
         return "(" + std::to_string(p.first) + "," + std::to_string(p.second) + ")";
     }

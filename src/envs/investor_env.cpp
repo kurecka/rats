@@ -1,6 +1,6 @@
 #include "envs/investor_env.hpp"
 
-namespace gym {
+namespace rats {
 
 int investor_env::current_state() const {
     return wealth;
@@ -57,5 +57,4 @@ void investor_env::reset() {
     spdlog::debug("Reset environment");
     wealth = initial_wealth;
 }
-
-} // namespace gym
+} // namespace rats

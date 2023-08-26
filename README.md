@@ -49,3 +49,33 @@ Make sure to have `cmake` installed
 > make coverage  # Generate a coverage report.
 > make doc       # Generate html documentation.
 ```
+
+In order to build and install as a python package, run the following commands:
+```bash
+> pip install .
+```
+The command above will build the code using cmake and install the package in the current environment as `rats` package.
+
+## Install pytjon packages
+We use `conda` to maintain python packages. Make sure you have it installed.
+The environment is described in `conda_env.yaml`.
+
+To create new environment according to the env file use:
+```bash
+conda env create -f conda_env.yaml
+```
+
+To activate the environment use:
+```bash
+conda activate rats
+```
+
+To update your environment according to the env file use:
+```bash
+conda env update -f conda_env.yaml
+```
+
+To export the description of your current conda environment use:
+```bash
+conda env export > conda_env.yml
+```

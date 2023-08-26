@@ -3,7 +3,13 @@
 #include "agents/agent.hpp"
 #include "rand.hpp"
 
-namespace gym {
+#ifdef PYBIND
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+#endif
+
+
+namespace rats {
 
 template <typename S, typename A>
 class constant_agent : public agent<S, A> {
@@ -12,7 +18,7 @@ private:
     A action;
 public:
     constant_agent(environment_handler<S, A> _handler, A a)
-    : agent<S, A>(_handler), action(a) {}
+    : agent<S, A>(_handler), action(a) {} 
 
     ~constant_agent() override = default;
 
@@ -34,4 +40,12 @@ public:
     }
 };
 
-} // namespace gym
+#ifdef PYBIND
+template <typename S, typename A>
+void register_constant_agent(py::module &m) {
+    py::class_<constant_agent<S, A>, agent<S, A>>(m, "ConstantAgent")
+        .def(py::init<environment_handler<S, A>, A>());
+}
+#endif
+
+} // namespace rats

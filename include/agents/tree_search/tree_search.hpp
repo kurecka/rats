@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <string>
 
-namespace gym {
+namespace rats {
 namespace ts {
 
 /*********************************************************************
@@ -216,4 +216,4 @@ void uct_prop_q_value(
 }
 
 } // namespace ts
-} // namespace gym
+} // namespace rats

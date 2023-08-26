@@ -1,4 +1,4 @@
-namespace gym {
+namespace rats {
 namespace ts {
 
 #ifdef ENABLE_DOCTEST_IN_LIBRARY
@@ -140,4 +140,4 @@ TEST_CASE("Test common tangent - overlay")
 #endif
 
 } // namespace ts
-} // namespace gym
+} // namespace rats

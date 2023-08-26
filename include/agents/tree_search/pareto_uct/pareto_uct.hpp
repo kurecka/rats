@@ -8,7 +8,7 @@
 #include "pareto_curves.hpp"
 #include "utils.hpp"
 
-namespace gym {
+namespace rats {
 namespace ts {
 
 template <typename pareto_curve>
@@ -288,7 +288,7 @@ public:
 };
 
 } // namespace ts
-} // namespace gym
+} // namespace rats
 
 
 #include "test.hpp"

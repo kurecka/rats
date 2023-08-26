@@ -24,3 +24,5 @@
 # Logs
 logs
 *.log
+
+*.egg-info

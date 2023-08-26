@@ -9,22 +9,22 @@
 template <typename S, typename A>
 class orchestrator {
 private:
-    std::unique_ptr<gym::environment<S, A>> env;
-    std::unique_ptr<gym::agent<S, A>> agent;
+    std::unique_ptr<rats::environment<S, A>> env;
+    std::unique_ptr<rats::agent<S, A>> agent;
 
 public:
-    void load_environment(std::unique_ptr<gym::environment<S, A>> env);
-    void load_environment(gym::environment<S, A>* env);
-    void load_agent(std::unique_ptr<gym::agent<S, A>> agent);
-    void load_agent(gym::agent<S, A>* agent);
-    gym::environment_handler<S, A> get_handler() const;
+    void load_environment(std::unique_ptr<rats::environment<S, A>> env);
+    void load_environment(rats::environment<S, A>* env);
+    void load_agent(std::unique_ptr<rats::agent<S, A>> agent);
+    void load_agent(rats::agent<S, A>* agent);
+    rats::environment_handler<S, A> get_handler() const;
 
     std::pair<float, float> episode();
     void run(int num_episodes, int num_train_episodes);
 };
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_environment(std::unique_ptr<gym::environment<S, A>> _env) {
+void orchestrator<S, A>::load_environment(std::unique_ptr<rats::environment<S, A>> _env) {
     spdlog::info("Load environment: " + _env->name());
     env = std::move(_env);
     if (agent) {
@@ -33,17 +33,17 @@ void orchestrator<S, A>::load_environment(std::unique_ptr<gym::environment<S, A>
 }
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_environment(gym::environment<S, A>* _env) {
-    load_environment(std::unique_ptr<gym::environment<S, A>>(_env));
+void orchestrator<S, A>::load_environment(rats::environment<S, A>* _env) {
+    load_environment(std::unique_ptr<rats::environment<S, A>>(_env));
 }
 
 template <typename S, typename A>
-gym::environment_handler<S, A> orchestrator<S, A>::get_handler() const {
-    return gym::environment_handler<S, A>(*env);
+rats::environment_handler<S, A> orchestrator<S, A>::get_handler() const {
+    return rats::environment_handler<S, A>(*env);
 }
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_agent(std::unique_ptr<gym::agent<S, A>> _agent) {
+void orchestrator<S, A>::load_agent(std::unique_ptr<rats::agent<S, A>> _agent) {
     spdlog::info("Load agent: " +_agent->name());
     agent = std::move(_agent);
     if (env) {
@@ -52,13 +52,13 @@ void orchestrator<S, A>::load_agent(std::unique_ptr<gym::agent<S, A>> _agent) {
 }
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_agent(gym::agent<S, A>* _agent) {
-    this->load_agent(std::unique_ptr<gym::agent<S, A>>(_agent));
+void orchestrator<S, A>::load_agent(rats::agent<S, A>* _agent) {
+    this->load_agent(std::unique_ptr<rats::agent<S, A>>(_agent));
 }
 
 template <typename S, typename A>
 std::pair<float, float> orchestrator<S, A>::episode() {
-    const gym::environment_handler<S, A>& handler = agent->get_handler();
+    const rats::environment_handler<S, A>& handler = agent->get_handler();
     spdlog::debug("Run episode");
     env->reset();
     spdlog::debug("Environment prepared");

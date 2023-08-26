@@ -1,11 +1,14 @@
 #pragma once
 
 #include <map>
-
 #include "envs/env.hpp"
 
+#ifdef PYBIND
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+#endif
 
-namespace gym { 
+namespace rats { 
 
 class investor_env : public environment<int, size_t> {
 private:
@@ -45,4 +48,11 @@ public:
     void reset() override;
 };
 
-} // namespace gym
+#ifdef PYBIND
+void register_investor_env(py::module &m) {
+    py::class_<investor_env, environment<int, size_t>>(m, "InvestorEnv")
+        .def(py::init<int, int>());
+}
+#endif
+
+} // namespace rats

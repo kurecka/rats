@@ -8,7 +8,7 @@
 #include "rand.hpp"
 #include "envs/env.hpp"
 
-namespace gym {
+namespace rats {
 
 template <typename S>
 using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, is_over
@@ -102,4 +102,4 @@ public:
     virtual std::string name() const = 0;
 };
 
-} // namespace gym
+} // namespace rats

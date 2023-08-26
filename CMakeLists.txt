@@ -25,7 +25,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 include(ConfigSafeGuards)
 include(Colors)
 include(CTest)
-include(Doctest)
+# include(Doctest)
 include(Documentation)
 include(LTO)
 include(Misc)
@@ -42,6 +42,7 @@ if(NOT TARGET Eigen3)
     find_package(Eigen3 REQUIRED)
 endif()
 
+find_package(pybind11 REQUIRED)
 
 # --------------------------------------------------------------------------------
 #                         Locate files (change as needed).
@@ -55,7 +56,7 @@ set(SOURCES          # All .cpp files in src/
 set(TESTFILES        # All .cpp files in tests/
     tests/main.cpp
 )
-set(LIBRARY_NAME rat_lib)  # Default name for the library built from src/*.cpp (change if you wish)
+set(LIBRARY_NAME rat)  # Default name for the library built from src/*.cpp (change if you wish)
 
 # --------------------------------------------------------------------------------
 #                            Build! (Change as needed)
@@ -67,7 +68,7 @@ add_library(${LIBRARY_NAME} OBJECT ${SOURCES})
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # There's also (probably) doctests within the library, so we need to see this as well.
-target_link_libraries(${LIBRARY_NAME} PUBLIC doctest)
+# target_link_libraries(${LIBRARY_NAME} PUBLIC doctest)
 
 # Link the logging library
 target_link_libraries(${LIBRARY_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
@@ -90,9 +91,11 @@ target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-g
 # Add an executable for the file app/main.cpp.
 # If you add more executables, copy these lines accordingly.
 set(MAIN_APP_NAME rats)
-add_executable(${MAIN_APP_NAME} app/main.cpp)   # Name of exec. and location of file.
+# add_executable(${MAIN_APP_NAME} app/main.cpp)   # Name of exec. and location of file.
+pybind11_add_module(${MAIN_APP_NAME} pybind/interface.cpp)
 target_link_libraries(${MAIN_APP_NAME} PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
 target_link_libraries(${MAIN_APP_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+target_link_libraries(${MAIN_APP_NAME} PRIVATE pybind11::pybind11)
 target_set_warnings(${MAIN_APP_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
 
 target_compile_options(${MAIN_APP_NAME} PRIVATE -Wno-missing-prototypes)
@@ -109,4 +112,4 @@ set_target_properties(
 )
 
 # Set up tests (see tests/CMakeLists.txt).
-add_subdirectory(tests)
+# add_subdirectory(tests)

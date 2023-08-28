@@ -135,15 +135,21 @@ public:
         for (int i = 0; i < num_sim; i++) {
             spdlog::trace("Simulation {}", i);
             common_data.sample_risk_thd = common_data.risk_thd;
+            spdlog::trace("Select leaf");
             uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
+            spdlog::trace("Expand leaf");
             expand_state(leaf);
+            spdlog::trace("Rollout");
             void_rollout(leaf);
+            spdlog::trace("Propagate");
             propagate_f(leaf, gamma);
             agent<S, A>::handler.sim_reset();
 
+            spdlog::trace("Select action");
             A a = select_action_dual(root.get(), false);
             uct_action_t* action_node = root->get_child(a);
 
+            spdlog::trace("Update lambda");
             d_lambda += ((action_node->q.second - common_data.risk_thd) - d_lambda) * 0.2f;
             common_data.lambda += lr * d_lambda;
             common_data.lambda = std::max(0.0f, common_data.lambda);
@@ -153,11 +159,11 @@ public:
         common_data.sample_risk_thd = common_data.risk_thd;
         A a = select_action_dual(root.get(), false);
 
-        static bool logged = false;
-        if (!logged) {
-            spdlog::get("graphviz")->info(to_graphviz_tree(*root.get(), 9));
-            logged = true;
-        }
+        // static bool logged = false;
+        // if (!logged) {
+        //     spdlog::get("graphviz")->info(to_graphviz_tree(*root.get(), 9));
+        //     logged = true;
+        // }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         spdlog::debug("Play action: {}", a);

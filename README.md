@@ -30,7 +30,7 @@ Currently only rollout method is constant zeros.
   - Does not match the decribed algorithm perfectyl. In particular, it does not use LP, just thresholding to select best greedy action.
 
 ## Todo
-- [ ] Pytorch binding
+- [x] Pytorch binding
 - [ ] Ray distributed computing
 - [ ] Evironment management
 - [ ] Experiment configuration files
@@ -44,7 +44,7 @@ Make sure to have `cmake` installed
 > cd build
 > cmake .. -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
 > make
-> ./rats ...
+> ./rats_app ...
 > make test      # Makes and runs the tests.
 > make coverage  # Generate a coverage report.
 > make doc       # Generate html documentation.

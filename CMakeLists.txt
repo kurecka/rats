@@ -90,21 +90,31 @@ target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-g
 
 # Add an executable for the file app/main.cpp.
 # If you add more executables, copy these lines accordingly.
-set(MAIN_APP_NAME rats)
-# add_executable(${MAIN_APP_NAME} app/main.cpp)   # Name of exec. and location of file.
-pybind11_add_module(${MAIN_APP_NAME} pybind/interface.cpp)
-target_link_libraries(${MAIN_APP_NAME} PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
-target_link_libraries(${MAIN_APP_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
-target_link_libraries(${MAIN_APP_NAME} PRIVATE pybind11::pybind11)
-target_set_warnings(${MAIN_APP_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
+set(MAIN_APP_NAME rats_app)
+set(MAIN_MODULE_NAME rats)
+add_executable(${MAIN_APP_NAME} app/main.cpp)   # Name of exec. and location of file.
+pybind11_add_module(${MAIN_MODULE_NAME} pybind/interface.cpp)
 
-target_compile_options(${MAIN_APP_NAME} PRIVATE -Wno-missing-prototypes)
+foreach(_target ${MAIN_APP_NAME} ${MAIN_MODULE_NAME})
 
-target_enable_lto(${MAIN_APP_NAME} optimized)  # enable link-time-optimization if available for non-debug configurations
+target_link_libraries(${_target} PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
+target_link_libraries(${_target} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+target_set_warnings(${_target} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
+
+target_compile_options(${_target} PRIVATE -Wno-missing-prototypes)
+
+target_enable_lto(${_target} optimized)  # enable link-time-optimization if available for non-debug configurations
+
+endforeach()
+
+target_link_libraries(${MAIN_MODULE_NAME} PRIVATE pybind11::pybind11)
+
+
+
 
 # Set the properties you require, e.g. what C++ standard to use. Here applied to library and main (change as needed).
 set_target_properties(
-    ${LIBRARY_NAME} ${MAIN_APP_NAME}
+    ${LIBRARY_NAME} ${MAIN_APP_NAME} ${MAIN_MODULE_NAME}
       PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES

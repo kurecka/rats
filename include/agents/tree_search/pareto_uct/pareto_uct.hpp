@@ -251,11 +251,11 @@ public:
         common_data.sample_risk_thd = common_data.risk_thd;
         A a = select_action_pareto<S, A, data_t, pareto_curve>(root.get(), false);
 
-        static bool logged = false;
-        if (!logged) {
-            spdlog::get("graphviz")->info(to_graphviz_tree(*root.get(), 9));
-            logged = true;
-        }
+        // static bool logged = false;
+        // if (!logged) {
+        //     spdlog::get("graphviz")->info(to_graphviz_tree(*root.get(), 9));
+        //     logged = true;
+        // }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         spdlog::debug("Play action: {}", a);

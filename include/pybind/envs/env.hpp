@@ -6,8 +6,9 @@
 namespace rats::py {
 
 template <typename S, typename A>
-void register_environment(py::module& m) {
-    py::class_<environment<S, A>>(m, "Environment")
+py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_environment(py::module& m) {
+    py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> env_type(m, "Environment");
+    env_type
         .def("name", &environment<S, A>::name)
         .def("num_actions", &environment<S, A>::num_actions)
         .def("possible_actions", &environment<S, A>::possible_actions)
@@ -32,6 +33,8 @@ void register_environment(py::module& m) {
         .def("possible_actions", &environment_handler<S, A>::possible_actions)
         .def("get_action", &environment_handler<S, A>::get_action)
         .def("get_current_state", &environment_handler<S, A>::get_current_state);
+
+    return env_type;
 }
 
 } // end namespace rats::py

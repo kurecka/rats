@@ -1,8 +1,8 @@
 #include "pybind/pybind.hpp"
 #include "pybind/envs.hpp"
 #include "pybind/agents.hpp"
+#include "pybind/kernell.pybind.hpp"
 
-// namespace py = pybind11;
 
 void set_log_level(std::string level) {
     std::transform(level.begin(), level.end(), level.begin(), 
@@ -23,6 +23,7 @@ void set_log_level(std::string level) {
 PYBIND11_MODULE(rats, m) {
     rats::py::register_environments(m);
     rats::py::register_agents(m);
+    rats::py::register_kernells(m);
 
     m.def("set_log_level", &set_log_level, "Set the log level");
 }

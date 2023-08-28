@@ -9,11 +9,11 @@
 namespace rats::py {
 
 void register_agents(py::module& m) {
-    register_agent<int, size_t>(m);
-    register_constant_agent<int, size_t>(m);
-    register_randomized_agent<int, size_t>(m);
-    register_dual_uct<int, size_t>(m);
-    register_primal_uct<int, size_t>(m);
+    auto agent_type = register_agent<int, size_t>(m);
+    register_constant_agent<int, size_t>(m, agent_type);
+    register_randomized_agent<int, size_t>(m, agent_type);
+    register_dual_uct<int, size_t>(m, agent_type);
+    register_primal_uct<int, size_t>(m, agent_type);
 }
 
 }  // namespace rats

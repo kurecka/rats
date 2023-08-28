@@ -22,7 +22,10 @@ public:
 
     investor_env(int _initial_wealth, int _target)
     : initial_wealth(_initial_wealth)
+    , wealth(_initial_wealth)
     , target(_target)
+    , checkpoint(_initial_wealth)
+    , checkpoints(std::map<size_t, int>())
     {}
 
     ~investor_env() override = default;

@@ -17,9 +17,6 @@ using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, 
 /*************************************************************************
  * AGENT INTERFACE
  *************************************************************************/
-template<typename S, typename A>
-class orchestrator;
-
 template <typename S, typename A>
 class agent {
 protected:

@@ -8,9 +8,9 @@
 namespace rats::py {
 
 void register_environments(py::module& m) {
-    register_environment<int, size_t>(m);
+    auto env_type = register_environment<int, size_t>(m);
 
-    register_investor_env(m);
+    register_investor_env(m, env_type);
 }
 
 }  // namespace rats::py

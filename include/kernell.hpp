@@ -9,13 +9,13 @@
 template <typename S, typename A>
 class orchestrator {
 private:
-    std::unique_ptr<rats::environment<S, A>> env;
-    std::unique_ptr<rats::agent<S, A>> agent;
+    std::shared_ptr<rats::environment<S, A>> env;
+    std::shared_ptr<rats::agent<S, A>> agent;
 
 public:
-    void load_environment(std::unique_ptr<rats::environment<S, A>> env);
+    void load_environment(std::shared_ptr<rats::environment<S, A>> env);
     void load_environment(rats::environment<S, A>* env);
-    void load_agent(std::unique_ptr<rats::agent<S, A>> agent);
+    void load_agent(std::shared_ptr<rats::agent<S, A>> agent);
     void load_agent(rats::agent<S, A>* agent);
     rats::environment_handler<S, A> get_handler() const;
 
@@ -24,9 +24,9 @@ public:
 };
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_environment(std::unique_ptr<rats::environment<S, A>> _env) {
+void orchestrator<S, A>::load_environment(std::shared_ptr<rats::environment<S, A>> _env) {
     spdlog::info("Load environment: " + _env->name());
-    env = std::move(_env);
+    env = _env;
     if (agent) {
         agent->set_handler(*env);
     }
@@ -34,7 +34,8 @@ void orchestrator<S, A>::load_environment(std::unique_ptr<rats::environment<S, A
 
 template <typename S, typename A>
 void orchestrator<S, A>::load_environment(rats::environment<S, A>* _env) {
-    load_environment(std::unique_ptr<rats::environment<S, A>>(_env));
+    spdlog::info("Load environment: " + _env->name());
+    load_environment(std::shared_ptr<rats::environment<S, A>>(_env));
 }
 
 template <typename S, typename A>
@@ -43,9 +44,9 @@ rats::environment_handler<S, A> orchestrator<S, A>::get_handler() const {
 }
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_agent(std::unique_ptr<rats::agent<S, A>> _agent) {
+void orchestrator<S, A>::load_agent(std::shared_ptr<rats::agent<S, A>> _agent) {
     spdlog::info("Load agent: " +_agent->name());
-    agent = std::move(_agent);
+    agent = _agent;
     if (env) {
         agent->set_handler(*env);
     }
@@ -53,7 +54,8 @@ void orchestrator<S, A>::load_agent(std::unique_ptr<rats::agent<S, A>> _agent) {
 
 template <typename S, typename A>
 void orchestrator<S, A>::load_agent(rats::agent<S, A>* _agent) {
-    this->load_agent(std::unique_ptr<rats::agent<S, A>>(_agent));
+    spdlog::info("Load agent: " +_agent->name());
+    this->load_agent(std::shared_ptr<rats::agent<S, A>>(_agent));
 }
 
 template <typename S, typename A>

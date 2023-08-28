@@ -44,7 +44,7 @@ Make sure to have `cmake` installed
 > cd build
 > cmake .. -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
 > make
-> ./rats_app ...
+> ./rats_app -h
 > make test      # Makes and runs the tests.
 > make coverage  # Generate a coverage report.
 > make doc       # Generate html documentation.
@@ -52,7 +52,8 @@ Make sure to have `cmake` installed
 
 In order to build and install as a python package, run the following commands:
 ```bash
-> pip install .
+> cd build
+> pip install ..
 ```
 The command above will build the code using cmake and install the package in the current environment as `rats` package.
 
@@ -77,5 +78,5 @@ conda env update -f conda_env.yaml
 
 To export the description of your current conda environment use:
 ```bash
-conda env export > conda_env.yml
+conda env export > conda_env.yaml
 ```

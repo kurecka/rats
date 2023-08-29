@@ -1,6 +1,7 @@
 #include "pybind/pybind.hpp"
 #include "pybind/envs.hpp"
 #include "pybind/agents.hpp"
+#include "pybind/LP_example.hpp"
 #include "pybind/kernell.pybind.hpp"
 
 
@@ -24,6 +25,8 @@ PYBIND11_MODULE(rats, m) {
     rats::py::register_environments(m);
     rats::py::register_agents(m);
     rats::py::register_kernells(m);
+
+    rats::py::example::register_lp_example(m);
 
     m.def("set_log_level", &set_log_level, "Set the log level");
 }

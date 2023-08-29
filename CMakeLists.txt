@@ -1,15 +1,4 @@
-# This file specifies how the project should be built, using CMake.
-# If you are unfamiliar with CMake, don't worry about all the details.
-# The sections you might want to edit are marked as such, and
-# the comments should hopefully make most of it clear.
-#
-# For many purposes, you may not need to change anything about this file.
-
 cmake_minimum_required(VERSION 3.14)
-
-# Set project name, version and laguages here. (change as needed)
-# Version numbers are available by including "exampleConfig.h" in
-# the source. See exampleConfig.h.in for some more details.
 project(RATS VERSION 1.0 LANGUAGES CXX)
 
 
@@ -20,7 +9,7 @@ option(ENABLE_LTO "Enable link time optimization" ON)
 option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
 
-# Include stuff. No change needed.
+# Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 include(ConfigSafeGuards)
 include(Colors)
@@ -34,6 +23,7 @@ include(Warnings)
 # Check for LTO support.
 find_lto(CXX)
 
+# Find packages
 if(NOT TARGET spdlog)
     find_package(spdlog REQUIRED)
 endif()
@@ -43,6 +33,8 @@ if(NOT TARGET Eigen3)
 endif()
 
 find_package(pybind11 REQUIRED)
+
+find_package(ortools CONFIG REQUIRED)
 
 # --------------------------------------------------------------------------------
 #                         Locate files (change as needed).
@@ -59,7 +51,7 @@ set(TESTFILES        # All .cpp files in tests/
 set(LIBRARY_NAME rat)  # Default name for the library built from src/*.cpp (change if you wish)
 
 # --------------------------------------------------------------------------------
-#                            Build! (Change as needed)
+#                            Build library
 # --------------------------------------------------------------------------------
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} OBJECT ${SOURCES})
@@ -70,39 +62,39 @@ target_include_directories(${LIBRARY_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 # There's also (probably) doctests within the library, so we need to see this as well.
 # target_link_libraries(${LIBRARY_NAME} PUBLIC doctest)
 
-# Link the logging library
+# Link libraries
 target_link_libraries(${LIBRARY_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
-
-target_include_directories(${LIBRARY_NAME}
-    SYSTEM
-    PUBLIC
-    ${EIGEN3_INCLUDE_DIR}
-)
-
-target_link_libraries(${LIBRARY_NAME}
-    PUBLIC
-    Eigen3::Eigen
-)
+target_include_directories(${LIBRARY_NAME} SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
+target_link_libraries(${LIBRARY_NAME} PUBLIC Eigen3::Eigen)
+target_link_libraries(${LIBRARY_NAME} PUBLIC ortools::ortools)
 
 # Set the compile options you want (change as needed).
 target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors)
+target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors -Wno-poison-system-directories)
 
-# Add an executable for the file app/main.cpp.
-# If you add more executables, copy these lines accordingly.
+# --------------------------------------------------------------------------------
+#                            Build targets
+# --------------------------------------------------------------------------------
+
+# Add the executeble
 set(MAIN_APP_NAME rats_app)
+add_executable(${MAIN_APP_NAME} app/main.cpp)
+
+# Add the python binding
 set(MAIN_MODULE_NAME rats)
-add_executable(${MAIN_APP_NAME} app/main.cpp)   # Name of exec. and location of file.
 pybind11_add_module(${MAIN_MODULE_NAME} pybind/interface.cpp)
 
 foreach(_target ${MAIN_APP_NAME} ${MAIN_MODULE_NAME})
 
+# Link libraries
 target_link_libraries(${_target} PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
 target_link_libraries(${_target} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+target_link_libraries(${LIBRARY_NAME} PUBLIC ortools::ortools)
+
+# Set the compilation options
 target_set_warnings(${_target} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-
 target_compile_options(${_target} PRIVATE -Wno-missing-prototypes)
-
+target_compile_options(${_target} PRIVATE -Wno-poison-system-directories)
 target_enable_lto(${_target} optimized)  # enable link-time-optimization if available for non-debug configurations
 
 endforeach()
@@ -110,9 +102,7 @@ endforeach()
 target_link_libraries(${MAIN_MODULE_NAME} PRIVATE pybind11::pybind11)
 
 
-
-
-# Set the properties you require, e.g. what C++ standard to use. Here applied to library and main (change as needed).
+# Set the properties you require, e.g. what C++ standard to use.
 set_target_properties(
     ${LIBRARY_NAME} ${MAIN_APP_NAME} ${MAIN_MODULE_NAME}
       PROPERTIES

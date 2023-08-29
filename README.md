@@ -32,6 +32,7 @@ Currently only rollout method is constant zeros.
 ## Todo
 - [x] Pytorch binding
 - [x] Link LP library
+- [ ] Implement insteraction with AI gym with [pybind11](https://pybind11.readthedocs.io/en/stable/advanced/embedding.html#executing-python-code)
 - [ ] Ray distributed computing
 - [ ] Evironment management
 - [ ] Experiment configuration files
@@ -68,7 +69,7 @@ The following commands should work:
 > cmake --build build --target install  # install the libraries in the system
 ```
 
-## Install pytjon packages
+## Install python packages
 We use `conda` to maintain python packages. Make sure you have it installed.
 The environment is described in `conda_env.yaml`.
 

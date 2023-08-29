@@ -3,5 +3,6 @@
 
 namespace rats::py {
     using namespace pybind11::literals;
-    namespace py = pybind11;
+    using namespace pybind11;
+    // namespace py = pybind11;
 }

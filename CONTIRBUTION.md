@@ -6,6 +6,9 @@
 -   Continuous testing with [Travis-CI](https://travis-ci.org/), [Appveyor](https://www.appveyor.com) and [GitHub Actions](https://github.com/features/actions), with support for C++17.
 -   Code coverage reports, including automatic upload to [Coveralls.io](https://coveralls.io/) and/or [Codecov.io](https://codecov.io)
 -   Code documentation with [Doxygen](http://www.stack.nl/~dimitri/doxygen/)
+-   OR-Tools library for LP
+-   AI gym for environments
+-   Pybind11 for Python binding
 
 ## Structure
 Sources go in [src/](src/), header files in [include/](include/), main programs in [app/](app), and
@@ -20,6 +23,11 @@ target_link_libraries(hello PRIVATE ${LIBRARY_NAME})  # Link the executable to l
 
 You can find the example source code that builds the `main` executable in [app/main.cpp](app/main.cpp) under the `Build` section in [CMakeLists.txt](CMakeLists.txt).
 If the executable you made does not use the library in [src/](src), then only the first line is needed.
+
+## Pybind
+The root file of the python `rats` package is `pybind/interface.cpp`.
+The structer of directory `include/pybind` mirrors the structure of `include` directory.
+It is possible to use `pybind` to use python classes in C++ code. See `inclue/envs/frozen_lake.hpp` for an example.
 
 ## Services
 

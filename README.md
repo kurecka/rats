@@ -31,6 +31,7 @@ Currently only rollout method is constant zeros.
 
 ## Todo
 - [x] Pytorch binding
+- [x] Link LP library
 - [ ] Ray distributed computing
 - [ ] Evironment management
 - [ ] Experiment configuration files
@@ -38,7 +39,7 @@ Currently only rollout method is constant zeros.
 
 ## Building
 
-Make sure to have `cmake` installed
+Make sure to have `cmake` and [`OR-tools`](https://github.com/google/or-tools) library installed
 
 ``` bash
 > cd build
@@ -56,6 +57,16 @@ In order to build and install as a python package, run the following commands:
 > pip install ..
 ```
 The command above will build the code using cmake and install the package in the current environment as `rats` package.
+
+## Install OR-tools
+We use `OR-tools` to solve the LP problem. Make sure you have it installed.
+Download the latest version from [here](https://github.com/google/or-tools).
+The following commands should work:
+```bash
+> cd or-tools
+> cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON
+> cmake --build build --target install  # install the libraries in the system
+```
 
 ## Install pytjon packages
 We use `conda` to maintain python packages. Make sure you have it installed.

@@ -194,6 +194,38 @@ void void_descend_callback(
 template<typename S, typename A, typename DATA, typename V, typename Q>
 void void_rollout(state_node<S, A, DATA, V, Q>*) {}
 
+/**
+ * @brief Monte carlo rollout function
+ * 
+ * @param sn A leaf node to rollout
+ * 
+ * Do a Monte Carlo rollout from the given leaf node. Update its rollout reward and penalty.
+ */
+template<typename S, typename A, typename DATA, typename V, typename Q>
+void rollout(state_node<S, A, DATA, V, Q>* sn) {
+    using state_node_t = state_node<S, A, DATA, V, Q>;
+
+    state_node_t* current_sn = sn;
+    float disc_r = 0;
+    float disc_p = 0;
+    float gamma_pow = 1.0;
+    bool terminal = current_sn->is_terminal();
+
+    while (!terminal) {
+        gamma_pow *= current_sn->common_data->gamma;
+        A action = current_sn->common_data->handler.get_action(
+            rng::unif_int(current_sn->common_data->handler.num_actions())
+        );
+        auto [s, r, p, t] = current_sn->common_data->handler.sim_action(action);
+        terminal = t;
+        disc_r = r + disc_r * gamma_pow;
+        disc_p = p + disc_p * gamma_pow;
+    }
+
+    current_sn->rollout_reward = disc_r;
+    current_sn->rollout_penalty = disc_p;
+}
+
 template<typename S, typename A, typename DATA>
 void uct_prop_v_value(
     state_node<S, A, DATA, point_value, point_value>* sn,

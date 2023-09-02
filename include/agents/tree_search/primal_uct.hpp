@@ -13,6 +13,7 @@ struct primal_uct_data {
     float risk_thd;
     float sample_risk_thd;
     float exploration_constant;
+    float gamma;
     environment_handler<S, A>& handler;
 };
 
@@ -114,7 +115,7 @@ public:
     , num_sim(_num_sim)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
-    , common_data({_risk_thd, _risk_thd, _exploration_constant, agent<S, A>::handler})
+    , common_data({_risk_thd, _risk_thd, _exploration_constant, gamma, agent<S, A>::handler})
     , root(std::make_unique<uct_state_t>())
     {
         reset();
@@ -128,7 +129,7 @@ public:
             common_data.sample_risk_thd = common_data.risk_thd;
             uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
             expand_state(leaf);
-            void_rollout(leaf);
+            rollout(leaf);
             propagate_f(leaf, gamma);
             agent<S, A>::handler.sim_reset();
         }

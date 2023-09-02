@@ -66,7 +66,7 @@ void frozen_lake::restore_checkpoint(size_t id) {
     } else {
         state = checkpoints[id];
     }
-    python_env.attr("s").attr("__set__")(state);
+    python_env.attr("s") = state;
 }
 
 void frozen_lake::reset() {

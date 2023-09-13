@@ -3,6 +3,7 @@
 #include <vector>
 #include <tuple>
 #include <memory>
+#include <map>
 
 #include "rand.hpp"
 #include <spdlog/spdlog.h>
@@ -21,7 +22,6 @@ using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, 
  * @brief Abstract environment class
  * 
  * TODO: add
- * - probabilities
  * - templated multireward
  */
 template <typename S, typename A>
@@ -88,6 +88,12 @@ public:
      * 
      */
     virtual void restore_checkpoint(size_t id) = 0;
+
+    /**
+     * @brief Return the action's succesor states' probabilities
+     * 
+     */
+    virtual std::map<S, float> outcome_probabilities(S state, A action) = 0;
 
     /**
      * @brief Reset the environment

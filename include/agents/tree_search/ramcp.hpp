@@ -2,6 +2,7 @@
 
 #include "tree_search.hpp"
 #include "string_utils.hpp"
+#include "rand.hpp"
 #include "ortools/linear_solver/linear_solver.h"
 #include <string>
 #include <vector>
@@ -108,11 +109,71 @@ public:
             agent<S, A>::handler.sim_reset();
         }
 
-        solver->Clear();
+        auto [policy, leaf_risk] = define_LP_policy(risk_thd);
+        MPSolver::ResultStatus result_status = solver->Solve();
+
+        if (result_status != MPSolver::OPTIMAL) {
+
+            // if risk_thd is infeasable we relax the bound
+            auto risk_obj = define_LP_risk();
+            result_status = solver->Solve();
+            //assert(result_status == MPSolver::OPTIMAL);
+
+            double alt_thd = risk_obj->Value();
+            [policy, leaf_risk] = define_LP_policy(alt_thd);
+            result_status = solver_policy->Solve();
+
+            //assert(result_status == MPSolver::OPTIMAL);
+        }
+
+        // sample action
+        std::vector<double> policy_distr;
+        for (auto it = policy.begin(); it != policy.end(); it++) {
+            policy_distr.emplace_back(it->second->solution_value());
+        }
+
+        std::discrete_distribution<> ad(policy_distr.begin(), policy_distr.end());
+        int sample = ad(rng::engine);
+
+        A a = std::next(std::begin(policy), sample)->first;
+
+        auto [s, r, p, t] = common_data.handler.play_action(a);
+        spdlog::debug("Play action: {}", a);
+        spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
+
+        uct_action_t* an = root->get_child(a);
+        if (an->children.find(s) == an->children.end()) {
+            an->children[s] = expand_action(an, s, r, p, t);
+        }
+
+        // adjust risk thd, assuming only observed penalty == leaf in F
+        double alt_risk = 0;
+        for (auto& [child, leaves] : leaf_risk) {
+
+            if (child == s)
+                continue;
+
+            for (auto& leaf : leaves) {
+
+                alt_risk += leaf->solution_value();
+            }
+        }
+
+
+        // assert(alt_risk <= risk_thd);
+
+        auto states_distr = common_data.handler.outcome_probabilities(root->state, a);
+        risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s])
+
+        std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
+        root = std::move(new_root);
+        root->get_parent() = nullptr;
     }
 
     std::pair<std::unordered_map<A, MPVariable* const>, std::unordered_map<S, std::vector<MPVariable* const>>> define_LP_policy(
-            uct_state_t* root, double risk_thd, MPSolver* solver) {
+            double risk_thd) {
+
+        solver->Clear();
 
         std::unordered_map<A, MPVariable* const> policy;
 
@@ -122,6 +183,7 @@ public:
         //assert(!root->leaf());
 
         size_t ctr = 0; //counter
+        double payoff = 0;
 
         MPObjective* const objective = solver->MutableObjective();
 
@@ -133,10 +195,11 @@ public:
         action_sum->SetCoefficient(r, -1); // sum of action prob == prob of parent (2)
 
         auto& actions = root->actions;
+        auto& children = root->children;
         for (auto ac_it = actions.begin(), auto child_it = children.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver_policy->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
             action_sum->SetCoefficient(ac, 1);
             policy.insert({*ac_it, ac}); // add to policy to access solution
 
@@ -144,15 +207,15 @@ public:
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver_policy->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
 
                 // st = ac * delta (3)
-                MPConstraint* const ac_st = solver_policy->MakeRowConstraint(0, 0);
+                MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
                 ac_st->SetCoefficient(st, -1);
                 double delta = states_distr[it->first];
                 ac_st->SetCoefficient(ac, delta);
 
-                LP_policy_rec(it->second.get(), st, ctr, risk_cons, objective, 1, solver, leaves, it->first);
+                LP_policy_rec(it->second.get(), st, ctr, risk_cons, objective, 1, leaves, it->first, payoff);
             }
         }
 
@@ -162,20 +225,23 @@ public:
     }
 
     void LP_policy_rec(uct_state_t* node, MPVariable* const var, size_t& ctr, MPConstraint* const risk_cons,
-                        MPObjective* const objective, size_t node_depth, MPSolver* solver,
-                        std::unordered_map<S, std::vector<MPVariable* const>> leaves, S root_succ) {
+                        MPObjective* const objective, size_t node_depth,
+                        std::unordered_map<S, std::vector<MPVariable* const>> leaves, S root_succ, double payoff) {
 
-        if (node->leaf()) {
+        payoff += std::pow(gamma, node_depth - 1) * node->observed_reward;
+
+        if (node->is_leaf()) {
 
             // objective
-            double coef = (node->payoff / std::pow(tree->gamma, tree->root->his.actions.size()))  + std::pow(tree->gamma, node_depth) * node->v;
+            double coef = payoff + std::pow(gamma, node_depth) * node->rollout_reward;
             objective->SetCoefficient(var, coef);
 
             // risk
-            risk_cons->SetCoefficient(var, node->r);
+            risk_cons->SetCoefficient(var, node->observed_penalty);
 
             // alternative risk
-            leaves[root_succ].push_back(var);
+            if (node->observed_penalty > 0)
+                leaves[root_succ].push_back(var);
             return;
         }
 
@@ -183,27 +249,112 @@ public:
         action_sum->SetCoefficient(var, -1); // sum of action prob == prob of parent (2)
 
         auto& actions = node->actions;
+        auto& children = node->children;
         for (auto ac_it = actions.begin(), auto child_it = children.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver_policy->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
             auto states_distr = common_data.handler.outcome_probabilities(node->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver_policy->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
 
                 // st = ac * delta (3)
-                MPConstraint* const ac_st = solver_policy->MakeRowConstraint(0, 0);
+                MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
                 ac_st->SetCoefficient(st, -1);
                 double delta = states_distr[it->first];
                 ac_st->SetCoefficient(ac, delta);
 
-                LP_policy_rec(it->second.get(), st, ctr, risk_cons, objective, node_depth + 1, solver, leaves, it->first);
+                LP_policy_rec(it->second.get(), st, ctr, risk_cons, objective, node_depth + 1, solver, leaves, root_succ, payoff);
             }
         }
+    }
+
+    auto define_LP_risk() {
+
+        //assert(!root.leaf());
+
+        solver->Clear();
+
+        size_t ctr = 0; //counter
+
+        MPObjective* const objective = solver->MutableObjective();
+
+        MPVariable* const r = solver->MakeIntVar(1, 1, "r"); // (1)
+
+        MPConstraint* const action_sum = solver->MakeRowConstraint(0, 0); // setting 0 0 for equality could cause rounding problems
+        action_sum->SetCoefficient(r, -1); // sum of action prob == prob of parent (2)
+
+        auto& actions = root->actions;
+        auto& children = root->children;
+        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+             ac_it != actions.end(); ++ac_it, ++child_it) {
+
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            action_sum->SetCoefficient(ac, 1);
+
+            auto states_distr = common_data.handler.outcome_probabilities(root->state, *ac_it);
+
+            for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
+
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+
+                // st = ac * delta (3)
+                MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
+                ac_st->SetCoefficient(st, -1);
+                double delta = states_distr[it->first];
+                ac_st->SetCoefficient(ac, delta);
+
+                LP_risk_rec(it->second.get(), st, ctr, objective);
+            }
+        }
+
+        objective->SetMinimization();
+
+        return objective;
+    }
+
+    void LP_risk_rec(uct_state_t* node,
+                     MPVariable* const var, size_t& ctr,
+                     MPObjective* const objective) {
+
+        if (node->is_leaf()) {
+
+            // objective
+            objective->SetCoefficient(var, node->observed_penalty);
+
+            return;
+        }                  
+
+        MPConstraint* const action_sum = solver->MakeRowConstraint(0, 0); // setting 0 0 for equality could cause rounding problems
+        action_sum->SetCoefficient(var, -1); // sum of action prob == prob of parent (2)
+
+        auto& actions = node->actions;
+        auto& children = node->children;
+        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+             ac_it != actions.end(); ++ac_it, ++child_it) {
+
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            action_sum->SetCoefficient(ac, 1);
+
+            auto states_distr = common_data.handler.outcome_probabilities(node->state, *ac_it);
+
+            for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
+
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+
+                // st = ac * delta (3)
+                MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
+                ac_st->SetCoefficient(st, -1);
+                double delta = states_distr[it->first];
+                ac_st->SetCoefficient(ac, delta);
+
+                LP_risk_rec(it->second.get(), st, ctr, objective, solver);
+            }
+        } 
     }
 
     void reset() override {

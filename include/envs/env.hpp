@@ -93,7 +93,7 @@ public:
      * @brief Return the action's succesor states' probabilities
      * 
      */
-    virtual std::map<S, float> outcome_probabilities(S state, A action) = 0;
+    virtual std::map<S, float> outcome_probabilities(S state, A action) const = 0;
 
     /**
      * @brief Reset the environment

@@ -8,6 +8,12 @@
 namespace rats { 
 
 class frozen_lake : public environment<int, size_t> {
+    enum frozen_lake_action {
+        LEFT = 0,
+        DOWN = 1,
+        RIGHT = 2,
+        UP = 3
+    };
 private:
     py::module_ gym;
     py::object python_env;
@@ -32,6 +38,8 @@ public:
 
     void restore_checkpoint(size_t id) override;
     void make_checkpoint(size_t id) override;
+
+    std::map<int, float> outcome_probabilities(int state, size_t action) const override;
 
     void reset() override;
 };
@@ -73,6 +81,27 @@ void frozen_lake::reset() {
     auto [s, info] = python_env.attr("reset")().cast<std::tuple<int, py::dict>>();
     this->state = s;
     this->over = false;
+}
+
+std::map<int, float> frozen_lake::outcome_probabilities(int s, size_t action) const {
+    std::map<int, float> probs;
+    if (action != LEFT) {
+        int dest = s % 4 != 3 ? s + 1 : s;
+        probs[dest] += 1/3.0f;
+    }
+    if (action != RIGHT) {
+        int dest = s % 4 != 0 ? s - 1 : s;
+        probs[dest] += 1/3.0f;
+    }
+    if (action != DOWN) {
+        int dest = s > 3 ? s - 4 : s;
+        probs[dest] += 1/3.0f;
+    }
+    if (action != UP) {
+        int dest = s < 12 ? s + 4 : s;
+        probs[dest] += 1/3.0f;
+    }
+    return probs;
 }
 
 } // namespace rats

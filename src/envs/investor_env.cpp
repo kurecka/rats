@@ -53,6 +53,18 @@ void investor_env::restore_checkpoint(size_t id) {
     }
 }
 
+std::map<int, float> investor_env::outcome_probabilities(int state, size_t action) const {
+    std::map<int, float> probs;
+    if (action == RISKY) {
+        probs[state + 12] = 0.2f;
+        probs[state - 2] = 0.8f;
+    } else {
+        probs[state + 1] = 0.7f;
+        probs[state - 1] = 0.3f;
+    }
+    return probs;
+}
+
 void investor_env::reset() {
     spdlog::debug("Reset environment");
     wealth = initial_wealth;

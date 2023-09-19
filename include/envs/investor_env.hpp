@@ -42,6 +42,7 @@ public:
 
     void restore_checkpoint(size_t id) override;
     void make_checkpoint(size_t id) override;
+    std::map<int, float> outcome_probabilities(int state, size_t action) const override;
 
     void reset() override;
 };

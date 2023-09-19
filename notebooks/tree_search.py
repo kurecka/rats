@@ -1,16 +1,23 @@
 import rats
-import gymnasium as gym
 
-rats.set_log_level("DEBUG")
+rats.set_log_level('INFO')
 
-e = rats.FrozenLake()
-h = rats.EnvironmentHandler(e)
-a = rats.PrimalUCT(h, max_depth=10, num_sim=10, risk_thd=0.4, gamma=0.99)
+e = rats.InvestorEnv(2, 20)
 
-e.reset()
-a.reset()
-h.reset()
+thd = 0.0
 
-while not e.is_over():
-    a.play()
-    print(h.get_num_steps(), h.get_current_state(), h.get_reward(), h.get_penalty(), e.is_over())
+agents = [
+    rats.ConstantAgent(rats.EnvironmentHandler(e), 0),
+    rats.ConstantAgent(rats.EnvironmentHandler(e), 1),
+    rats.PrimalUCT(rats.EnvironmentHandler(e), max_depth=10, num_sim=40, risk_thd=thd, gamma=0.9),
+    rats.DualUCT(rats.EnvironmentHandler(e), max_depth=10, num_sim=40, risk_thd=thd, gamma=0.9),
+    rats.ParetoUCT(rats.EnvironmentHandler(e), max_depth=10, num_sim=40, risk_thd=thd, gamma=0.9),
+]
+
+for agent in agents:
+    n = 100
+    o = rats.Orchestrator()
+    o.load_agent(agent)
+    o.load_environment(e)
+    o.run(n)
+    

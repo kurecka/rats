@@ -7,23 +7,62 @@
 namespace rats {
 namespace ts {
 
+struct outcome_support {
+    // outcome index, curve vertex index
+    std::vector<std::pair<size_t, size_t>> support;
+
+    outcome_support() = default;
+    outcome_support(size_t o, size_t vtx) : support({{o, vtx}}) {}
+
+    outcome_support& operator+=(const outcome_support& other) {
+        support.insert(support.end(), other.support.begin(), other.support.end());
+        return *this;
+    }
+};
+
 struct EPC {
     size_t num_samples = 0;
-    std::vector<std::pair<float, float>> points;
+    std::vector<std::tuple<float, float, outcome_support>> points;
 
 public:
-    EPC() = default;
+    EPC() : num_samples(0), points({{0, 0, {}}}) {}
+    EPC(EPC&&) = default;
+    EPC(const EPC&) = default;
+    EPC& operator=(EPC&&) = default;
+    EPC& operator=(const EPC&) = default;
 
-    EPC(float r, float p)
-    : num_samples(1)
-    , points({{r, p}})
-    {}
+    std::pair<float, float> r_bounds() const {
+        return {std::get<0>(points.front()), std::get<0>(points.back())};
+    }
+
+    EPC& operator+=(std::pair<float, float> p) {
+        for (auto& [r, prob, supp] : points) {
+            r += p.first;
+            prob += p.second;
+        }
+        return *this;
+    }
+
+    EPC& add_and_fix(float dr, float dp) {
+        for (auto& [r, prob, supp] : points) {
+            r += dr;
+            prob = std::max(0.f, prob + dp);
+        }
+        return *this;
+    }
+
+    EPC operator*=(float f) {
+        for (auto& [r, prob, supp] : points) {
+            r *= f;
+        }
+        return *this;
+    }
 };
 
 
 std::string to_string(const EPC& curve) {
     std::string s = "[";
-    for (auto [r, p] : curve.points) {
+    for (auto [r, p, supp] : curve.points) {
         s += "(" + std::to_string(r) + ", " + std::to_string(p) + "), ";
     }
     s += "]";
@@ -31,72 +70,68 @@ std::string to_string(const EPC& curve) {
 }
 
 
-std::pair<EPC, std::vector<size_t>> convex_hull_merge(std::vector<EPC*> curves) {
+EPC convex_hull_merge(std::vector<EPC*> curves) {
     if (curves.size() == 1) {
         return *curves[0];
     }
 
-    std::vector<std::tuple<float, float, size_t>> points;
+    std::vector<std::tuple<float, float, outcome_support>> points;
     for (size_t i = 0; i < curves.size(); ++i) {
-        for (auto [r, p] : curves[i]->points) {
-            points.push_back({r, p, i});
+        for (size_t j = 0; j < curves[i]->points.size(); ++j) {
+            auto [r, p, supp] = curves[i]->points[j];
+            points.push_back({r, p, {i, j}});
         }
     }
 
-    std::vector<std::tuple<float, float, size_t>> hull = upper_hull(points);
-    std::vector<std::pair<float, float>> hull_points(hull.size());
-    std::vector<size_t> hull_indices(hull.size());
-    for (size_t i = 0; i < hull.size(); ++i) {
-        auto [r, p, idx] = hull[i];
-        hull_points[i] = {r, p};
-        hull_indices[i] = idx;
-    }
+    std::vector<std::tuple<float, float, outcome_support>> hull = upper_hull(points);
     EPC curve;
-    curve.points = hull_points;
+    curve.points = hull;
     curve.num_samples = 0;
     for (auto c : curves) {
         curve.num_samples += c->num_samples;
     }
-    return curve, hull_indices;
+    return curve;
 }
 
-std::pair<EPC, std::vector<size_t>> weighted_merge(std::vector<EPC*> curves) {
+EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights) {
     if (curves.size() == 1) {
         return *curves[0];
     }
 
-    std::vector<std::vector<std::pair<float, float>>> points(curves.size());
-    size_t total_samples = 0;
+    std::vector<std::vector<std::tuple<float, float, outcome_support>>> points(curves.size());
     size_t total_points = 0;
     for (size_t i = 0; i < curves.size(); ++i) {
-        total_samples += curves[i]->num_samples;
         total_points += curves[i]->points.size();
     }
+    // Estimate outcome probabilities
     for (size_t i = 0; i < curves.size(); ++i) {
-        float f = static_cast<float>(curves[i]->num_samples) / total_samples;
-        for (auto [r, p] : curves[i]->points) {
-            points[i].push_back({f * r, f * p});
+        float w = weights[i];
+        for (size_t j = 0; j < curves[i]->points.size(); ++j) {
+            auto [r, p, supp] = curves[i]->points[j];
+            points[i].push_back({w * r, w * p, {i, j}});
         }
     }
 
-    std::vector<size_t> idxs(curves.size(), 0);
-    std::vector<std::pair<float, float>> merged_points(1 + total_points - curves.size());
-    merged_points[0] = {0, 0};
+    std::vector<std::tuple<float, float, outcome_support>> merged_points(1 + total_points - curves.size());
+    // Initialize first point as a sum of the first points of all curves
+    merged_points[0] = {0, 0, {}};
     for (size_t i = 0; i < curves.size(); ++i) {
-        merged_points[0].first += points[i][0].first;
-        merged_points[0].second += points[i][0].second;
+        std::get<0>(merged_points[0]) += std::get<0>(points[i][0]);
+        std::get<1>(merged_points[0]) += std::get<1>(points[i][0]);
     }
-
-    std::vector<size_t> idxs(merged_points-1);
-
+    // Initialize indexes of the last processed points of each curve
+    std::vector<size_t> point_idxs(curves.size(), 0);
 
     for (size_t i = 1; i < merged_points.size(); ++i) {
-        double max_grad = -1;
+        // find curve with the highest gradient
+        double max_grad = -std::numeric_limits<double>::infinity();
         size_t max_idx = 0;
 
         for (size_t j = 0; j < curves.size(); ++j) {
-            if (idxs[j] + 1 < points[j].size()) {
-                double grad = (points[j][idxs[j] + 1].first - points[j][idxs[j]].first) / static_cast<double>(points[j][idxs[j] + 1].second - points[j][idxs[j]].second);
+            if (point_idxs[j] + 1 < points[j].size()) {
+                auto [r1, p1, supp1] = points[j][point_idxs[j]];
+                auto [r2, p2, supp2] = points[j][point_idxs[j] + 1];
+                double grad = static_cast<double>(r2 - r1) / static_cast<double>(p2 - p1);
                 if (grad > max_grad) {
                     max_grad = grad;
                     max_idx = j;
@@ -104,15 +139,16 @@ std::pair<EPC, std::vector<size_t>> weighted_merge(std::vector<EPC*> curves) {
             }
         }
 
-        merged_points[i] = merged_points[i - 1];
-        merged_points[i].first += points[max_idx][idxs[max_idx] + 1].first - points[max_idx][idxs[max_idx]].first;
-        merged_points[i].second += points[max_idx][idxs[max_idx] + 1].second - points[max_idx][idxs[max_idx]].second;
-        idxs[i] = max_idx;
+        auto& [r, p, supp] = merged_points[i] = merged_points[i - 1];
+        auto& [r1, p1, supp1] = points[max_idx][point_idxs[max_idx]];
+        auto& [r2, p2, supp2] = points[max_idx][point_idxs[max_idx] + 1];
+        r += r2 - r1;
+        p += p2 - p1;
+        point_idxs[max_idx] += 1;
     }
 
     EPC curve;
     curve.points = merged_points;
-    curve.num_samples = total_samples;
     return curve;
 }
 

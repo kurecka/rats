@@ -12,18 +12,34 @@ namespace rats {
 namespace ts {
 
 template <typename S, typename A>
+class prob_predictor {
+    std::map<std::tuple<S, A, S>, size_t> counts;
+    std::map<std::pair<S, A>, size_t> total_counts;
+public:
+    void add(S s0, A a1, S s1) {
+        counts[{s0, a1, s1}] += 1;
+        total_counts[{s0, a1}] += 1;
+    }
+
+    float predict(S s0, A a1, S s1) {
+        return static_cast<float>(counts[{s0, a1, s1}]) / total_counts[{s0, a1}];
+    }
+};
+
+template <typename S, typename A>
 struct pareto_uct_data {
     float risk_thd;
     float sample_risk_thd;
+    size_t descent_point;
     float exploration_constant;
     environment_handler<S, A>& handler;
+    prob_predictor<S, A> predictor;
 };
 
 
 template <typename pareto_curve>
 struct pareto_value {
     pareto_curve curve;
-    std::vector<size_t> idx;
     float risk_thd;
 };
 
@@ -39,91 +55,146 @@ A select_action_pareto(state_node<S, A, DATA, pareto_value<pareto_curve>, pareto
     float risk_thd = node->common_data->sample_risk_thd;
     float c = node->common_data->exploration_constant;
 
-    auto& children = node->children;
+    pareto_curve merged_curve;
+    pareto_curve* curve_ptr = &node->v.curve;
 
-    auto [min_r, max_r] = children[0].q.curve.r_bounds();
-    for (size_t i = 0; i < children.size(); ++i) {
-        auto [er, ep] = children[i].q.curve.r_bounds();
-        min_r = std::min(min_r, er);
-        max_r = std::max(max_r, er);
-    }
-    if (min_r >= max_r) {
-        if (min_r < 0) {
-            max_r = 0.9f * min_r;
-        } else {
-            max_r = 1.1f * min_r;
-        }
-    }
-
-    std::vector<float> uct_bonus(children.size());
-
-    for (size_t i = 0; i < children.size(); ++i) {
-        uct_bonus[i] = explore * c * static_cast<float>(
-            sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-        );
-    }
-
-    float max_v = -std::numeric_limits<float>::infinity();
-    float max_thd = 0;
-    size_t max_idx = 0;
-
-    for (size_t i = 0; i < children.size(); ++i) {
-        for (size_t j = i+1; j < children.size(); ++j) {
-            auto [p1, prob1, p2, v] = mix(
-                children[i].q.curve, children[j].q.curve,
-                uct_bonus[i], uct_bonus[j],
-                10, 0.01f, risk_thd
-            );
-
-            if (v > max_v) {
-                max_v = v;
-                if (rng::unif_float() < prob1) {
-                    max_idx = i;
-                    max_thd = p1;
-                } else {
-                    max_idx = j;
-                    max_thd = p2;
-                }
+    if (explore) {
+        curve_ptr = &merged_curve;
+        // compute uct bonuses
+        std::vector<pareto_curve> action_curves;
+        std::vector<pareto_curve*> curve_ptrs;
+        for (auto& child : node->children) {
+            action_curves.push_back(child.q.curve);
+            float r_uct;
+            float p_uct;
+            if (child.q.curve.num_samples == 0) {
+                r_uct = std::numeric_limits<float>::infinity();
+                p_uct = 0;
+            } else {
+                r_uct = c * powf(static_cast<float>(node->num_visits), 0.8f) / child.q.curve.num_samples;
+                p_uct = -c * powf(static_cast<float>(node->num_visits), 0.6f) / child.q.curve.num_samples;
             }
+            action_curves.back().add_and_fix(r_uct, p_uct);
+        }
+        for (auto& curve : action_curves) {
+            curve_ptrs.push_back(&curve);
+        }
+        merged_curve = convex_hull_merge(curve_ptrs);
+    }
+
+    size_t idx;
+    // TODO: bin search
+    for (idx = 0; idx < curve_ptr->points.size()-1; ++idx) {
+        if (std::get<1>(curve_ptr->points[idx + 1]) > risk_thd) {
+            break;
         }
     }
 
-    node->common_data->sample_risk_thd = max_thd;
-    return node->actions[max_idx];
+
+    size_t opt_vertex_idx;
+
+    if (idx == curve_ptr->points.size() - 1) {
+        opt_vertex_idx = curve_ptr->points.size() - 1;
+    } else {
+        float p1 = std::get<1>(curve_ptr->points[idx]);
+        float p2 = std::get<1>(curve_ptr->points[idx + 1]);
+
+        float prob2 = (risk_thd - p1) / (p2 - p1);
+
+        if (p1 > risk_thd) {
+            opt_vertex_idx = idx;
+        } if (rng::unif_float() < prob2) {
+            opt_vertex_idx = idx + 1;
+        } else {
+            opt_vertex_idx = idx;
+        }
+    }
+    auto& [r, p, supp] = curve_ptr->points[opt_vertex_idx];
+    auto [o, vtx] = supp.support[0];
+
+    node->common_data->descent_point = vtx;
+    return o;
 }
 
+
+/**
+ * @brief Update the nodes after a descent
+ * 
+ * Update sample risk threshold after a descent through an action and a state node.
+ */
 template<typename S, typename A, typename DATA, typename pareto_curve>
 void descend_callback(
-    state_node<S, A, DATA, pareto_value<pareto_curve>, pareto_value<pareto_curve>>*,
-    A, action_node<S, A, DATA, pareto_value<pareto_curve>, pareto_value<pareto_curve>>* action,
-    S, state_node<S, A, DATA, pareto_value<pareto_curve>, pareto_value<pareto_curve>>* new_state
+    state_node<S, A, DATA, pareto_value<pareto_curve>, pareto_value<pareto_curve>>* s0,
+    A a, action_node<S, A, DATA, pareto_value<pareto_curve>, pareto_value<pareto_curve>>* action,
+    S s, state_node<S, A, DATA, pareto_value<pareto_curve>, pareto_value<pareto_curve>>* new_state
 ) {
     DATA* common_data = action->common_data;
-    float risk_thd = action->q.risk_thd = common_data->sample_risk_thd;
-    float d = action->q.curve.derivative(risk_thd);
-    float new_risk_thd = new_state->v.curve.inverse_derivative(d);
-    new_state->v.risk_thd = new_risk_thd;
-    common_data->sample_risk_thd = new_risk_thd;
+
+    common_data->predictor.add(s0->state, a, s);
+
+    size_t point_idx = common_data->descent_point;
+    size_t state_idx = action->child_idx[s];
+    auto& [r, p, supp] = action->q.curve.points[point_idx];
+    if (supp.support.size() > state_idx) {
+        auto& [o, vtx] = supp.support[state_idx];
+        common_data->sample_risk_thd = std::get<1>(new_state->v.curve.points[vtx]);
+    }
 }
 
+template<typename S, typename A, typename DATA, typename V, typename Q>
+void exact_pareto_propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
+    using state_node_t = state_node<S, A, DATA, V, Q>;
+    using action_node_t = action_node<S, A, DATA, V, Q>;
 
-template<typename S, typename A, typename DATA, typename pareto_curve>
-void pareto_prop_v_value(
-    state_node<S, A, DATA, pareto_value<pareto_curve>, pareto_value<pareto_curve>>* sn,
-    float disc_r, float disc_p
-) {
-    sn->num_visits++;
-    sn->v.curve.update(disc_r, disc_p);
-}
+    action_node_t* prev_an = nullptr;
+    state_node_t* current_sn = leaf;
 
+    // TODO: rolout
+    // float disc_r = leaf->rollout_reward;
+    // float disc_p = leaf->rollout_penalty;
 
-template<typename S, typename A, typename DATA, typename pareto_curve>
-void pareto_prop_q_value(
-    action_node<S, A, DATA, pareto_value<pareto_curve>, pareto_value<pareto_curve>>* an,
-    float disc_r, float disc_p
-) {
-    an->num_visits++;
-    an->q.curve.update(disc_r, disc_p);
+    while (true) {
+        std::vector<EPC*> action_curves;
+        for (auto& child : current_sn->children) {
+            action_curves.push_back(&child.q.curve);
+        }
+        EPC merged_curve = convex_hull_merge(action_curves);
+        ++current_sn->num_visits;
+        merged_curve.num_samples = current_sn->num_visits;
+        merged_curve += {current_sn->observed_reward, current_sn->observed_penalty};
+        current_sn->v.curve = merged_curve;
+
+        if (current_sn->is_root()) {
+            break;
+        }
+
+        action_node_t* current_an = current_sn->get_parent();
+        std::vector<EPC*> state_curves;
+        for (auto& [s, child] : current_an->children) {
+            state_curves.push_back(&(child->v.curve));
+        }
+        std::vector<float> weights;
+        weights.reserve(current_an->children.size());
+        auto& predictor = current_an->common_data->predictor;
+        S s0 = current_an->parent->state;
+        A a1 = current_an->action;
+        std::string weights_str;
+        for (auto& [s1, child] : current_an->children) {
+            weights.push_back(predictor.predict(s0, a1, s1));
+            weights_str += "s(" + std::to_string(s1) + ")=" + std::to_string(weights.back()) + ", ";
+        }
+        
+        spdlog::debug("S = {}, A = {}", s0, a1);
+        spdlog::debug("Weights: {}", weights_str);
+        merged_curve = weighted_merge(state_curves, weights);
+        ++current_an->num_visits;
+        merged_curve.num_samples = current_an->num_visits;
+        merged_curve *= gamma;
+        current_an->q.curve = merged_curve;
+
+        current_sn = current_an->get_parent();
+        prev_an = current_an;
+    }
 }
 
 
@@ -137,16 +208,16 @@ void pareto_prop_q_value(
 template <typename S, typename A>
 class pareto_uct : public agent<S, A> {
     using data_t = pareto_uct_data<S, A>;
-    using v_t = pareto_value<quad_pareto_curve>;
-    using q_t = pareto_value<quad_pareto_curve>;
-    using pareto_curve = quad_pareto_curve;
+    using v_t = pareto_value<EPC>;
+    using q_t = pareto_value<EPC>;
+    using pareto_curve = EPC;
     using uct_state_t = state_node<S, A, data_t, v_t, q_t>;
     using uct_action_t = action_node<S, A, data_t, v_t, q_t>;
     
     constexpr static auto select_action_f = select_action_pareto<S, A, data_t, pareto_curve>;
     constexpr static auto descend_callback_f = descend_callback<S, A, data_t, pareto_curve>;
     constexpr static auto select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_f, descend_callback_f>;
-    constexpr static auto propagate_f = propagate<S, A, data_t, v_t, q_t, pareto_prop_v_value<S, A, data_t, pareto_curve>, pareto_prop_q_value<S, A, data_t, pareto_curve>>;
+    constexpr static auto propagate_f = exact_pareto_propagate<S, A, data_t, v_t, q_t>;
 
 private:
     int max_depth;
@@ -168,7 +239,7 @@ public:
     , num_sim(_num_sim)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
-    , common_data({_risk_thd, _risk_thd, _exploration_constant, agent<S, A>::handler})
+    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, agent<S, A>::handler, {}})
     , root(std::make_unique<uct_state_t>())
     {
         reset();
@@ -180,21 +251,26 @@ public:
         for (int i = 0; i < num_sim; i++) {
             spdlog::trace("Simulation {}", i);
             common_data.sample_risk_thd = common_data.risk_thd;
+            spdlog::trace("Select");
             uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
+            spdlog::trace("Expand");
             expand_state(leaf);
+            spdlog::trace("Rollout");
             void_rollout(leaf);
+            spdlog::trace("Propagate");
             propagate_f(leaf, gamma);
+            spdlog::trace("Reset");
             agent<S, A>::handler.sim_reset();
         }
 
         common_data.sample_risk_thd = common_data.risk_thd;
         A a = select_action_pareto<S, A, data_t, pareto_curve>(root.get(), false);
 
-        // static bool logged = false;
-        // if (!logged) {
-        //     spdlog::get("graphviz")->info(to_graphviz_tree(*root.get(), 9));
-        //     logged = true;
-        // }
+        static bool logged = false;
+        if (!logged) {
+            spdlog::debug(to_graphviz_tree(*root.get(), 9));
+            logged = true;
+        }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         spdlog::debug("Play action: {}", a);
@@ -202,7 +278,7 @@ public:
 
         uct_action_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand_action(an, s, r, p, t);
+            expand_action(an, s, r, p, t);
         }
 
         std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
@@ -219,6 +295,7 @@ public:
         common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
         root = std::make_unique<uct_state_t>();
         root->common_data = &common_data;
+        root->state = agent<S, A>::handler.get_current_state();
     }
 
     std::string name() const override {

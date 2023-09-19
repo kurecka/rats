@@ -172,7 +172,7 @@ public:
 
         uct_action_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand_action(an, s, r, p, t);
+            expand_action(an, s, r, p, t);
         }
 
         common_data.risk_thd = an->children[s]->v.second;

@@ -70,6 +70,7 @@ public:
     A action;
     state_node_t *parent;
     std::map<S, std::unique_ptr<state_node_t>> children;
+    std::map<S, size_t> child_idx;
 
     size_t num_visits = 0;
 
@@ -91,7 +92,6 @@ public:
  * TREE SEARCH
  *********************************************************************/
 template<typename S, typename A, typename DATA, typename V, typename Q>
-// std::unique_ptr<state_node<S, A, DATA, V, Q>>
 void expand_state(state_node<S, A, DATA, V, Q>* sn) {
     sn->actions = sn->common_data->handler.possible_actions();
     sn->children.resize(sn->actions.size());
@@ -103,21 +103,21 @@ void expand_state(state_node<S, A, DATA, V, Q>* sn) {
 }
 
 template<typename S, typename A, typename DATA, typename V, typename Q>
-std::unique_ptr<state_node<S, A, DATA, V, Q>> expand_action(
+void expand_action(
     action_node<S, A, DATA, V, Q>* an,
     S s, float r, float p, bool t
 ) {
     using state_node_t = state_node<S, A, DATA, V, Q>;
 
-    std::unique_ptr<state_node_t> new_sn = std::make_unique<state_node_t>();
+    an->child_idx[s] = an->children.size();
+
+    std::unique_ptr<state_node_t>& new_sn = an->children[s] = std::make_unique<state_node_t>();
     new_sn->state = s;
     new_sn->parent = an;
     new_sn->common_data = an->common_data;
     new_sn->observed_reward = r;
     new_sn->observed_penalty = p;
     new_sn->terminal = t;
-
-    return new_sn;
 }
 
 template<typename S, typename A, typename DATA, typename V, typename Q,
@@ -139,7 +139,7 @@ state_node<S, A, DATA, V, Q>* select_leaf(
         action_node_t *an = sn->get_child(action);
         auto [s, r, p, t] = sn->common_data->handler.sim_action(action);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand_action(an, s, r, p, t);
+            expand_action(an, s, r, p, t);
         }
         state_node_t* new_sn = an->get_child(s);
         descent_callback(sn, action, an, s, new_sn);
@@ -167,7 +167,7 @@ void propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
     while (!current_sn->is_root()) {
         prop_v(current_sn,  disc_r, disc_p);
         disc_r = current_sn->observed_reward + gamma * disc_r;
-        disc_p = current_sn->observed_penalty + gamma * disc_p;
+        disc_p = current_sn->observed_penalty + disc_p;
         action_node_t* current_an = current_sn->get_parent();
         prop_q(current_an, disc_r, disc_p);
         current_sn = current_an->get_parent();

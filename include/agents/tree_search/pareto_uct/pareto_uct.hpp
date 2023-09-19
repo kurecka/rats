@@ -263,7 +263,7 @@ public:
 
         uct_action_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand_action(an, s, r, p, t);
+            expand_action(an, s, r, p, t);
         }
 
         std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);

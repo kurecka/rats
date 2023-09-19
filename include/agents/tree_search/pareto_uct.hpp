@@ -1,2 +1,2 @@
 #pragma once
-#include "pareto_uct/pareto_uct.hpp"
+#include "pareto_uct/exact_pareto_uct.hpp"

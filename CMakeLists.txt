@@ -66,7 +66,7 @@ target_include_directories(${LIBRARY_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(${LIBRARY_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 target_include_directories(${LIBRARY_NAME} SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(${LIBRARY_NAME} PUBLIC Eigen3::Eigen)
-target_link_libraries(${LIBRARY_NAME} PUBLIC ortools::ortools)
+target_link_libraries(${LIBRARY_NAME} PRIVATE ortools::ortools)
 target_link_libraries(${LIBRARY_NAME} PRIVATE pybind11::pybind11)
 
 # Set the compile options you want (change as needed).

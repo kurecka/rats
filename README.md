@@ -88,7 +88,7 @@ To update your environment according to the env file use:
 conda env update -f conda_env.yaml
 ```
 
-To export the description of your current conda environment use:
+<!-- To export the description of your current conda environment use:
 ```bash
-conda env export > conda_env.yaml
-```
+conda env export --no-build --from-history | grep -v prefix > conda_env.yaml
+``` -->

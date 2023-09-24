@@ -19,7 +19,9 @@ void set_log_level(std::string level) {
         {"debug", spdlog::level::debug},
         {"info", spdlog::level::info},
         {"warn", spdlog::level::warn},
+        {"warning", spdlog::level::warn},
         {"err", spdlog::level::err},
+        {"error", spdlog::level::err},
         {"critical", spdlog::level::critical},
         {"off", spdlog::level::off}
     };

@@ -1,0 +1,210 @@
+#!/usr/bin/env python
+import os
+from sys import argv
+import yaml
+import multiprocessing
+
+def run_remote_command(host, cmd, user):
+    print(f'Running bash command on {host}:')
+    print(cmd)
+    print(f'ssh {user}@{host} "{cmd}"')
+    os.system(f'ssh {user}@{host} "{cmd}"')
+
+
+def run_remote_commands(host, cmds, user, msg=None):
+    if msg:
+        print(msg)
+    for cmd in cmds:
+        run_remote_command(host, cmd, user)
+
+
+def run_remote_docker_command(host, cmd, user, container_name):
+    print(f'Running bash command on {host}:')
+    print(cmd)
+    print(f'ssh {user}@{host} "docker exec -it {container_name} {cmd}"')
+    os.system(f'ssh {user}@{host} "docker exec -it {container_name} {cmd}"')
+
+
+def tuple_run_remote_commands(tuple):
+    host, cmds, user = tuple
+    run_remote_commands(host, cmds, user)
+
+
+def ray_up(head_ip, worker_ips, user, port=6379):
+    run_remote_commands(head_ip, [
+        'ray stop',
+        f'ray start --head --port={port}'
+    ], user, msg=f'Starting head node {head_ip}...')
+    params = [(worker, [
+        'ray stop',
+        f'ray start --address={head_ip}:{port}'
+        ], user) for worker in worker_ips]
+    with multiprocessing.Pool(processes=max(len(params), 1)) as pool:
+        pool.map(tuple_run_remote_commands, params)
+
+
+def ray_up_docker(head_ip, worker_ips, user, docker_image, docker_container_name, docker_pull_before_run=False, docker_run_options=[], port=6379):
+    head_commands = [f'docker stop {docker_container_name}']
+    if docker_pull_before_run:
+        head_commands.append(f'docker pull {docker_image}')
+
+    volume = '-v /tmp/ray:/tmp/ray'
+    docker_command = f'docker run --network host -d -it --rm --name {docker_container_name} {volume} {" ".join(docker_run_options)} {docker_image}'
+    
+    head_commands.append(docker_command + f" sh -c 'ray start --head --port={port} --disable-usage-stats; bash'")
+    run_remote_commands(head_ip, head_commands, user, msg=f'Starting head node {head_ip}:{port}...')
+
+    worker_commands = [f'docker stop {docker_container_name}']
+    if docker_pull_before_run:
+        worker_commands.append(f'docker pull {docker_image}')
+    worker_commands.append(docker_command + f" sh -c 'ray start --address={head_ip}:{port}; bash'")
+    params = [(worker, worker_commands, user) for worker in worker_ips]
+    with multiprocessing.Pool(processes=max(len(params), 1)) as pool:
+        pool.map(tuple_run_remote_commands, params)
+
+
+def mount_files(file_mounts, head_ip, user):
+    for target, source in file_mounts.items():
+        cmd = f'rsync -avz --mkpath {source} {user}@{head_ip}:{target}'
+        os.system(cmd)
+
+def cluster_sync(files, head_ip, worker_ips, user):
+    params = [(head_ip, [
+        f'rsync -avz --mkpath {file} {user}@{worker}:{file}' for file in files
+    ], user) for worker in worker_ips]
+    with multiprocessing.Pool(processes=max(len(worker_ips), 1)) as pool:
+        pool.map(tuple_run_remote_commands, params)
+
+def ray_down(head_ip, worker_ips, user):
+    run_remote_commands(head_ip, [
+        'ray stop'
+    ], user, msg=f'Stopping head node {head_ip}...')
+
+    params = [(worker, [
+        'ray stop'
+        ], user) for worker in worker_ips]
+    with multiprocessing.Pool(processes=max(len(params), 1)) as pool:
+        pool.map(tuple_run_remote_commands, params)
+
+
+def ray_down_docker(head_ip, worker_ips, user, docker_container_name):
+    run_remote_commands(head_ip, [
+        f'docker stop {docker_container_name}'
+    ], user, msg=f'Stopping head node {head_ip}...')
+
+    params = [(worker, [
+        f'docker stop {docker_container_name}'
+        ], user) for worker in worker_ips]
+    with multiprocessing.Pool(processes=max(len(params), 1)) as pool:
+        pool.map(tuple_run_remote_commands, params)
+
+
+def ray_dashboard(host, user, port=8265):
+    os.system(f'ssh -f -N -L {port}:localhost:{port} {user}@{host}')
+
+def validate_config(config, _structure):
+    structure = _structure.value if isinstance(_structure, Maybe) else _structure
+    if structure == str:
+        assert isinstance(config, str)
+    elif structure == bool:
+        assert isinstance(config, bool)
+    elif structure == int:
+        assert isinstance(config, int)
+    elif isinstance(structure, list):
+        assert isinstance(config, list)
+        for item in config:
+            validate_config(item, structure[0])
+    elif isinstance(structure, dict):
+        assert isinstance(config, dict)
+        for key, key_type in structure.items():
+            if not isinstance(key_type, Maybe) or key in config:
+                if key not in config:
+                    print(f'Key {key} not found in config')
+                assert key in config
+                validate_config(config[key], key_type)
+
+class Maybe:
+    def __init__(self, value):
+        self.value = value
+
+def load_config(config_path):
+    structure = {
+        'auth': {'ssh_user': str},
+        'provider': {
+            'head_ip': str,
+            'worker_ips': [str],
+        },
+        'docker': Maybe({
+            'image': str,
+            'container_name': str,
+            'pull_before_run': Maybe(bool),
+            'run_options': Maybe([str]),
+        })
+    }
+    
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+        validate_config(config, structure)
+    
+    conf = {
+        'user': config['auth']['ssh_user'],
+        'head_ip': config['provider']['head_ip'],
+        'worker_ips': config['provider']['worker_ips']
+    }
+
+    if 'docker' in config:
+        conf['docker'] = {
+            'image': config['docker']['image'],
+            'container_name': config['docker']['container_name'],
+            'pull_before_run': config['docker']['pull_before_run'] if 'pull_before_run' in config['docker'] else False,
+            'run_options': config['docker']['run_options'] if 'run_options' in config['docker'] else []
+        }
+    
+    if 'file_mounts' in config:
+        conf['file_mounts'] = config['file_mounts']
+    
+    if 'cluster_synced_files' in config:
+        conf['cluster_synced_files'] = config['cluster_synced_files']
+    
+    return conf
+
+def help():
+    print('Usage: myray.py <up|down|dashboard> <config_path>.yaml')
+
+if __name__ == '__main__':
+    if len(argv) != 3:
+        help()
+        exit(1)
+
+    config = load_config(argv[2])
+    
+    if argv[1] == 'up':
+        if 'docker' in config:
+            ray_up_docker(
+                config['head_ip'], config['worker_ips'], config['user'],
+                config['docker']['image'], config['docker']['container_name'], config['docker']['pull_before_run'], config['docker']['run_options']
+            )
+        else:
+            ray_up(config['head_ip'], config['worker_ips'], config['user'])
+        if 'file_mounts' in config:
+            mount_files(config['file_mounts'], config['head_ip'], config['user'])
+        if 'cluster_synced_files' in config:
+            cluster_sync(config['cluster_synced_files'], config['head_ip'], config['worker_ips'], config['user'])
+    elif argv[1] == 'sync':
+        if 'file_mounts' in config:
+            mount_files(config['file_mounts'], config['head_ip'], config['user'])
+        if 'cluster_synced_files' in config:
+            cluster_sync(config['cluster_synced_files'], config['head_ip'], config['worker_ips'], config['user'])
+    elif argv[1] == 'down':
+        if 'docker' in config:
+            ray_down_docker(
+                config['head_ip'], config['worker_ips'], config['user'],
+                config['docker']['container_name']
+            )
+        else:
+            ray_down(config['head_ip'], config['worker_ips'], config['user'])
+    elif argv[1] == 'dashboard':
+        ray_dashboard(config['head_ip'], config['user'])
+    else:
+        help()
+        exit(1)

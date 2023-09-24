@@ -1,7 +1,7 @@
 #pragma once
 
 #include "tree_search.hpp"
-#include <iostream>
+#include <fstream>
 #include <vector>
 
 namespace rats::ts {
@@ -85,4 +85,4 @@ namespace rats::ts {
         str += to_graphviz(node, "", id, depth) + "}\n";
         return str;
     }
-};
+}

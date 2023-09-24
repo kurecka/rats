@@ -8,6 +8,7 @@ option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defi
 option(ENABLE_LTO "Enable link time optimization" ON)
 option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
+option(PEDANTIC "Enable pedantic compiler warnings." ON)
 
 # Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -69,9 +70,12 @@ target_link_libraries(${LIBRARY_NAME} PUBLIC Eigen3::Eigen)
 target_link_libraries(${LIBRARY_NAME} PRIVATE ortools::ortools)
 target_link_libraries(${LIBRARY_NAME} PRIVATE pybind11::pybind11)
 
-# Set the compile options you want (change as needed).
-target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors -Wno-poison-system-directories)
+# Set the compile options you want (change as needed). Only if PEDANTIC is ON.
+if(PEDANTIC)
+    message(STATUS "Enabling pedantic compiler warnings for ${LIBRARY_NAME}. If this is annoying, set -DPEDANTIC=OFF.")
+    target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
+    target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors -Wno-poison-system-directories)
+endif()
 
 # --------------------------------------------------------------------------------
 #                            Build targets
@@ -94,9 +98,12 @@ target_link_libraries(${_target} PUBLIC ortools::ortools)
 target_link_libraries(${_target} PRIVATE pybind11::pybind11)
 
 # Set the compilation options
-target_set_warnings(${_target} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-target_compile_options(${_target} PRIVATE -Wno-missing-prototypes)
-target_compile_options(${_target} PRIVATE -Wno-poison-system-directories)
+if (PEDANTIC)
+    message(STATUS "Enabling pedantic compiler warnings for ${_target}. If this is annoying, set -DPEDANTIC=OFF.")
+    target_set_warnings(${_target} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
+    target_compile_options(${_target} PRIVATE -Wno-missing-prototypes)
+    target_compile_options(${_target} PRIVATE -Wno-poison-system-directories)
+endif()
 target_enable_lto(${_target} optimized)  # enable link-time-optimization if available for non-debug configurations
 endforeach()
 

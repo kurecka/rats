@@ -218,7 +218,6 @@ class pareto_uct : public agent<S, A> {
     constexpr static auto descend_callback_f = descend_callback<S, A, data_t, pareto_curve>;
     constexpr static auto select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_f, descend_callback_f>;
     constexpr static auto propagate_f = exact_pareto_propagate<S, A, data_t, v_t, q_t>;
-
 private:
     int max_depth;
     int num_sim;
@@ -227,12 +226,15 @@ private:
 
     data_t common_data;
 
+    int graphviz_depth = -1;
+    std::string dot_tree;
+
     std::unique_ptr<uct_state_t> root;
 public:
     pareto_uct(
         environment_handler<S, A> _handler,
         int _max_depth, int _num_sim, float _risk_thd, float _gamma,
-        float _exploration_constant = 5.0
+        float _exploration_constant = 5.0, int _graphviz_depth = -1
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -240,9 +242,14 @@ public:
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, agent<S, A>::handler, {}})
+    , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<uct_state_t>())
     {
         reset();
+    }
+
+    std::string get_graphviz() const {
+        return dot_tree;
     }
 
     void play() override {
@@ -266,10 +273,9 @@ public:
         common_data.sample_risk_thd = common_data.risk_thd;
         A a = select_action_pareto<S, A, data_t, pareto_curve>(root.get(), false);
 
-        static bool logged = false;
-        if (!logged) {
-            spdlog::debug(to_graphviz_tree(*root.get(), 9));
-            logged = true;
+        if (graphviz_depth > 0) {
+            spdlog::debug("Graphviz checkpoint: {}", graphviz_depth);
+            dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);

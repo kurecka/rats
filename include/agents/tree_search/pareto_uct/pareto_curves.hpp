@@ -71,10 +71,6 @@ std::string to_string(const EPC& curve) {
 
 
 EPC convex_hull_merge(std::vector<EPC*> curves) {
-    if (curves.size() == 1) {
-        return *curves[0];
-    }
-
     std::vector<std::tuple<float, float, outcome_support>> points;
     for (size_t i = 0; i < curves.size(); ++i) {
         for (size_t j = 0; j < curves[i]->points.size(); ++j) {
@@ -86,10 +82,6 @@ EPC convex_hull_merge(std::vector<EPC*> curves) {
     std::vector<std::tuple<float, float, outcome_support>> hull = upper_hull(points);
     EPC curve;
     curve.points = hull;
-    curve.num_samples = 0;
-    for (auto c : curves) {
-        curve.num_samples += c->num_samples;
-    }
     return curve;
 }
 

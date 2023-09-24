@@ -27,13 +27,26 @@ public:
 };
 
 template <typename S, typename A>
+class exact_prob_predictor {
+    std::map<std::tuple<S, A, S>, float> probs;
+public:
+    void add(S s0, A a1, S s1, float p) {
+        probs[{s0, a1, s1}] = p;
+    }
+
+    float predict(S s0, A a1, S s1) {
+        return probs[{s0, a1, s1}];
+    }
+};
+
+template <typename S, typename A>
 struct pareto_uct_data {
     float risk_thd;
     float sample_risk_thd;
     size_t descent_point;
     float exploration_constant;
     environment_handler<S, A>& handler;
-    prob_predictor<S, A> predictor;
+    exact_prob_predictor<S, A> predictor;
 };
 
 
@@ -130,7 +143,11 @@ void descend_callback(
 ) {
     DATA* common_data = action->common_data;
 
-    common_data->predictor.add(s0->state, a, s);
+    // common_data->predictor.add(s0->state, a, s);
+    if (new_state->is_leaf()) {
+        auto probs = common_data->handler.outcome_probabilities(s0->state, a);
+        common_data->predictor.add(s0->state, a, s, probs[s]);
+    }
 
     size_t point_idx = common_data->descent_point;
     size_t state_idx = action->child_idx[s];

@@ -234,6 +234,10 @@ public:
         return env->current_state();
     }
 
+    std::map<S, float> outcome_probabilities(S state, A action) const {
+        return env->outcome_probabilities(state, action);
+    }
+
     operator bool() const
     {
         return env;

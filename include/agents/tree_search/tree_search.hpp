@@ -226,6 +226,49 @@ void rollout(state_node<S, A, DATA, V, Q>* sn) {
     current_sn->rollout_penalty = disc_p;
 }
 
+
+/**
+ * @brief Monte carlo rollout function
+ * 
+ * @param sn A leaf node to rollout
+ * 
+ * Do a Monte Carlo rollout from the given leaf node. Update its rollout reward and penalty.
+ */
+template<typename S, typename A, typename DATA, typename V, typename Q, A a, int N>
+void constant_rollout(state_node<S, A, DATA, V, Q>* sn) {
+    using state_node_t = state_node<S, A, DATA, V, Q>;
+
+    float mean_r = 0;
+    float mean_p = 0;
+    auto common_data = sn->common_data;
+
+    common_data->handler.make_checkpoint(1);
+
+    for (int i = 0; i < N; ++i) {
+        common_data->handler.restore_checkpoint(1);
+        state_node_t* current_sn = sn;
+        float disc_r = 0;
+        float disc_p = 0;
+        float gamma_pow = 1.0;
+        bool terminal = current_sn->is_terminal();
+
+        while (!terminal) {
+            gamma_pow *= common_data->gamma;
+            auto [s, r, p, t] = common_data->handler.sim_action(a);
+            terminal = t;
+            disc_r = r + disc_r * gamma_pow;
+            disc_p = p + disc_p * gamma_pow;
+        }
+
+        mean_r += disc_r;
+        mean_p += disc_p;
+    }
+
+    sn->rollout_reward = mean_r / N;
+    sn->rollout_penalty = mean_p / N;
+}
+
+
 template<typename S, typename A, typename DATA>
 void uct_prop_v_value(
     state_node<S, A, DATA, point_value, point_value>* sn,

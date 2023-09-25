@@ -47,6 +47,7 @@ struct pareto_uct_data {
     float exploration_constant;
     environment_handler<S, A>& handler;
     exact_prob_predictor<S, A> predictor;
+    float gamma;
 };
 
 
@@ -167,8 +168,13 @@ void exact_pareto_propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
     state_node_t* current_sn = leaf;
 
     // TODO: rolout
-    // float disc_r = leaf->rollout_reward;
-    // float disc_p = leaf->rollout_penalty;
+    float disc_r = leaf->rollout_reward;
+    float disc_p = leaf->rollout_penalty;
+
+    for (auto& child : current_sn->children) {
+        std::get<0>(child.q.curve.points[0]) = disc_r;
+        std::get<1>(child.q.curve.points[0]) = disc_p;
+    }
 
     while (true) {
         std::vector<EPC*> action_curves;
@@ -258,7 +264,7 @@ public:
     , num_sim(_num_sim)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
-    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, agent<S, A>::handler, {}})
+    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, agent<S, A>::handler, {}, gamma})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<uct_state_t>())
     {
@@ -280,7 +286,7 @@ public:
             spdlog::trace("Expand");
             expand_state(leaf);
             spdlog::trace("Rollout");
-            void_rollout(leaf);
+            constant_rollout<S, A, data_t, v_t, q_t, 1, 100>(leaf);
             spdlog::trace("Propagate");
             propagate_f(leaf, gamma);
             spdlog::trace("Reset");

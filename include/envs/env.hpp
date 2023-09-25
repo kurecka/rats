@@ -163,6 +163,14 @@ public:
         return o;
     }
 
+    void make_checkpoint(size_t id) {
+        env->make_checkpoint(id);
+    }
+
+    void restore_checkpoint(size_t id) {
+        env->restore_checkpoint(id);
+    }
+
     /**
      * @brief Simulate an action in the environment
      * 

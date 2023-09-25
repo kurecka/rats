@@ -3,11 +3,14 @@ import rats
 rats.set_log_level('info')
 
 e = rats.InvestorEnv(2, 20)
+
 a = rats.ParetoUCT(
     rats.EnvironmentHandler(e),
-    max_depth=20, num_sim=200, risk_thd=0.0, gamma=1,
+    max_depth=10, num_sim=1000, risk_thd=0.8, gamma=1,
     exploration_constant=1, graphviz_depth=-1
 )
+
+# a = rats.ConstantAgent(rats.EnvironmentHandler(e), 1)
 
 # e.reset()
 # a.reset()
@@ -21,5 +24,4 @@ a = rats.ParetoUCT(
 o = rats.Orchestrator()
 o.load_agent(a)
 o.load_environment(e)
-o.run(50)
-    
+o.run(100)

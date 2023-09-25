@@ -108,6 +108,7 @@ void expand_action(
     S s, float r, float p, bool t
 ) {
     using state_node_t = state_node<S, A, DATA, V, Q>;
+    // TODO: initialize all possible child states
 
     an->child_idx[s] = an->children.size();
 
@@ -239,7 +240,7 @@ void constant_rollout(state_node<S, A, DATA, V, Q>* sn) {
     using state_node_t = state_node<S, A, DATA, V, Q>;
 
     float mean_r = 0;
-    float mean_p = 0;
+    // float mean_p = 0;
     auto common_data = sn->common_data;
 
     common_data->handler.make_checkpoint(1);
@@ -247,7 +248,7 @@ void constant_rollout(state_node<S, A, DATA, V, Q>* sn) {
     for (int i = 0; i < N; ++i) {
         state_node_t* current_sn = sn;
         float disc_r = 0;
-        float disc_p = 0;
+        // float disc_p = 0;
         float gamma_pow = 1.0;
         bool terminal = current_sn->is_terminal();
 
@@ -256,16 +257,20 @@ void constant_rollout(state_node<S, A, DATA, V, Q>* sn) {
             auto [s, r, p, t] = common_data->handler.sim_action(a);
             terminal = t;
             disc_r = r + disc_r * gamma_pow;
-            disc_p = p + disc_p * gamma_pow;
+            // disc_p = p + disc_p * gamma_pow;
         }
 
         mean_r += disc_r;
-        mean_p += disc_p;
+        // mean_p += disc_p;
         common_data->handler.restore_checkpoint(1);
     }
 
     sn->rollout_reward = mean_r / N;
-    sn->rollout_penalty = mean_p / N;
+    float probs[] = {1.000000f,0.428571f,0.183673f,0.078717f,0.033736f,0.014458f,0.006196f,0.002656f,0.001138f,0.000488f,0.000209f,0.000090f,0.000038f,0.000016f,0.000007f,0.000003f,0.000001f,0.000001f,0.000000f,0.000000f,0.000000f};
+    int s = sn->state;
+    s = std::min(s, 20);
+    s = std::max(s, 0);
+    sn->rollout_penalty = probs[s];
 }
 
 

@@ -245,7 +245,6 @@ void constant_rollout(state_node<S, A, DATA, V, Q>* sn) {
     common_data->handler.make_checkpoint(1);
 
     for (int i = 0; i < N; ++i) {
-        common_data->handler.restore_checkpoint(1);
         state_node_t* current_sn = sn;
         float disc_r = 0;
         float disc_p = 0;
@@ -262,12 +261,46 @@ void constant_rollout(state_node<S, A, DATA, V, Q>* sn) {
 
         mean_r += disc_r;
         mean_p += disc_p;
+        common_data->handler.restore_checkpoint(1);
     }
 
     sn->rollout_reward = mean_r / N;
     sn->rollout_penalty = mean_p / N;
 }
 
+
+template<typename S, typename A, typename DATA, typename V, typename Q, A a, int N>
+void constant_rollout(action_node<S, A, DATA, V, Q>* an) {
+    float mean_r = 0;
+    float mean_p = 0;
+    auto common_data = an->common_data;
+
+    common_data->handler.make_checkpoint(1);
+
+    for (int i = 0; i < N; ++i) {
+        A initial_action = an->action;
+        auto [s, r, p, t] = common_data->handler.sim_action(initial_action);
+        bool terminal = t;
+        float disc_r = r;
+        float disc_p = p;
+        float gamma_pow = 1.0;
+
+        while (!terminal) {
+            gamma_pow *= common_data->gamma;
+            auto [s_, r_, p_, t_] = common_data->handler.sim_action(a);
+            terminal = t_;
+            disc_r = r_ + disc_r * gamma_pow;
+            disc_p = p_ + disc_p * gamma_pow;
+        }
+
+        mean_r += disc_r;
+        mean_p += disc_p;
+        common_data->handler.restore_checkpoint(1);
+    }
+
+    an->rollout_reward = mean_r / N;
+    an->rollout_penalty = mean_p / N;
+}
 
 template<typename S, typename A, typename DATA>
 void uct_prop_v_value(

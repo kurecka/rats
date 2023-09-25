@@ -167,13 +167,12 @@ void exact_pareto_propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
     action_node_t* prev_an = nullptr;
     state_node_t* current_sn = leaf;
 
-    // TODO: rolout
-    float disc_r = leaf->rollout_reward;
-    float disc_p = leaf->rollout_penalty;
-
-    for (auto& child : current_sn->children) {
-        std::get<0>(child.q.curve.points[0]) = disc_r;
-        std::get<1>(child.q.curve.points[0]) = disc_p;
+    if (!current_sn->is_terminal()) {
+        for (auto& child : current_sn->children) {
+            // spdlog::debug("Rollout: {}", child.rollout_penalty);
+            std::get<0>(child.q.curve.points[0]) = child.rollout_reward;
+            std::get<1>(child.q.curve.points[0]) = child.rollout_penalty;
+        }
     }
 
     while (true) {
@@ -286,7 +285,9 @@ public:
             spdlog::trace("Expand");
             expand_state(leaf);
             spdlog::trace("Rollout");
-            constant_rollout<S, A, data_t, v_t, q_t, 1, 100>(leaf);
+            for (auto& child : leaf->children) {
+                constant_rollout<S, A, data_t, v_t, q_t, 1, 300>(&child);
+            }
             spdlog::trace("Propagate");
             propagate_f(leaf, gamma);
             spdlog::trace("Reset");

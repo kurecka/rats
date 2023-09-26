@@ -2,7 +2,8 @@ import rats
 import ray
 import numpy as np
 
-ray.init(address="auto")
+# ray.init(address="auto")
+ray.init()
 
 @ray.remote
 def task():
@@ -10,7 +11,7 @@ def task():
     e = rats.InvestorEnv(2, 20)
     a = rats.ParetoUCT(
         rats.EnvironmentHandler(e),
-        max_depth=0, num_sim=1000, risk_thd=0.23, gamma=1,
+        max_depth=20, num_sim=1000, risk_thd=0.2, gamma=1,
         exploration_constant=1, graphviz_depth=7
     )
     a.reset()

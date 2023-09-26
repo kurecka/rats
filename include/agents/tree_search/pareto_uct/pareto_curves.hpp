@@ -85,7 +85,7 @@ EPC convex_hull_merge(std::vector<EPC*> curves) {
     return curve;
 }
 
-EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights) {
+EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights, std::vector<size_t> state_refs) {
     if (curves.size() == 1) {
         return *curves[0];
     }
@@ -100,7 +100,7 @@ EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights) {
         float w = weights[i];
         for (size_t j = 0; j < curves[i]->points.size(); ++j) {
             auto [r, p, supp] = curves[i]->points[j];
-            points[i].push_back({w * r, w * p, {i, j}});
+            points[i].push_back({w * r, w * p, {state_refs[i], j}});
         }
     }
 
@@ -110,6 +110,7 @@ EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights) {
     for (size_t i = 0; i < curves.size(); ++i) {
         std::get<0>(merged_points[0]) += std::get<0>(points[i][0]);
         std::get<1>(merged_points[0]) += std::get<1>(points[i][0]);
+        std::get<2>(merged_points[0]) += std::get<2>(points[i][0]);
     }
     // Initialize indexes of the last processed points of each curve
     std::vector<size_t> point_idxs(curves.size(), 0);
@@ -137,6 +138,7 @@ EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights) {
         r += r2 - r1;
         p += p2 - p1;
         point_idxs[max_idx] += 1;
+        supp.support[max_idx].first = point_idxs[max_idx];
     }
 
     EPC curve;

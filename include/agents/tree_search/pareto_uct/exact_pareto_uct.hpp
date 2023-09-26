@@ -156,7 +156,7 @@ void descend_callback(
     if (supp.support.size() > state_idx) {
         auto& [o, vtx] = supp.support[state_idx];
         common_data->sample_risk_thd = std::get<1>(new_state->v.curve.points[vtx]);
-    }
+    }   
 }
 
 template<typename S, typename A, typename DATA, typename V, typename Q>
@@ -167,13 +167,17 @@ void exact_pareto_propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
     action_node_t* prev_an = nullptr;
     state_node_t* current_sn = leaf;
 
-    if (!current_sn->is_terminal()) {
-        for (auto& child : current_sn->children) {
-            // spdlog::debug("Rollout: {}", child.rollout_penalty);
-            std::get<0>(child.q.curve.points[0]) = child.rollout_reward;
-            std::get<1>(child.q.curve.points[0]) = child.rollout_penalty;
-        }
-    }
+    // TODO
+    // std::get<0>(current_sn->v.curve.points[0]) = current_sn->rollout_reward;
+    // std::get<1>(current_sn->v.curve.points[0]) = current_sn->rollout_penalty;
+
+    // if (!current_sn->is_terminal()) {
+    //     for (auto& child : current_sn->children) {
+    //         // spdlog::debug("Rollout: {}", child.rollout_penalty);
+    //         std::get<0>(child.q.curve.points[0]) = current_sn->rollout_reward;
+    //         std::get<1>(child.q.curve.points[0]) = current_sn->rollout_penalty;
+    //     }
+    // }
 
     while (true) {
         std::vector<EPC*> action_curves;
@@ -201,14 +205,13 @@ void exact_pareto_propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
         S s0 = current_an->parent->state;
         A a1 = current_an->action;
         std::string weights_str;
+        std::vector<size_t> state_refs;
         for (auto& [s1, child] : current_an->children) {
             weights.push_back(predictor.predict(s0, a1, s1));
+            state_refs.push_back(current_an->child_idx[s1]);
             weights_str += "s(" + std::to_string(s1) + ")=" + std::to_string(weights.back()) + ", ";
         }
-        
-        spdlog::debug("S = {}, A = {}", s0, a1);
-        spdlog::debug("Weights: {}", weights_str);
-        merged_curve = weighted_merge(state_curves, weights);
+        merged_curve = weighted_merge(state_curves, weights, state_refs);
         ++current_an->num_visits;
         merged_curve.num_samples = current_an->num_visits;
         merged_curve *= gamma;
@@ -285,9 +288,11 @@ public:
             spdlog::trace("Expand");
             expand_state(leaf);
             spdlog::trace("Rollout");
-            for (auto& child : leaf->children) {
-                constant_rollout<S, A, data_t, v_t, q_t, 1, 300>(&child);
-            }
+            // TODO
+            // for (auto& child : leaf->children) {
+            //     constant_rollout<S, A, data_t, v_t, q_t, 1, 300>(&child);
+            // }
+            // constant_rollout<S, A, data_t, v_t, q_t, 1, 30>(leaf);
             spdlog::trace("Propagate");
             propagate_f(leaf, gamma);
             spdlog::trace("Reset");
@@ -310,10 +315,21 @@ public:
         if (an->children.find(s) == an->children.end()) {
             expand_action(an, s, r, p, t);
         }
+        for (auto& [_r, _p, supp] : an->q.curve.points) {
+            spdlog::debug("  r={}, p={}, supp size={}", _r, _p, supp.support.size());
+            std::string supp_str;
+            for (auto& [aidx, vidx] : supp.support) {
+                supp_str += "state=" + std::to_string(aidx) + ", vtx=" + std::to_string(vidx) + "; ";
+            }
+            spdlog::debug("   {}", supp_str);
+        }
 
         std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
 
+        float old_risk_thd = common_data.risk_thd;
         descend_callback_f(root.get(), a, an, s, new_root.get());
+        common_data.risk_thd = common_data.sample_risk_thd;
+        spdlog::debug("Old vs New thd: {} -> {}", old_risk_thd, common_data.risk_thd);
 
         root = std::move(new_root);
         root->get_parent() = nullptr;

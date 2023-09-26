@@ -120,10 +120,8 @@ public:
             //assert(result_status == MPSolver::OPTIMAL);
 
             double alt_thd = risk_obj->Value();
-            p = define_LP_policy(alt_thd);
-            policy = p.first;
-            leaf_risk = p.second;
-            result_status = solver_policy->Solve();
+            std::tie(policy, leaf_risk) = define_LP_policy(alt_thd);
+            result_status = solver->Solve();
 
             //assert(result_status == MPSolver::OPTIMAL);
         }
@@ -165,7 +163,7 @@ public:
         // assert(alt_risk <= risk_thd);
 
         auto states_distr = common_data.handler.outcome_probabilities(root->state, a);
-        risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s])
+        risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s]);
 
         std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
@@ -198,7 +196,8 @@ public:
 
         auto& actions = root->actions;
         auto& children = root->children;
-        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+        auto child_it = children.begin();
+        for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
@@ -252,7 +251,8 @@ public:
 
         auto& actions = node->actions;
         auto& children = node->children;
-        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+        auto child_it = children.begin();
+        for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
@@ -292,7 +292,8 @@ public:
 
         auto& actions = root->actions;
         auto& children = root->children;
-        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+        auto child_it = children.begin();
+        for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
@@ -336,7 +337,8 @@ public:
 
         auto& actions = node->actions;
         auto& children = node->children;
-        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+        auto child_it = children.begin();
+        for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a

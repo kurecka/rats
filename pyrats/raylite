@@ -172,39 +172,49 @@ def help():
     print('Usage: myray.py <up|down|dashboard> <config_path>.yaml')
 
 if __name__ == '__main__':
-    if len(argv) != 3:
-        help()
-        exit(1)
-
-    config = load_config(argv[2])
+    if len(argv) == 3:
+        config = load_config(argv[2])
     
-    if argv[1] == 'up':
-        if 'docker' in config:
-            ray_up_docker(
-                config['head_ip'], config['worker_ips'], config['user'],
-                config['docker']['image'], config['docker']['container_name'], config['docker']['pull_before_run'], config['docker']['run_options']
-            )
+        if argv[1] == 'up':
+            if 'docker' in config:
+                ray_up_docker(
+                    config['head_ip'], config['worker_ips'], config['user'],
+                    config['docker']['image'], config['docker']['container_name'], config['docker']['pull_before_run'], config['docker']['run_options']
+                )
+            else:
+                ray_up(config['head_ip'], config['worker_ips'], config['user'])
+            if 'file_mounts' in config:
+                mount_files(config['file_mounts'], config['head_ip'], config['user'])
+            if 'cluster_synced_files' in config:
+                cluster_sync(config['cluster_synced_files'], config['head_ip'], config['worker_ips'], config['user'])
+        elif argv[1] == 'sync':
+            if 'file_mounts' in config:
+                mount_files(config['file_mounts'], config['head_ip'], config['user'])
+            if 'cluster_synced_files' in config:
+                cluster_sync(config['cluster_synced_files'], config['head_ip'], config['worker_ips'], config['user'])
+        elif argv[1] == 'down':
+            if 'docker' in config:
+                ray_down_docker(
+                    config['head_ip'], config['worker_ips'], config['user'],
+                    config['docker']['container_name']
+                )
+            else:
+                ray_down(config['head_ip'], config['worker_ips'], config['user'])
+        elif argv[1] == 'dashboard':
+            ray_dashboard(config['head_ip'], config['user'])
         else:
-            ray_up(config['head_ip'], config['worker_ips'], config['user'])
-        if 'file_mounts' in config:
-            mount_files(config['file_mounts'], config['head_ip'], config['user'])
-        if 'cluster_synced_files' in config:
-            cluster_sync(config['cluster_synced_files'], config['head_ip'], config['worker_ips'], config['user'])
-    elif argv[1] == 'sync':
-        if 'file_mounts' in config:
-            mount_files(config['file_mounts'], config['head_ip'], config['user'])
-        if 'cluster_synced_files' in config:
-            cluster_sync(config['cluster_synced_files'], config['head_ip'], config['worker_ips'], config['user'])
-    elif argv[1] == 'down':
-        if 'docker' in config:
-            ray_down_docker(
-                config['head_ip'], config['worker_ips'], config['user'],
-                config['docker']['container_name']
-            )
+            help()
+            exit(1)
+    elif len(argv) == 4:
+        config = load_config(argv[2])
+        if argv[1] == 'cmd':
+            cmd = argv[3]
+            print(cmd)
+            for worker in config['worker_ips']:
+                run_remote_command(worker, cmd, config['user'])
         else:
-            ray_down(config['head_ip'], config['worker_ips'], config['user'])
-    elif argv[1] == 'dashboard':
-        ray_dashboard(config['head_ip'], config['user'])
+            help()
+            exit(1)
     else:
         help()
         exit(1)

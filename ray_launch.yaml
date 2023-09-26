@@ -13,20 +13,24 @@ docker:
     pull_before_run: False
     run_options:   # Extra options to pass into "docker run"
         - -v /var/data/xkurecka/rats/pyrats:/work/rats/pyrats
-    #     - --ulimit nofile=65536:65536
+        - -v /var/data/xkurecka/rats/include:/work/rats/include
+        - -v /var/data/xkurecka/rats/src:/work/rats/src
+        - -v /var/data/xkurecka/rats/logs:/work/rats/logs
+        - -v /var/data/xkurecka/rats/notebooks:/work/rats/notebooks
+        - -u 19281:10100
 
 cluster_name: valley_of_erin
 
 provider:
     type: local
     head_ip: erinys02.fi.muni.cz
-    worker_ips: []
+    worker_ips:
         # - erinys01.fi.muni.cz
         # - erinys02.fi.muni.cz
-        # - erinys03.fi.muni.cz
-        # - erinys04.fi.muni.cz
-        # - erinys05.fi.muni.cz
-        # - erinys06.fi.muni.cz
+        - erinys03.fi.muni.cz
+        - erinys04.fi.muni.cz
+        - erinys05.fi.muni.cz
+        - erinys06.fi.muni.cz
 
 
 # How Ray will authenticate with newly launched nodes.
@@ -81,7 +85,9 @@ file_mounts: {
 # list of paths. The same path on the head node will be copied to the worker node.
 # This behavior is a subset of the file_mounts behavior. In the vast majority of cases
 # you should just use file_mounts. Only use this if you know what you're doing!
-cluster_synced_files: [] #['/var/data/xkurecka/volume/cluster_test.py']
+cluster_synced_files: [
+    '/var/data/xkurecka/rats/build/rats.so'
+]
 
 # Whether changes to directories in file_mounts or cluster_synced_files in the head node
 # should sync to the worker node continuously

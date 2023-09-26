@@ -20,7 +20,7 @@ struct ramcp_data {
 };
 
 template<typename S, typename A, typename DATA, typename V>
-A select_action_uct(state_node<S, A, DATA, V, point_value>* node, bool explore) {
+A select_action_uct(state_node<S, A, DATA, V, point_value>* node, bool /*explore*/) {
 
     float c = node->common_data->exploration_constant;
 
@@ -33,7 +33,7 @@ A select_action_uct(state_node<S, A, DATA, V, point_value>* node, bool explore) 
     size_t idxa = 0;
     float max_uct = 0, uct_value = 0;
     for (size_t i = 0; i < children.size(); ++i) {
-        uct_value = ((children[i].q.first - Vmin) / (Vmax - Vmin)) +
+        uct_value = ((children[i].q.first - min_v) / (max_v - min_v)) +
             c * static_cast<float>(std::sqrt(std::log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
         );
 
@@ -85,7 +85,7 @@ public:
     , num_sim(_num_sim)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
-    , common_data({_risk_thd, initial_lambda, _exploration_constant, agent<S, A>::handler})
+    , common_data({_risk_thd, _exploration_constant, agent<S, A>::handler})
     , root(std::make_unique<uct_state_t>())
     {
         // Create the linear solvers with the GLOP backend.
@@ -120,8 +120,8 @@ public:
             //assert(result_status == MPSolver::OPTIMAL);
 
             double alt_thd = risk_obj->Value();
-            [policy, leaf_risk] = define_LP_policy(alt_thd);
-            result_status = solver_policy->Solve();
+            std::tie(policy, leaf_risk) = define_LP_policy(alt_thd);
+            result_status = solver->Solve();
 
             //assert(result_status == MPSolver::OPTIMAL);
         }
@@ -163,7 +163,7 @@ public:
         // assert(alt_risk <= risk_thd);
 
         auto states_distr = common_data.handler.outcome_probabilities(root->state, a);
-        risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s])
+        risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s]);
 
         std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
@@ -196,7 +196,8 @@ public:
 
         auto& actions = root->actions;
         auto& children = root->children;
-        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+        auto child_it = children.begin();
+        for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
@@ -250,7 +251,8 @@ public:
 
         auto& actions = node->actions;
         auto& children = node->children;
-        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+        auto child_it = children.begin();
+        for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
@@ -290,7 +292,8 @@ public:
 
         auto& actions = root->actions;
         auto& children = root->children;
-        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+        auto child_it = children.begin();
+        for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
@@ -334,7 +337,8 @@ public:
 
         auto& actions = node->actions;
         auto& children = node->children;
-        for (auto ac_it = actions.begin(), auto child_it = children.begin();
+        auto child_it = children.begin();
+        for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a

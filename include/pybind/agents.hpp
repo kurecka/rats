@@ -6,6 +6,7 @@
 #include "pybind/agents/dual_uct.hpp"
 #include "pybind/agents/primal_uct.hpp"
 #include "pybind/agents/pareto_uct.hpp"
+#include "pybind/agents/ramcp.hpp"
 
 
 namespace rats::py {
@@ -17,6 +18,7 @@ void register_agents(py::module& m) {
     register_dual_uct<int, size_t>(m, agent_type);
     register_primal_uct<int, size_t>(m, agent_type);
     register_pareto_uct<int, size_t>(m, agent_type);
+    register_ramcp<int, size_t>(m, agent_type);
 }
 
 }  // namespace rats

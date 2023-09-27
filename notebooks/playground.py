@@ -1,52 +1,35 @@
 import rats
-# import numpy as np
+import rats
+import ray
+import numpy as np
 
-rats.set_log_level('info')
+ray.init(address="auto")
+# ray.init()
 
-e = rats.InvestorEnv(2, 20)
+@ray.remote
+def task(thd):
+    rats.set_log_level('info')
+    e = rats.InvestorEnv(2, 20)
+    a = rats.RAMCP(
+        rats.EnvironmentHandler(e),
+        max_depth=20, num_sim=1000, risk_thd=thd, gamma=1,
+        exploration_constant=0.05, graphviz_depth=-1
+    )
+    a.reset()
+    e.reset()
+    while not e.is_over():
+        a.play()
+    
+    h = a.get_handler()
 
-a = rats.ParetoUCT(
-    rats.EnvironmentHandler(e),
-    max_depth=10, num_sim=300, risk_thd=0.8, gamma=1,
-    exploration_constant=1, graphviz_depth=-1
-)
+    return h.get_reward(), h.get_penalty()
 
-e.reset()
-a.reset()
+thds = np.linspace(0.1, 0.9, 7)
 
-for i in range(3):
-    a.play()
-    with open(f"../logs/tree_{i}.dot", "w") as f:
-        f.write(a.get_graphviz())
+futures = [task.remote(thd) for thd in thds for _ in range(1000)]
+results = ray.get(futures)
+results = np.array(results).reshape(len(thds), -1, 2)
+means = results.mean(axis=1)
 
-
-# o = rats.Orchestrator()
-# o.load_agent(a)
-# o.load_environment(e)
-# o.run(200)
-
-# A = np.zeros((21, 21))
-# b = np.zeros(21)
-
-# for i in range(21):
-#     if i == 0:
-#         A[i, i] = 1
-#         b[i] = 0
-#     elif i == 20:
-#         A[i, i] = 1
-#         b[i] = 1
-#     else:
-#         A[i, i] = 1
-#         A[i, i+1] = -0.7
-#         A[i, i-1] = -0.3
-#         b[i] = 0
-
-# print('[', end='')
-# for v in 1-np.linalg.solve(A, b):
-#     # dont use scientific notation
-#     print(f"{v:.6f}", end=",")
-# print(']')
-
-
-
-
+for thd, (r, p) in zip(thds, means):
+    print(f"thd={thd:.2f}, reward={r:.2f}, penalty={p:.2f}")

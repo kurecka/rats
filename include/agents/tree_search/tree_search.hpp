@@ -159,7 +159,6 @@ void propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
     using state_node_t = state_node<S, A, DATA, V, Q>;
     using action_node_t = action_node<S, A, DATA, V, Q>;
 
-    action_node_t* prev_an = nullptr;
     state_node_t* current_sn = leaf;
 
     float disc_r = leaf->rollout_reward;
@@ -172,7 +171,6 @@ void propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
         action_node_t* current_an = current_sn->get_parent();
         prop_q(current_an, disc_r, disc_p);
         current_sn = current_an->get_parent();
-        prev_an = current_an;
     }
 
     prop_v(current_sn, disc_r, disc_p);

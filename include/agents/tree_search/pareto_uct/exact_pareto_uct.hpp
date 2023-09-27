@@ -164,7 +164,6 @@ void exact_pareto_propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
     using state_node_t = state_node<S, A, DATA, V, Q>;
     using action_node_t = action_node<S, A, DATA, V, Q>;
 
-    action_node_t* prev_an = nullptr;
     state_node_t* current_sn = leaf;
 
     // TODO
@@ -218,7 +217,6 @@ void exact_pareto_propagate(state_node<S, A, DATA, V, Q>* leaf, float gamma) {
         current_an->q.curve = merged_curve;
 
         current_sn = current_an->get_parent();
-        prev_an = current_an;
     }
 }
 

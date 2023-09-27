@@ -82,15 +82,15 @@ endif()
 # --------------------------------------------------------------------------------
 
 # Add the executeble
-set(MAIN_APP_NAME rats_app)
-add_executable(${MAIN_APP_NAME} app/main.cpp)
+# set(MAIN_APP_NAME rats_app)
+# add_executable(${MAIN_APP_NAME} app/main.cpp)
 
 # Add the python binding
 set(MAIN_MODULE_NAME rats)
 pybind11_add_module(${MAIN_MODULE_NAME} pybind/interface.cpp)
 
-foreach(_target ${MAIN_APP_NAME} ${MAIN_MODULE_NAME})
-
+# foreach(_target ${MAIN_APP_NAME} ${MAIN_MODULE_NAME})
+foreach(_target ${MAIN_MODULE_NAME})
 # Link libraries
 target_link_libraries(${_target} PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
 target_link_libraries(${_target} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)

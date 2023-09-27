@@ -10,7 +10,7 @@ docker:
         - -v /var/data/xkurecka/rats/src:/work/rats/src
         - -v /var/data/xkurecka/rats/logs:/work/rats/logs
         - -v /var/data/xkurecka/rats/notebooks:/work/rats/notebooks
-        - -v /var/data/xkurecka/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
+        # - -v /var/data/xkurecka/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
         - -u 19281:10100
 
 provider:

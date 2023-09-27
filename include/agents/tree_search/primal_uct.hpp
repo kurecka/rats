@@ -18,63 +18,60 @@ struct primal_uct_data {
 };
 
 
-template<typename S, typename A, typename DATA, typename V, bool deterministic>
-A select_action_primal(state_node<S, A, DATA, V, point_value>* node, bool explore) {
-    float risk_thd = node->common_data->sample_risk_thd;
-    float c = node->common_data->exploration_constant;
+template<typename SN, bool deterministic>
+struct select_action_primal {
+    size_t operator()(SN* node, bool explore) const {
+        float risk_thd = node->common_data->sample_risk_thd;
+        float c = node->common_data->exploration_constant;
 
-    auto& children = node->children;
-    auto q = children[0].q;
-    auto [min_r, min_p] = q;
-    auto [max_r, max_p] = q;
-    for (size_t i = 0; i < children.size(); ++i) {
-        auto [er, ep] = children[i].q;
-        min_r = std::min(min_r, er);
-        max_r = std::max(max_r, er);
-        min_p = std::min(min_p, ep);
-        max_p = std::max(max_p, ep);
-    }
-    if (min_r < 0) {
-        max_r = 0.9f * min_r;
-    } else {
-        max_r = 1.1f * min_r;
-    }
-    if (min_p >= max_p) max_p = min_p + 0.1f;
+        auto& children = node->children;
+        auto q = children[0].q;
+        auto [min_r, min_p] = q;
+        auto [max_r, max_p] = q;
+        for (size_t i = 0; i < children.size(); ++i) {
+            auto [er, ep] = children[i].q;
+            min_r = std::min(min_r, er);
+            max_r = std::max(max_r, er);
+            min_p = std::min(min_p, ep);
+            max_p = std::max(max_p, ep);
+        }
+        if (min_p >= max_p) max_p = min_p + 0.1f;
 
-    std::vector<float> ucts(children.size());
-    std::vector<float> lcts(children.size());
+        std::vector<float> ucts(children.size());
+        std::vector<float> lcts(children.size());
 
-    for (size_t i = 0; i < children.size(); ++i) {
-        ucts[i] = children[i].q.first + explore * c * (max_r - min_r) * static_cast<float>(
-            sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-        );
-        lcts[i] = children[i].q.second - explore * c * (max_p - min_p) * static_cast<float>(
-            sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-        );
-        if (lcts[i] < 0) lcts[i] = 0;
-    }
+        for (size_t i = 0; i < children.size(); ++i) {
+            ucts[i] = children[i].q.first + explore * c * (max_r - min_r) * static_cast<float>(
+                sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
+            );
+            lcts[i] = children[i].q.second - explore * c * (max_p - min_p) * static_cast<float>(
+                sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
+            );
+            if (lcts[i] < 0) lcts[i] = 0;
+        }
 
-    auto [a1, p2, a2] = greedy_mix(ucts, lcts, risk_thd);
-    if (!explore) {
-        std::string ucts_str = "";
-        for (auto u : ucts) ucts_str += std::to_string(u) + ", ";
-        std::string lcts_str = "";
-        for (auto l : lcts) lcts_str += std::to_string(l) + ", ";
-        spdlog::trace("ucts: {}", ucts_str);
-        spdlog::trace("lcts: {}", lcts_str);
-        spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", a1, p2, a2, risk_thd);
-    }
+        auto [a1, p2, a2] = greedy_mix(ucts, lcts, risk_thd);
+        if (!explore) {
+            std::string ucts_str = "";
+            for (auto u : ucts) ucts_str += std::to_string(u) + ", ";
+            std::string lcts_str = "";
+            for (auto l : lcts) lcts_str += std::to_string(l) + ", ";
+            spdlog::trace("ucts: {}", ucts_str);
+            spdlog::trace("lcts: {}", lcts_str);
+            spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", a1, p2, a2, risk_thd);
+        }
 
-    if constexpr (deterministic) {
-        return node->actions[a1];
-    } else {
-        if (rng::unif_float() < p2) {
-            return node->actions[a2];
+        if constexpr (deterministic) {
+            return a1;
         } else {
-            return node->actions[a1];
+            if (rng::unif_float() < p2) {
+                return a2;
+            } else {
+                return a1;
+            }
         }
     }
-}
+};
 
 
 /*********************************************************************
@@ -89,11 +86,14 @@ class primal_uct : public agent<S, A> {
     using data_t = primal_uct_data<S, A>;
     using v_t = std::pair<float, float>;
     using q_t = std::pair<float, float>;
-    using uct_state_t = state_node<S, A, data_t, v_t, q_t>;
-    using uct_action_t = action_node<S, A, data_t, v_t, q_t>;
+    using state_node_t = state_node<S, A, data_t, v_t, q_t>;
+    using action_node_t = action_node<S, A, data_t, v_t, q_t>;
     
-    constexpr auto static select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_primal<S, A, data_t, v_t, true>, void_descend_callback<S, A, data_t, v_t, q_t>>;
-    constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<S, A, data_t>, uct_prop_q_value<S, A, data_t>>;
+    using select_action_t = select_action_primal<state_node_t, true>;
+    using descend_callback_t = void_fn<state_node_t*, A, action_node_t*, S, state_node_t*>;
+    constexpr auto static select_action_f = select_action_t();
+    constexpr auto static select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
+    constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
 
 private:
     int max_depth;
@@ -103,7 +103,7 @@ private:
 
     data_t common_data;
 
-    std::unique_ptr<uct_state_t> root;
+    std::unique_ptr<state_node_t> root;
 public:
     primal_uct(
         environment_handler<S, A> _handler,
@@ -116,7 +116,7 @@ public:
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , common_data({_risk_thd, _risk_thd, _exploration_constant, gamma, agent<S, A>::handler})
-    , root(std::make_unique<uct_state_t>())
+    , root(std::make_unique<state_node_t>())
     {
         reset();
     }
@@ -127,7 +127,7 @@ public:
         for (int i = 0; i < num_sim; i++) {
             spdlog::trace("Simulation {}", i);
             common_data.sample_risk_thd = common_data.risk_thd;
-            uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
+            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
             expand_state(leaf);
             rollout(leaf);
             propagate_f(leaf, gamma);
@@ -135,7 +135,7 @@ public:
         }
 
         common_data.sample_risk_thd = common_data.risk_thd;
-        A a = select_action_primal<S, A, data_t, v_t, true>(root.get(), false);
+        A a = select_action_f(root.get(), false);
 
         // static bool logged = false;
         // if (!logged) {
@@ -147,12 +147,12 @@ public:
         spdlog::debug("Play action: {}", a);
         spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
 
-        uct_action_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
             expand_action(an, s, r, p, t);
         }
 
-        std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
+        std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
         root->get_parent() = nullptr;
     }
@@ -161,7 +161,7 @@ public:
         spdlog::debug("Reset: {}", name());
         agent<S, A>::reset();
         common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
-        root = std::make_unique<uct_state_t>();
+        root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
     }
 

@@ -10,13 +10,13 @@ ray.init(address="auto")
 def task(thd):
     rats.set_log_level('info')
     e = rats.InvestorEnv(2, 20)
-    a = rats.RAMCP(
+    a = rats.ParetoUCT(
         rats.EnvironmentHandler(e),
         max_depth=20, num_sim=1000, risk_thd=thd, gamma=1,
         exploration_constant=0.05, graphviz_depth=-1
     )
-    a.reset()
     e.reset()
+    a.reset()
     while not e.is_over():
         a.play()
     

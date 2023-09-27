@@ -58,8 +58,8 @@ class ramcp : public agent<S, A> {
     using data_t = ramcp_data<S, A>;
     using v_t = std::pair<float, float>;
     using q_t = std::pair<float, float>;
-    using uct_state_t = state_node<S, A, data_t, v_t, q_t>;
-    using uct_action_t = action_node<S, A, data_t, v_t, q_t>;
+    using state_node_t = state_node<S, A, data_t, v_t, q_t>;
+    using action_node_t = action_node<S, A, data_t, v_t, q_t>;
     
     constexpr auto static select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_uct<S, A, data_t, v_t>, void_descend_callback<S, A, data_t, v_t, q_t>>;
     constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<S, A, data_t>, uct_prop_q_value<S, A, data_t>>;
@@ -72,7 +72,7 @@ private:
 
     data_t common_data;
 
-    std::unique_ptr<uct_state_t> root;
+    std::unique_ptr<state_node_t> root;
     std::unique_ptr<MPSolver> solver;
 public:
     ramcp(
@@ -86,7 +86,7 @@ public:
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , common_data({_risk_thd, initial_lambda, _exploration_constant, agent<S, A>::handler})
-    , root(std::make_unique<uct_state_t>())
+    , root(std::make_unique<state_node_t>())
     {
         // Create the linear solvers with the GLOP backend.
         solver = std::make_unique<MPSolver>(MPSolver::CreateSolver("GLOP"));
@@ -99,7 +99,7 @@ public:
         for (int i = 0; i < num_sim; i++) {
             spdlog::trace("Simulation {}", i);
             spdlog::trace("Select leaf");
-            uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
+            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
             spdlog::trace("Expand leaf");
             expand_state(leaf);
             spdlog::trace("Rollout");
@@ -141,7 +141,7 @@ public:
         spdlog::debug("Play action: {}", a);
         spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
 
-        uct_action_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
             an->children[s] = expand_action(an, s, r, p, t);
         }
@@ -165,7 +165,7 @@ public:
         auto states_distr = common_data.handler.outcome_probabilities(root->state, a);
         risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s])
 
-        std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
+        std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
         root->get_parent() = nullptr;
     }
@@ -224,7 +224,7 @@ public:
         return {policy, leaves};
     }
 
-    void LP_policy_rec(uct_state_t* node, MPVariable* const var, size_t& ctr, MPConstraint* const risk_cons,
+    void LP_policy_rec(state_node_t* node, MPVariable* const var, size_t& ctr, MPConstraint* const risk_cons,
                         MPObjective* const objective, size_t node_depth,
                         std::unordered_map<S, std::vector<MPVariable* const>> leaves, S root_succ, double payoff) {
 
@@ -317,7 +317,7 @@ public:
         return objective;
     }
 
-    void LP_risk_rec(uct_state_t* node,
+    void LP_risk_rec(state_node_t* node,
                      MPVariable* const var, size_t& ctr,
                      MPObjective* const objective) {
 
@@ -361,7 +361,7 @@ public:
         spdlog::debug("Reset: {}", name());
         agent<S, A>::reset();
         risk_thd = common_data.risk_thd;
-        root = std::make_unique<uct_state_t>();
+        root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
     }
 

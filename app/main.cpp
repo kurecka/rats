@@ -63,7 +63,7 @@ std::string get_help(const std::vector<arg_spec>& specs) {
 }
 
 std::string get_version() {
-    std::string version = "Ralph version " + std::to_string(PROJECT_VERSION_MAJOR);
+    std::string version = "Ralph version " + to_string(PROJECT_VERSION_MAJOR);
     return version;
 }
 

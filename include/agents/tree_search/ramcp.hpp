@@ -199,7 +199,7 @@ public:
         for (auto ac_it = actions.begin(), auto child_it = children.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
             action_sum->SetCoefficient(ac, 1);
             policy.insert({*ac_it, ac}); // add to policy to access solution
 
@@ -207,7 +207,7 @@ public:
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
@@ -253,14 +253,14 @@ public:
         for (auto ac_it = actions.begin(), auto child_it = children.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
             auto states_distr = common_data.handler.outcome_probabilities(node->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
@@ -293,14 +293,14 @@ public:
         for (auto ac_it = actions.begin(), auto child_it = children.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
             auto states_distr = common_data.handler.outcome_probabilities(root->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
@@ -337,14 +337,14 @@ public:
         for (auto ac_it = actions.begin(), auto child_it = children.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
             auto states_distr = common_data.handler.outcome_probabilities(node->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);

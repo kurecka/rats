@@ -53,9 +53,9 @@ struct select_action_primal {
         auto [a1, p2, a2] = greedy_mix(ucts, lcts, risk_thd);
         if (!explore) {
             std::string ucts_str = "";
-            for (auto u : ucts) ucts_str += std::to_string(u) + ", ";
+            for (auto u : ucts) ucts_str += to_string(u) + ", ";
             std::string lcts_str = "";
-            for (auto l : lcts) lcts_str += std::to_string(l) + ", ";
+            for (auto l : lcts) lcts_str += to_string(l) + ", ";
             spdlog::trace("ucts: {}", ucts_str);
             spdlog::trace("lcts: {}", lcts_str);
             spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", a1, p2, a2, risk_thd);

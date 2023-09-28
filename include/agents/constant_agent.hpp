@@ -1,6 +1,7 @@
 #pragma once
 
 #include "agents/agent.hpp"
+#include "string_utils.hpp"
 #include "rand.hpp"
 
 
@@ -18,20 +19,20 @@ public:
     ~constant_agent() override = default;
 
     void play() override {
-        spdlog::debug("Play action: " + std::to_string(action));
+        spdlog::debug("Play action: " + to_string(action));
         outcome_t<S> outcome = agent<S, A>::handler.play_action(action);
-        spdlog::debug("  Result: s=" + std::to_string(std::get<0>(outcome)) + ", r=" + std::to_string(std::get<1>(outcome)) + ", p=" + std::to_string(std::get<2>(outcome)));
+        spdlog::debug("  Result: s=" + to_string(std::get<0>(outcome)) + ", r=" + to_string(std::get<1>(outcome)) + ", p=" + to_string(std::get<2>(outcome)));
     }
 
     void reset() override {
         spdlog::debug("Resetting agent");
         agent<S, A>::reset();
         state = agent<S, A>::handler.get_current_state();
-        spdlog::debug("  Current state: " + std::to_string(state));
+        spdlog::debug("  Current state: " + to_string(state));
     }
 
     std::string name() const override {
-        return "Constant Agent (" + std::to_string(action) + ")";
+        return "Constant Agent (" + to_string(action) + ")";
     }
 };
 

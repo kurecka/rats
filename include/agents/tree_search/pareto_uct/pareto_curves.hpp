@@ -63,7 +63,7 @@ public:
 std::string to_string(const EPC& curve) {
     std::string s = "[";
     for (auto [r, p, supp] : curve.points) {
-        s += "(" + std::to_string(r) + ", " + std::to_string(p) + "), ";
+        s += "(" + to_string(r) + ", " + to_string(p) + "), ";
     }
     s += "]";
     return s;
@@ -227,7 +227,7 @@ public:
 
 std::string to_string(const quad_pareto_curve& c) {
     auto beta = c.get_beta();
-    return std::to_string(beta[2]) + " * p^2 + " + std::to_string(beta[1]) + " * p + " + std::to_string(beta[0]);
+    return to_string(beta[2]) + " * p^2 + " + to_string(beta[1]) + " * p + " + to_string(beta[0]);
 }
 
 

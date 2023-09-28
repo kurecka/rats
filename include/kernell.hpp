@@ -4,6 +4,7 @@
 
 #include "envs/env.hpp"
 #include "agents/agent.hpp"
+#include "string_utils.hpp"
 
 
 template <typename S, typename A>
@@ -73,9 +74,9 @@ std::pair<float, float> orchestrator<S, A>::episode() {
     }
 
     spdlog::debug("Episode stats:");
-    spdlog::debug("  Length: " + std::to_string(handler.get_num_steps()));
-    spdlog::debug("  Reward: " + std::to_string(handler.get_reward()));
-    spdlog::debug("  Penalty: " + std::to_string(handler.get_penalty()));
+    spdlog::debug("  Length: " + to_string(handler.get_num_steps()));
+    spdlog::debug("  Reward: " + to_string(handler.get_reward()));
+    spdlog::debug("  Penalty: " + to_string(handler.get_penalty()));
 
     return {handler.get_reward(), handler.get_penalty()};
 }
@@ -107,6 +108,6 @@ void orchestrator<S, A>::run(int num_episodes, int num_train_episodes) {
     }
 
     spdlog::info("Evaluation results:");
-    spdlog::info("  Mean reward: " + std::to_string(mean_reward));
-    spdlog::info("  Mean penalty: " + std::to_string(mean_penalty));
+    spdlog::info("  Mean reward: " + to_string(mean_reward));
+    spdlog::info("  Mean penalty: " + to_string(mean_penalty));
 }

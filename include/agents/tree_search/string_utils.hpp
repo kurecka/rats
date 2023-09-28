@@ -13,7 +13,8 @@ namespace rats {
         str += "\\nr=" + to_string(node.observed_reward);
         str += ", p=" + to_string(node.observed_penalty);
         
-        str += "\\nE[V]=" + to_stringg(node.v);
+        // TODO: fix this to_srinGG (it does not compile with to_string)
+        str += "\\nE[V]=" + to_string(node.v);
         return str;
     }
 
@@ -21,7 +22,7 @@ namespace rats {
     std::string to_string(const ts::action_node<Args...>& node) {
         std::string str = "Action (" + to_string(node.action) + "):\\n";
         str += "N=" + to_string(node.num_visits);
-        // str += "\\nE[V]=" + to_string(node.q);
+        str += "\\nE[V]=" + to_string(node.q);
         return str;
     }
 

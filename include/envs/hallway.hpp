@@ -72,6 +72,8 @@ struct map_manager {
                         if (num_gold > 64) {
                             throw std::runtime_error("Invalid map: too many golds (max 64)");
                         }
+                        initial_gold_mask <<= 1;
+                        initial_gold_mask |= 1;
                         break;
                     case 'B':
                         data.push_back(EMPTY);
@@ -84,14 +86,21 @@ struct map_manager {
 
             height++;
         }
+
+        spdlog::debug("Loading map:");
+        spdlog::debug(" Map size: {}x{}", width, height);
+        spdlog::debug(" Start position: {}", start);
+        spdlog::debug(" Number of golds: {}", num_gold);
+        spdlog::debug(" Mask: {}", initial_gold_mask);
+        spdlog::debug(" Map:\n{}", str);
     }
 
-    // position, gold_mask, tile
-    std::tuple<int, uint64_t, int> move(size_t action, int pos, uint64_t gold_mask) const {
+    // position, gold_mask, tile, hit wall
+    std::tuple<int, uint64_t, int, bool> move(size_t action, int pos, uint64_t gold_mask) const {
+
         int x = pos % width;
         int y = pos / width;
-        int new_x = x;
-        int new_y = y;
+        int new_x = x;        int new_y = y;
         switch (action) {
             case LEFT:
                 new_x = x > 0 ? x - 1 : x;
@@ -108,16 +117,15 @@ struct map_manager {
         }
         int new_pos = new_y * width + new_x;
         int new_gold_mask = gold_mask;
-        bool trap = false;
-        if (data[new_pos] == TRAP) {
-            trap = true;
-        } else if (data[new_pos] >= 0) {
+        bool hit = false;
+        if (data[new_pos] >= 0) {
             uint64_t all = -1;
             new_gold_mask &= all ^ (1 << data[new_pos]);
         } else if (data[new_pos] == WALL) {
             new_pos = pos;
+            hit = true;
         }
-        return {new_pos, new_gold_mask, data[new_pos]};
+        return {new_pos, new_gold_mask, data[new_pos], hit};
     }
 };
 
@@ -161,14 +169,19 @@ hallway::hallway(std::string map_str, float trap_prob)
 }
 
 outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
-    auto [new_pos, new_gold_mask, tile] = m.move(action, position, gold_mask);
-    typename hallway::state_t state = {new_pos, new_gold_mask};
-    float reward = tile == map_manager::GOLD;
+    if (over) {
+        throw std::runtime_error("Cannot play action: environment is over");
+    }
+    auto [new_pos, new_gold_mask, tile, hit] = m.move(action, position, gold_mask);
+    float reward = new_gold_mask != gold_mask;
+    if (hit) reward -= 0.1f;
+    spdlog::debug("hit: {}", hit);
     float penalty = (tile == map_manager::TRAP) && (rng::unif_float() < trap_prob);
     if (penalty > 0) { new_pos = -1; }
-    bool o = (new_gold_mask == 0) || penalty > 0;
-    if (o) {over = true;}
-    return {state, reward, penalty, o};
+    over = (new_gold_mask == 0) || penalty > 0;
+    position = new_pos;
+    gold_mask = new_gold_mask;
+    return {{position, gold_mask}, reward, penalty, over};
 }
 
 void hallway::make_checkpoint(size_t id) {
@@ -185,6 +198,7 @@ void hallway::restore_checkpoint(size_t id) {
     } else {
         std::tie(position, gold_mask) = checkpoints[id];
     }
+    over = position == -1;
 }
 
 void hallway::reset() {
@@ -195,7 +209,7 @@ void hallway::reset() {
 
 std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typename hallway::state_t s, size_t a) const {
     auto [pos, gold_mask] = s;
-    auto [new_pos, new_gold_mask, tile] = m.move(a, pos, gold_mask);
+    auto [new_pos, new_gold_mask, tile, hit] = m.move(a, pos, gold_mask);
 
     if (tile == map_manager::TRAP) {
         return {{{-1, new_gold_mask}, trap_prob}, {{new_pos, new_gold_mask}, 1 - trap_prob}};

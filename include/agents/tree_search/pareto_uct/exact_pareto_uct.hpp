@@ -89,7 +89,7 @@ struct pareto_value {
 };
 } // namespace ts
 
-std::string to_stringg(const ts::pareto_value& v) {
+std::string to_string(const ts::pareto_value& v) {
     return to_string(v.curve);
 }
 
@@ -254,9 +254,7 @@ void exact_pareto_propagate(SN* leaf, float gamma) {
         for (auto& [s1, child] : current_an->children) {
             weights.push_back(probs[s1]);
             state_refs.push_back(current_an->child_idx[s1]);
-            weights_str += "s(" + to_string(s1) + ")=" + to_string(weights.back()) + ", ";
         }
-        spdlog::debug("Weights: {}", weights_str);
         merged_curve = weighted_merge(state_curves, weights, state_refs);
         ++current_an->num_visits;
         merged_curve.num_samples = current_an->num_visits;

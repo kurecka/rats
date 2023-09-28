@@ -12,28 +12,29 @@ from utils import set_log_level
 # #############
 # """
 
-map = """#####
-#BTG#
-#.T.#
-#...#
-#####
+map = """
+#######
+#BTTTG#
+#..T..#
+#.....#
+#######
 """
 
 set_log_level('info')
 
-e = envs.Hallway(map, 0.5)
+e = envs.Hallway(map, 0.1)
 # e = envs.InvestorEnv(2, 20)
+h = envs.EnvironmentHandler(e)
 a = agents.ParetoUCT(
-    envs.EnvironmentHandler(e),
-    max_depth=20, num_sim=40, risk_thd=0.2, gamma=1,
-    exploration_constant=1, graphviz_depth=7
+    h,
+    max_depth=80, num_sim=4000, risk_thd=0.2, gamma=1,
+    exploration_constant=0.6, graphviz_depth=4
 )
 
-
-for i in range(30):
+for i in range(3):
     e.reset()
     a.reset()
-    while not e.is_over():
+    while not a.get_handler().is_over():
         a.play()
 
 

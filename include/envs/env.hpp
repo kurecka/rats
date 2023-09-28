@@ -111,15 +111,20 @@ class environment_handler {
 private:
     environment<S, A>* env;
     bool is_simulating = false;
+    int checkpoint_num_steps;
 
     float reward;
     float penalty;
     int num_steps;
+    int max_num_steps = 100;
 public:
     // environment_handler(environment<S, A>* env) : env(env) {}
-    environment_handler() = default;
-    environment_handler(environment<S, A>& _env) : env(&_env) {}
-    environment_handler(const environment_handler&) = default;
+    // environment_handler() = default;
+    environment_handler(environment<S, A>& _env, int max_num_steps_ = 100)
+    : env(&_env)
+    , max_num_steps(max_num_steps_)
+    {}
+    // environment_handler(const environment_handler&, max_num_steps_ = 100) = default;
 
     ~environment_handler() = default;
 
@@ -149,9 +154,10 @@ public:
      * @return outcome_t
      */
     outcome_t<S> play_action(A action) {
-        if (is_simulating) {
-            env->restore_checkpoint(0);
-            is_simulating = false;
+        sim_reset();
+        spdlog::debug("Steps: {} {}", num_steps, max_num_steps);
+        if (is_over()) {
+            return {get_current_state(), 0, 0, true};
         }
         outcome_t<S> o = env->play_action(action);
         float r = std::get<1>(o);
@@ -165,10 +171,12 @@ public:
 
     void make_checkpoint(size_t id) {
         env->make_checkpoint(id);
+        checkpoint_num_steps = num_steps;
     }
 
     void restore_checkpoint(size_t id) {
         env->restore_checkpoint(id);
+        num_steps = checkpoint_num_steps;
     }
 
     /**
@@ -179,9 +187,13 @@ public:
      */
     outcome_t<S> sim_action(A action) {
         if (!is_simulating) {
-            env->make_checkpoint(0);
+            make_checkpoint(0);
             is_simulating = true;
         }
+        if (is_over()) {
+            return {get_current_state(), 0, 0, true};
+        }
+        ++num_steps;
         return env->play_action(action);
     }
 
@@ -191,7 +203,7 @@ public:
      */
     void sim_reset() {
         if (is_simulating) {
-            env->restore_checkpoint(0);
+            restore_checkpoint(0);
             is_simulating = false;
         }
     }
@@ -249,6 +261,10 @@ public:
     operator bool() const
     {
         return env;
+    }
+
+    bool is_over() const {
+        return env->is_over() || num_steps >= max_num_steps;
     }
 };
 } // namespace rats

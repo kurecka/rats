@@ -37,7 +37,8 @@ py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_envir
         .def("num_actions", &environment_handler<S, A>::num_actions)
         .def("possible_actions", &environment_handler<S, A>::possible_actions)
         .def("get_action", &environment_handler<S, A>::get_action)
-        .def("get_current_state", &environment_handler<S, A>::get_current_state);
+        .def("get_current_state", &environment_handler<S, A>::get_current_state)
+        .def("is_over", &environment_handler<S, A>::is_over);
 
     return env_type;
 }

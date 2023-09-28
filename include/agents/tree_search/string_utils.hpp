@@ -1,29 +1,31 @@
 #pragma once
 
 #include "tree_search.hpp"
-#include "string_utils.hpp"
+#include "../../string_utils.hpp"
 #include <fstream>
 #include <vector>
 
-namespace rats::ts {
+namespace rats { 
     template<typename ...Args>
-    std::string to_string(const state_node<Args...>& node) {
+    std::string to_string(const ts::state_node<Args...>& node) {
         std::string str = "State ("+to_string(node.state)+"):\n";
         str += "N=" + to_string(node.num_visits);
         str += "\\nr=" + to_string(node.observed_reward);
         str += ", p=" + to_string(node.observed_penalty);
         
-        str += "\\nE[V]=" + to_string(node.v);
+        str += "\\nE[V]=" + to_stringg(node.v);
         return str;
     }
 
     template<typename ...Args>
-    std::string to_string(const action_node<Args...>& node) {
+    std::string to_string(const ts::action_node<Args...>& node) {
         std::string str = "Action (" + to_string(node.action) + "):\\n";
         str += "N=" + to_string(node.num_visits);
-        str += "\\nE[V]=" + to_string(node.q);
+        // str += "\\nE[V]=" + to_string(node.q);
         return str;
     }
+
+    namespace ts {
 
     template<typename ...Args>
     std::string to_graphviz(const state_node<Args...>& node, std::string parent, size_t& id, int depth) {
@@ -66,4 +68,6 @@ namespace rats::ts {
         str += to_graphviz(node, "", id, depth) + "}\n";
         return str;
     }
-}
+
+    } // namespace ts
+} // namespace rats

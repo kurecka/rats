@@ -1,7 +1,7 @@
 #pragma once
 
 #include "agents/agent.hpp"
-#include "string_utils.hpp"
+#include "../string_utils.hpp"
 #include "rand.hpp"
 
 

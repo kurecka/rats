@@ -16,11 +16,11 @@ docker:
 provider:
     type: local
     head_ip: erinys02.fi.muni.cz
-    worker_ips:
-        - erinys03.fi.muni.cz
-        - erinys04.fi.muni.cz
-        - erinys05.fi.muni.cz
-        - erinys06.fi.muni.cz
+    worker_ips: []
+        # - erinys03.fi.muni.cz
+        # - erinys04.fi.muni.cz
+        # - erinys05.fi.muni.cz
+        # - erinys06.fi.muni.cz
 
 
 auth:

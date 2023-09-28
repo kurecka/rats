@@ -2,6 +2,8 @@
 
 #include <Eigen/Dense>
 #include "utils.hpp"
+#include "../../../string_utils.hpp"
+// #include "string_utils.hpp"
 
 
 namespace rats {
@@ -58,17 +60,6 @@ public:
         return *this;
     }
 };
-
-
-std::string to_string(const EPC& curve) {
-    std::string s = "[";
-    for (auto [r, p, supp] : curve.points) {
-        s += "(" + to_string(r) + ", " + to_string(p) + "), ";
-    }
-    s += "]";
-    return s;
-}
-
 
 EPC convex_hull_merge(std::vector<EPC*> curves) {
     std::vector<std::tuple<float, float, outcome_support>> points;
@@ -147,88 +138,88 @@ EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights, std::ve
 }
 
 
-/**
- * @brief A class to represent a quadratic approximation of a pareto curve
- * 
- * 
- * The quadratic approximation is of the form:
- * r = beta[2] * p^2 + beta[1] * p + beta[0]
- */
-class quad_pareto_curve {
-private:
-    size_t num_samples = 0;
-    Eigen::Matrix3d moments = Eigen::Matrix3d::Zero();
-    Eigen::Vector3d mean_xy = Eigen::Vector3d::Zero();
+// /**
+//  * @brief A class to represent a quadratic approximation of a pareto curve
+//  * 
+//  * 
+//  * The quadratic approximation is of the form:
+//  * r = beta[2] * p^2 + beta[1] * p + beta[0]
+//  */
+// class quad_pareto_curve {
+// private:
+//     size_t num_samples = 0;
+//     Eigen::Matrix3d moments = Eigen::Matrix3d::Zero();
+//     Eigen::Vector3d mean_xy = Eigen::Vector3d::Zero();
 
-    Eigen::Vector3f beta = Eigen::Vector3f::Zero();
-public:
-    void update(float r, float p) {
-        double _r = static_cast<double>(r);
-        double _p = static_cast<double>(p);
-        ++num_samples;
-        Eigen::Vector3d x = {1, _p, _p*_p};
-        moments += (x * x.transpose() - moments) / num_samples;
-        mean_xy += (_r * x - mean_xy) / num_samples;
+//     Eigen::Vector3f beta = Eigen::Vector3f::Zero();
+// public:
+//     void update(float r, float p) {
+//         double _r = static_cast<double>(r);
+//         double _p = static_cast<double>(p);
+//         ++num_samples;
+//         Eigen::Vector3d x = {1, _p, _p*_p};
+//         moments += (x * x.transpose() - moments) / num_samples;
+//         mean_xy += (_r * x - mean_xy) / num_samples;
 
-        auto QR = moments.fullPivHouseholderQr();
-        beta = QR.solve(mean_xy).cast<float>();
+//         auto QR = moments.fullPivHouseholderQr();
+//         beta = QR.solve(mean_xy).cast<float>();
 
-        if (beta[2] > 0) {
-            beta[2] = 0;
-        }
-        if (beta[2] > -1e-6f && beta[1] < 0) {
-            beta[1] = 0;
-        }
-    }
+//         if (beta[2] > 0) {
+//             beta[2] = 0;
+//         }
+//         if (beta[2] > -1e-6f && beta[1] < 0) {
+//             beta[1] = 0;
+//         }
+//     }
 
-    float eval(float p, float uct = 0) const {
-        return static_cast<float>(beta[2] * p * p + beta[1] * p + beta[0]) + uct;
-    }
+//     float eval(float p, float uct = 0) const {
+//         return static_cast<float>(beta[2] * p * p + beta[1] * p + beta[0]) + uct;
+//     }
 
-    std::array<float, 3> get_beta() const {
-        return {beta[0], beta[1], beta[2]};
-    }
+//     std::array<float, 3> get_beta() const {
+//         return {beta[0], beta[1], beta[2]};
+//     }
 
-    std::pair<float, float> r_bounds() const {
-        float right_r = eval(1);
-        float left_r = eval(std::min(min_p() + 0.01f, 1.f));
-        return {left_r, right_r};
-    }
+//     std::pair<float, float> r_bounds() const {
+//         float right_r = eval(1);
+//         float left_r = eval(std::min(min_p() + 0.01f, 1.f));
+//         return {left_r, right_r};
+//     }
 
-    float min_p() const {
-        float root;
-        if (beta[2] > -1e-6f && beta[2] < 1e-6f) {
-            root = -beta[0] / beta[1];
-        } else {
-            root = (-beta[1] - sqrt(beta[1] * beta[1] - 4 * beta[2] * beta[0])) / (2 * beta[2]);
-        }
+//     float min_p() const {
+//         float root;
+//         if (beta[2] > -1e-6f && beta[2] < 1e-6f) {
+//             root = -beta[0] / beta[1];
+//         } else {
+//             root = (-beta[1] - sqrt(beta[1] * beta[1] - 4 * beta[2] * beta[0])) / (2 * beta[2]);
+//         }
 
-        return std::max(0.f, std::min(1.f, root));
-    }
+//         return std::max(0.f, std::min(1.f, root));
+//     }
 
-    /**
-     * @brief Get p such that c'(p) = d, where c is the curve and d is the derivative.
-     * 
-     * d = c'(p) = 2 * beta[2] * p + beta[1]
-     * p = (d - beta[1]) / (2 * beta[2])
-     * 
-     * @param d derivative
-     * @return float
-     */
-    float inverse_derivative(float d) const {
-        return (d - beta[1]) / (2 * beta[2]);
-    }
+//     /**
+//      * @brief Get p such that c'(p) = d, where c is the curve and d is the derivative.
+//      * 
+//      * d = c'(p) = 2 * beta[2] * p + beta[1]
+//      * p = (d - beta[1]) / (2 * beta[2])
+//      * 
+//      * @param d derivative
+//      * @return float
+//      */
+//     float inverse_derivative(float d) const {
+//         return (d - beta[1]) / (2 * beta[2]);
+//     }
 
-    float derivative(float p) const {
-        return 2 * beta[2] * p + beta[1];
-    }
-};
+//     float derivative(float p) const {
+//         return 2 * beta[2] * p + beta[1];
+//     }
+// };
 
 
-std::string to_string(const quad_pareto_curve& c) {
-    auto beta = c.get_beta();
-    return to_string(beta[2]) + " * p^2 + " + to_string(beta[1]) + " * p + " + to_string(beta[0]);
-}
+// std::string to_string(const quad_pareto_curve& c) {
+//     auto beta = c.get_beta();
+//     return to_string(beta[2]) + " * p^2 + " + to_string(beta[1]) + " * p + " + to_string(beta[0]);
+// }
 
 
 // class softmax_pareto_curve {
@@ -266,4 +257,16 @@ std::string to_string(const quad_pareto_curve& c) {
 // };
 
 } // namespace ts
+
+//check whther T contain a curve in the compile time
+
+std::string to_string(const ts::EPC& curve) {
+    std::string s = "[";
+    for (auto& [r, p, supp] : curve.points) {
+        s += "(" + to_string(r) + ", " + to_string(p) + "), ";
+    }
+    s += "]";
+    return s;
+}
+
 } // namespace rats

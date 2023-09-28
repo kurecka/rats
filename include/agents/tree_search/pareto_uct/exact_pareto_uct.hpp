@@ -6,9 +6,8 @@
 #include <cmath>
 
 #include "../tree_search.hpp"
-#include "pareto_curves.hpp"
 #include "utils.hpp"
-#include "../string_utils.hpp"
+#include "pareto_curves.hpp"
 
 namespace rats {
 namespace ts {
@@ -84,18 +83,22 @@ struct pareto_uct_data {
     float gamma;
 };
 
-
-template <typename pareto_curve>
 struct pareto_value {
-    pareto_curve curve;
+    EPC curve;
     float risk_thd;
 };
+} // namespace ts
 
-
-template <typename pareto_curve>
-std::string to_string(pareto_value<pareto_curve> v) {
+std::string to_stringg(const ts::pareto_value& v) {
     return to_string(v.curve);
 }
+
+} // namespace rats
+
+#include "../string_utils.hpp"
+
+namespace rats {
+namespace ts {
 
 template<typename SN>
 struct select_action_pareto {
@@ -295,9 +298,8 @@ void expand_state_neighbours(
 template <typename S, typename A>
 class pareto_uct : public agent<S, A> {
     using data_t = pareto_uct_data<S, A>;
-    using v_t = pareto_value<EPC>;
-    using q_t = pareto_value<EPC>;
-    using pareto_curve = EPC;
+    using v_t = pareto_value;
+    using q_t = pareto_value;
     using state_node_t = state_node<S, A, data_t, v_t, q_t>;
     using action_node_t = action_node<S, A, data_t, v_t, q_t>;
     
@@ -375,7 +377,7 @@ public:
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         spdlog::debug("Play action: {}", a);
-        spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
+        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
@@ -416,6 +418,7 @@ public:
 };
 
 } // namespace ts
+
 } // namespace rats
 
 

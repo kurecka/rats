@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ortools/linear_solver/linear_solver.h>
 #include <spdlog/spdlog.h>
 #include <memory>

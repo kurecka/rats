@@ -1,6 +1,6 @@
 #pragma once
 #include "tree_search.hpp"
-#include "string_utils.hpp"
+#include "../../string_utils.hpp"
 #include <string>
 #include <vector>
 #include <array>
@@ -58,7 +58,7 @@ struct select_action_primal {
             for (auto l : lcts) lcts_str += to_string(l) + ", ";
             spdlog::trace("ucts: {}", ucts_str);
             spdlog::trace("lcts: {}", lcts_str);
-            spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", a1, p2, a2, risk_thd);
+            spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", to_string(a1), p2, to_string(a2), risk_thd);
         }
 
         if constexpr (deterministic) {
@@ -145,7 +145,7 @@ public:
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         spdlog::debug("Play action: {}", a);
-        spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
+        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {

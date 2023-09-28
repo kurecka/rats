@@ -1,9 +1,9 @@
 #pragma once
 
 #include "tree_search.hpp"
-#include "string_utils.hpp"
 #include <string>
 #include <vector>
+
 
 namespace rats {
 namespace ts {
@@ -173,7 +173,7 @@ public:
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         spdlog::debug("Play action: {}", a);
-        spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
+        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {

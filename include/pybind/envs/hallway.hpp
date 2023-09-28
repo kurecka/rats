@@ -8,8 +8,8 @@
 namespace rats::py {
 
 template <typename T>
-void register_hallwat(py::module &m, const T& env_type) {
-    py::class_<frozen_lake>(m, "Hallway", env_type)
+void register_hallway(py::module &m, const T& env_type) {
+    py::class_<hallway>(m, "Hallway", env_type)
         .def(py::init<std::string, float>());
 }
 

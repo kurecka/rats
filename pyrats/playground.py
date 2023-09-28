@@ -1,14 +1,31 @@
-import rats
-import rats
-import ray
 import numpy as np
 
+import envs
+import agents
+from utils import set_log_level
 
-rats.set_log_level('info')
-e = rats.InvestorEnv(2, 20)
-a = rats.ParetoUCT(
-    rats.EnvironmentHandler(e),
-    max_depth=20, num_sim=4, risk_thd=0.2, gamma=1,
+# map = """
+# #############
+# #B...T#.G...#
+# #.##..#TTT..#
+# #..G#.......#
+# #############
+# """
+
+map = """#####
+#BTG#
+#.T.#
+#...#
+#####
+"""
+
+set_log_level('info')
+
+e = envs.Hallway(map, 0.5)
+# e = envs.InvestorEnv(2, 20)
+a = agents.ParetoUCT(
+    envs.EnvironmentHandler(e),
+    max_depth=20, num_sim=40, risk_thd=0.2, gamma=1,
     exploration_constant=1, graphviz_depth=7
 )
 

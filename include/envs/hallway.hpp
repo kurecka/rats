@@ -1,7 +1,5 @@
 #pragma once
 
-#include <map>
-#include "envs/env.hpp"
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -9,6 +7,7 @@
 #include <map>
 #include <cstdint>
 
+#include "envs/env.hpp"
 #include "rand.hpp"
 
 
@@ -45,11 +44,11 @@ struct map_manager {
      * #GT..#
      * ######
     */
-    map(std::string str) {
+    map_manager(std::string str) {
         std::stringstream ss(str);
         std::string line;
         num_gold = 0;
-        gold_mask = 0;
+        initial_gold_mask = 0;
         while (std::getline(ss, line)) {
             if (line.size() == 0) continue;
             if (width == 0) {
@@ -87,12 +86,8 @@ struct map_manager {
         }
     }
 
-    void reset() {
-        current_gold_mask = initial_gold_mask;
-    }
-
     // position, gold_mask, tile
-    std::tuple<int, uint64_t, int> move(int action, int pos, uint64_t gold_mask) {
+    std::tuple<int, uint64_t, int> move(size_t action, int pos, uint64_t gold_mask) const {
         int x = pos % width;
         int y = pos / width;
         int new_x = x;
@@ -117,7 +112,7 @@ struct map_manager {
         if (data[new_pos] == TRAP) {
             trap = true;
         } else if (data[new_pos] >= 0) {
-            uintt64_t all = -1;
+            uint64_t all = -1;
             new_gold_mask &= all ^ (1 << data[new_pos]);
         } else if (data[new_pos] == WALL) {
             new_pos = pos;
@@ -145,16 +140,16 @@ public:
 
     std::pair<float, float> reward_range() const override { return {0, 1}; }
     size_t num_actions() const override { return 4; }
-    std::vector<size_t> possible_actions() const override { return {0, 1, 2, 3}; }
+    std::vector<action_t> possible_actions() const override { return {0, 1, 2, 3}; }
     size_t get_action(size_t i) const override { return i; }
-    int current_state() const override { return state; }
+    state_t current_state() const override { return {position, gold_mask}; }
     bool is_over() const override { return over; }
-    outcome_t<int> play_action(size_t action) override;
+    outcome_t<state_t> play_action(size_t action) override;
 
     void restore_checkpoint(size_t id) override;
     void make_checkpoint(size_t id) override;
 
-    std::map<state_t, float> outcome_probabilities(state_t state, size_t action) const override;
+    std::map<state_t, float> outcome_probabilities(state_t state, action_t action) const override;
 
     void reset() override;
 };
@@ -166,13 +161,13 @@ hallway::hallway(std::string map_str, float trap_prob)
 }
 
 outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
-    auto [new_pos, new_gold_mask, tile] = map.move(action, position, gold_mask);
+    auto [new_pos, new_gold_mask, tile] = m.move(action, position, gold_mask);
     typename hallway::state_t state = {new_pos, new_gold_mask};
     float reward = tile == map_manager::GOLD;
     float penalty = (tile == map_manager::TRAP) && (rng::unif_float() < trap_prob);
     if (penalty > 0) { new_pos = -1; }
     bool o = (new_gold_mask == 0) || penalty > 0;
-    if (o) {is_over = true;}
+    if (o) {over = true;}
     return {state, reward, penalty, o};
 }
 
@@ -180,7 +175,7 @@ void hallway::make_checkpoint(size_t id) {
     if (id == 0) {
         checkpoint = {position, gold_mask};
     } else {
-        checkpoints[id] = {position, gold_mask}
+        checkpoints[id] = {position, gold_mask};
     }
 }
 
@@ -195,10 +190,10 @@ void hallway::restore_checkpoint(size_t id) {
 void hallway::reset() {
     position = m.start;
     gold_mask = m.initial_gold_mask;
-    this->over = false;
+    over = false;
 }
 
-std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typename hallway::state_t s, int a) const {
+std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typename hallway::state_t s, size_t a) const {
     auto [pos, gold_mask] = s;
     auto [new_pos, new_gold_mask, tile] = m.move(a, pos, gold_mask);
 

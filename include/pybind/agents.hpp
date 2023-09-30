@@ -6,6 +6,7 @@
 #include "pybind/agents/dual_uct.hpp"
 #include "pybind/agents/primal_uct.hpp"
 #include "pybind/agents/pareto_uct.hpp"
+#include "pybind/agents/ramcp.hpp"
 
 
 namespace rats::py {

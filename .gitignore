@@ -28,3 +28,5 @@ logs
 *.egg-info
 
 docker_build
+
+build

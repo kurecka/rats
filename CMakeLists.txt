@@ -37,6 +37,9 @@ find_package(pybind11 REQUIRED)
 
 find_package(ortools CONFIG REQUIRED)
 
+# Define NDEBUG macro
+add_definitions(-DNDEBUG)
+
 # --------------------------------------------------------------------------------
 #                         Locate files (change as needed).
 # --------------------------------------------------------------------------------
@@ -115,6 +118,7 @@ set_target_properties(
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
+        COMPILE_OPTIONS "-O2"
 )
 
 # Set up tests (see tests/CMakeLists.txt).

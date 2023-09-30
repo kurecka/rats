@@ -121,4 +121,16 @@ private:
     static bool bernoulli(T p) {
         return d_uni_dist(engine) < p;
     }
+
+    /**
+     * @brief Get a random sample from discrete distribution
+     * 
+     * @param distribution container with probabilities (summing to 1)
+     * @return sample from the discrete distribution
+     */
+    template <typename T>
+    static int custom_discrete(T distribution) {
+        std::discrete_distribution<> d (distribution.begin(), distribution.end());
+        return d(engine);
+    }
 };

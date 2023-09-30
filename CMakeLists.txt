@@ -77,7 +77,7 @@ target_link_libraries(${LIBRARY_NAME} PRIVATE pybind11::pybind11)
 if(PEDANTIC)
     message(STATUS "Enabling pedantic compiler warnings for ${LIBRARY_NAME}. If this is annoying, set -DPEDANTIC=OFF.")
     target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-    target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors -Wno-poison-system-directories)
+    target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors)# -Wno-poison-system-directories)
 endif()
 
 # --------------------------------------------------------------------------------
@@ -85,15 +85,15 @@ endif()
 # --------------------------------------------------------------------------------
 
 # Add the executeble
-set(MAIN_APP_NAME rats_app)
-add_executable(${MAIN_APP_NAME} app/main.cpp)
+# set(MAIN_APP_NAME rats_app)
+# add_executable(${MAIN_APP_NAME} app/main.cpp)
 
 # Add the python binding
 set(MAIN_MODULE_NAME rats)
 pybind11_add_module(${MAIN_MODULE_NAME} pybind/interface.cpp)
 
-foreach(_target ${MAIN_APP_NAME} ${MAIN_MODULE_NAME})
-
+# foreach(_target ${MAIN_APP_NAME} ${MAIN_MODULE_NAME})
+foreach(_target ${MAIN_MODULE_NAME})
 # Link libraries
 target_link_libraries(${_target} PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
 target_link_libraries(${_target} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
@@ -104,8 +104,8 @@ target_link_libraries(${_target} PRIVATE pybind11::pybind11)
 if (PEDANTIC)
     message(STATUS "Enabling pedantic compiler warnings for ${_target}. If this is annoying, set -DPEDANTIC=OFF.")
     target_set_warnings(${_target} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-    target_compile_options(${_target} PRIVATE -Wno-missing-prototypes)
-    target_compile_options(${_target} PRIVATE -Wno-poison-system-directories)
+    # target_compile_options(${_target} PRIVATE -Wno-missing-prototypes)
+    # target_compile_options(${_target} PRIVATE -Wno-poison-system-directories)
 endif()
 target_enable_lto(${_target} optimized)  # enable link-time-optimization if available for non-debug configurations
 endforeach()

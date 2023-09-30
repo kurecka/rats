@@ -201,8 +201,8 @@ class pareto_uct : public agent<S, A> {
     using v_t = pareto_value<quad_pareto_curve>;
     using q_t = pareto_value<quad_pareto_curve>;
     using pareto_curve = quad_pareto_curve;
-    using uct_state_t = state_node<S, A, data_t, v_t, q_t>;
-    using uct_action_t = action_node<S, A, data_t, v_t, q_t>;
+    using state_node_t = state_node<S, A, data_t, v_t, q_t>;
+    using action_node_t = action_node<S, A, data_t, v_t, q_t>;
     
     constexpr static auto select_action_f = select_action_pareto<S, A, data_t, pareto_curve>;
     constexpr static auto descend_callback_f = descend_callback<S, A, data_t, pareto_curve>;
@@ -217,7 +217,7 @@ private:
 
     data_t common_data;
 
-    std::unique_ptr<uct_state_t> root;
+    std::unique_ptr<state_node_t> root;
 public:
     pareto_uct(
         environment_handler<S, A> _handler,
@@ -230,7 +230,7 @@ public:
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , common_data({_risk_thd, _risk_thd, _exploration_constant, agent<S, A>::handler})
-    , root(std::make_unique<uct_state_t>())
+    , root(std::make_unique<state_node_t>())
     {
         reset();
     }
@@ -241,7 +241,7 @@ public:
         for (int i = 0; i < num_sim; i++) {
             spdlog::trace("Simulation {}", i);
             common_data.sample_risk_thd = common_data.risk_thd;
-            uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
+            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
             expand_state(leaf);
             void_rollout(leaf);
             propagate_f(leaf, gamma);
@@ -261,12 +261,12 @@ public:
         spdlog::debug("Play action: {}", a);
         spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
 
-        uct_action_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
             expand_action(an, s, r, p, t);
         }
 
-        std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
+        std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
 
         descend_callback_f(root.get(), a, an, s, new_root.get());
 
@@ -278,7 +278,7 @@ public:
         spdlog::debug("Reset: {}", name());
         agent<S, A>::reset();
         common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
-        root = std::make_unique<uct_state_t>();
+        root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
     }
 

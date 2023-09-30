@@ -1,9 +1,9 @@
 #pragma once
 
 #include "tree_search.hpp"
-#include "string_utils.hpp"
 #include <string>
 #include <vector>
+
 
 namespace rats {
 namespace ts {
@@ -18,63 +18,65 @@ struct dual_uct_data {
 };
 
 
-template<typename S, typename A, typename DATA, typename V>
-A select_action_dual(state_node<S, A, DATA, V, point_value>* node, bool explore) {
-    float risk_thd = node->common_data->sample_risk_thd;
-    float lambda = node->common_data->lambda;
-    float c = node->common_data->exploration_constant;
+template<typename SN>
+struct select_action_dual {
+    size_t operator()(SN* node, bool explore) const {
+        float risk_thd = node->common_data->sample_risk_thd;
+        float lambda = node->common_data->lambda;
+        float c = node->common_data->exploration_constant;
 
-    auto& children = node->children;
-    
-    float min_v = children[0].q.first - lambda * children[0].q.second;
-    float max_v = min_v;
-    std::vector<float> uct_values(children.size());
-    for (size_t i = 0; i < children.size(); ++i) {
-        float val = children[i].q.first - lambda * children[i].q.second;
-        min_v = std::min(min_v, val);
-        max_v = std::max(max_v, val);
-        uct_values[i] = val;
-    }
-    if (min_v < 0) {
-        max_v = 0.9f * min_v;
-    } else {
-        max_v = 1.1f * min_v;
-    }
+        auto& children = node->children;
+        
+        float min_v = children[0].q.first - lambda * children[0].q.second;
+        float max_v = min_v;
+        std::vector<float> uct_values(children.size());
+        for (size_t i = 0; i < children.size(); ++i) {
+            float val = children[i].q.first - lambda * children[i].q.second;
+            min_v = std::min(min_v, val);
+            max_v = std::max(max_v, val);
+            uct_values[i] = val;
+        }
+        if (min_v < 0) {
+            max_v = 0.9f * min_v;
+        } else {
+            max_v = 1.1f * min_v;
+        }
 
-    for (size_t i = 0; i < children.size(); ++i) {
-        uct_values[i] += explore * c * (max_v - min_v) * static_cast<float>(
-            sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-        );
-    }
+        for (size_t i = 0; i < children.size(); ++i) {
+            uct_values[i] += explore * c * (max_v - min_v) * static_cast<float>(
+                sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
+            );
+        }
 
-    float best_reward = *std::max_element(uct_values.begin(), uct_values.end());
-    float eps = (max_v - min_v) * 0.1f;
-    std::vector<size_t> eps_best_actions;
-    for (size_t i = 0; i < children.size(); ++i) {
-        if (uct_values[i] >= best_reward - eps) {
-            eps_best_actions.push_back(i);
+        float best_reward = *std::max_element(uct_values.begin(), uct_values.end());
+        float eps = (max_v - min_v) * 0.1f;
+        std::vector<size_t> eps_best_actions;
+        for (size_t i = 0; i < children.size(); ++i) {
+            if (uct_values[i] >= best_reward - eps) {
+                eps_best_actions.push_back(i);
+            }
+        }
+        
+        std::vector<float> rs(eps_best_actions.size());
+        for (size_t idx : eps_best_actions) {
+            rs[idx] = children[idx].q.first;
+        }
+
+        std::vector<float> ps(eps_best_actions.size());
+        for (size_t idx : eps_best_actions) {
+            ps[idx] = children[idx].q.second;
+        }
+
+        auto [a1, p2, a2] = greedy_mix(rs, ps, risk_thd);
+        a1 = eps_best_actions[a1];
+        a2 = eps_best_actions[a2];
+        if (rng::unif_float() < p2) {
+            return a2;
+        } else {
+            return a1;
         }
     }
-    
-    std::vector<float> rs(eps_best_actions.size());
-    for (size_t idx : eps_best_actions) {
-        rs[idx] = children[idx].q.first;
-    }
-
-    std::vector<float> ps(eps_best_actions.size());
-    for (size_t idx : eps_best_actions) {
-        ps[idx] = children[idx].q.second;
-    }
-
-    auto [a1, p2, a2] = greedy_mix(rs, ps, risk_thd);
-    a1 = eps_best_actions[a1];
-    a2 = eps_best_actions[a2];
-    if (rng::unif_float() < p2) {
-        return node->actions[a2];
-    } else {
-        return node->actions[a1];
-    }
-}
+};
 
 
 /*********************************************************************
@@ -94,11 +96,14 @@ class dual_uct : public agent<S, A> {
     using data_t = dual_uct_data<S, A>;
     using v_t = std::pair<float, float>;
     using q_t = std::pair<float, float>;
-    using uct_state_t = state_node<S, A, data_t, v_t, q_t>;
-    using uct_action_t = action_node<S, A, data_t, v_t, q_t>;
+    using state_node_t = state_node<S, A, data_t, v_t, q_t>;
+    using action_node_t = action_node<S, A, data_t, v_t, q_t>;
     
-    constexpr auto static select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_dual<S, A, data_t, v_t>, void_descend_callback<S, A, data_t, v_t, q_t>>;
-    constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<S, A, data_t>, uct_prop_q_value<S, A, data_t>>;
+    using select_action_t = select_action_dual<state_node_t>;
+    using descend_callback_t = void_fn<state_node_t*, A, action_node_t*, S, state_node_t*>;
+    constexpr auto static select_action_f = select_action_t();
+    constexpr auto static select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
+    constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
 
 private:
     int max_depth;
@@ -111,7 +116,7 @@ private:
 
     data_t common_data;
 
-    std::unique_ptr<uct_state_t> root;
+    std::unique_ptr<state_node_t> root;
 public:
     dual_uct(
         environment_handler<S, A> _handler,
@@ -125,7 +130,7 @@ public:
     , gamma(_gamma)
     , lr(0.0005f)
     , common_data({_risk_thd, _risk_thd, initial_lambda, _exploration_constant, agent<S, A>::handler})
-    , root(std::make_unique<uct_state_t>())
+    , root(std::make_unique<state_node_t>())
     {
         reset();
     }
@@ -137,18 +142,18 @@ public:
             spdlog::trace("Simulation {}", i);
             common_data.sample_risk_thd = common_data.risk_thd;
             spdlog::trace("Select leaf");
-            uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
+            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
             spdlog::trace("Expand leaf");
             expand_state(leaf);
             spdlog::trace("Rollout");
-            void_rollout(leaf);
+            // void_rollout(leaf);
             spdlog::trace("Propagate");
             propagate_f(leaf, gamma);
             agent<S, A>::handler.sim_reset();
 
             spdlog::trace("Select action");
-            A a = select_action_dual(root.get(), false);
-            uct_action_t* action_node = root->get_child(a);
+            A a = select_action_f(root.get(), false);
+            action_node_t* action_node = root->get_child(a);
 
             spdlog::trace("Update lambda");
             d_lambda += ((action_node->q.second - common_data.risk_thd) - d_lambda) * 0.2f;
@@ -158,7 +163,7 @@ public:
         }
 
         common_data.sample_risk_thd = common_data.risk_thd;
-        A a = select_action_dual(root.get(), false);
+        A a = select_action_f(root.get(), false);
 
         // static bool logged = false;
         // if (!logged) {
@@ -168,16 +173,16 @@ public:
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         spdlog::debug("Play action: {}", a);
-        spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
+        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
-        uct_action_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
             expand_action(an, s, r, p, t);
         }
 
         common_data.risk_thd = an->children[s]->v.second;
 
-        std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
+        std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
         root->get_parent() = nullptr;
     }
@@ -188,7 +193,7 @@ public:
         agent<S, A>::reset();
         common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
         // common_data.lambda = initial_lambda;
-        root = std::make_unique<uct_state_t>();
+        root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
     }
 

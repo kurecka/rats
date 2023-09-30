@@ -6,8 +6,8 @@
 namespace rats::py {
 
 template <typename S, typename A>
-py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_environment(py::module& m) {
-    py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> env_type(m, "Environment");
+py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_environment(py::module& m, std::string type_name) {
+    py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> env_type(m, ("Environment" + type_name).c_str());
     env_type
         .def("name", &environment<S, A>::name)
         .def("num_actions", &environment<S, A>::num_actions)
@@ -17,9 +17,14 @@ py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_envir
         .def("current_state", &environment<S, A>::current_state)
         .def("restore_checkpoint", &environment<S, A>::restore_checkpoint)
         .def("make_checkpoint", &environment<S, A>::make_checkpoint)
-        .def("reset", &environment<S, A>::reset);
+        .def("reset", &environment<S, A>::reset)
+        .def("template_type", [type_name](const environment<S, A>& self) {
+            std::string delim = "__";
+            size_t pos = type_name.rfind(delim);
+            return type_name.substr(pos + delim.length());
+        });
     
-    py::class_<environment_handler<S, A>>(m, "EnvironmentHandler")
+    py::class_<environment_handler<S, A>>(m, ("EnvironmentHandler" + type_name).c_str())
         .def(py::init<environment<S, A>&>())
         .def("get_reward", &environment_handler<S, A>::get_reward)
         .def("get_penalty", &environment_handler<S, A>::get_penalty)
@@ -32,7 +37,8 @@ py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_envir
         .def("num_actions", &environment_handler<S, A>::num_actions)
         .def("possible_actions", &environment_handler<S, A>::possible_actions)
         .def("get_action", &environment_handler<S, A>::get_action)
-        .def("get_current_state", &environment_handler<S, A>::get_current_state);
+        .def("get_current_state", &environment_handler<S, A>::get_current_state)
+        .def("is_over", &environment_handler<S, A>::is_over);
 
     return env_type;
 }

@@ -4,78 +4,80 @@
 
 #include "envs/env.hpp"
 #include "agents/agent.hpp"
+#include "string_utils.hpp"
 
+namespace rats {
 
 template <typename S, typename A>
 class orchestrator {
 private:
-    std::shared_ptr<rats::environment<S, A>> env;
-    std::shared_ptr<rats::agent<S, A>> agent;
+    std::shared_ptr<environment<S, A>> env;
+    std::shared_ptr<agent<S, A>> agnt;
 
 public:
-    void load_environment(std::shared_ptr<rats::environment<S, A>> env);
-    void load_environment(rats::environment<S, A>* env);
-    void load_agent(std::shared_ptr<rats::agent<S, A>> agent);
-    void load_agent(rats::agent<S, A>* agent);
-    rats::environment_handler<S, A> get_handler() const;
+    void load_environment(std::shared_ptr<environment<S, A>> env);
+    void load_environment(environment<S, A>* env);
+    void load_agent(std::shared_ptr<agent<S, A>> agnt);
+    void load_agent(agent<S, A>* agnt);
+    environment_handler<S, A> get_handler() const;
 
     std::pair<float, float> episode();
     void run(int num_episodes, int num_train_episodes);
 };
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_environment(std::shared_ptr<rats::environment<S, A>> _env) {
+void orchestrator<S, A>::load_environment(std::shared_ptr<environment<S, A>> _env) {
     spdlog::info("Load environment: " + _env->name());
     env = _env;
-    if (agent) {
-        agent->set_handler(*env);
+    if (agnt) {
+        agnt->set_handler(*env);
     }
 }
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_environment(rats::environment<S, A>* _env) {
+void orchestrator<S, A>::load_environment(environment<S, A>* _env) {
     spdlog::info("Load environment: " + _env->name());
-    load_environment(std::shared_ptr<rats::environment<S, A>>(_env));
+    load_environment(std::shared_ptr<environment<S, A>>(_env));
 }
 
 template <typename S, typename A>
-rats::environment_handler<S, A> orchestrator<S, A>::get_handler() const {
-    return rats::environment_handler<S, A>(*env);
+environment_handler<S, A> orchestrator<S, A>::get_handler() const {
+    return environment_handler<S, A>(*env);
 }
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_agent(std::shared_ptr<rats::agent<S, A>> _agent) {
-    spdlog::info("Load agent: " +_agent->name());
-    agent = _agent;
+void orchestrator<S, A>::load_agent(std::shared_ptr<agent<S, A>> _agnt) {
+    spdlog::info("Load agent: " +_agnt->name());
+    agnt = _agnt;
     if (env) {
-        agent->set_handler(*env);
+        agnt->set_handler(*env);
     }
 }
 
 template <typename S, typename A>
-void orchestrator<S, A>::load_agent(rats::agent<S, A>* _agent) {
-    spdlog::info("Load agent: " +_agent->name());
-    this->load_agent(std::shared_ptr<rats::agent<S, A>>(_agent));
+void orchestrator<S, A>::load_agent(agent<S, A>* _agnt) {
+    spdlog::info("Load agent: " +_agnt->name());
+    this->load_agent(std::shared_ptr<agent<S, A>>(_agnt));
 }
 
 template <typename S, typename A>
 std::pair<float, float> orchestrator<S, A>::episode() {
-    const rats::environment_handler<S, A>& handler = agent->get_handler();
+    const environment_handler<S, A>& handler = agnt->get_handler();
     spdlog::debug("Run episode");
     env->reset();
     spdlog::debug("Environment prepared");
-    agent->reset();
+    agnt->reset();
     spdlog::debug("Agent prepared");
 
     while (!env->is_over()) {
         spdlog::trace("Step {}: state={}", handler.get_num_steps(), handler.get_current_state());
-        agent->play();
+        agnt->play();
     }
 
     spdlog::debug("Episode stats:");
-    spdlog::debug("  Length: " + std::to_string(handler.get_num_steps()));
-    spdlog::debug("  Reward: " + std::to_string(handler.get_reward()));
-    spdlog::debug("  Penalty: " + std::to_string(handler.get_penalty()));
+    spdlog::debug("  Length: " + to_string(handler.get_num_steps()));
+    spdlog::debug("  Reward: " + to_string(handler.get_reward()));
+    spdlog::debug("  Penalty: " + to_string(handler.get_penalty()));
 
     return {handler.get_reward(), handler.get_penalty()};
 }
@@ -83,13 +85,13 @@ std::pair<float, float> orchestrator<S, A>::episode() {
 template <typename S, typename A>
 void orchestrator<S, A>::run(int num_episodes, int num_train_episodes) {
     spdlog::info("Started");
-    spdlog::info("  Agent: " + agent->name());
+    spdlog::info("  Agent: " + agnt->name());
     spdlog::info("  Environment: " + env->name());
-    if (agent->is_trainable()) {
+    if (agnt->is_trainable()) {
         spdlog::info("Training phase");
         for (int i = 0; i < num_train_episodes; i++) {
             episode();
-            agent->train();
+            agnt->train();
         }
     }
 
@@ -107,6 +109,8 @@ void orchestrator<S, A>::run(int num_episodes, int num_train_episodes) {
     }
 
     spdlog::info("Evaluation results:");
-    spdlog::info("  Mean reward: " + std::to_string(mean_reward));
-    spdlog::info("  Mean penalty: " + std::to_string(mean_penalty));
+    spdlog::info("  Mean reward: " + to_string(mean_reward));
+    spdlog::info("  Mean penalty: " + to_string(mean_penalty));
 }
+
+} // namespace rats

@@ -61,8 +61,8 @@ class ramcp : public agent<S, A> {
     using data_t = ramcp_data<S, A>;
     using v_t = std::pair<float, float>;
     using q_t = std::pair<float, float>;
-    using uct_state_t = state_node<S, A, data_t, v_t, q_t>;
-    using uct_action_t = action_node<S, A, data_t, v_t, q_t>;
+    using state_node_t = state_node<S, A, data_t, v_t, q_t>;
+    using action_node_t = action_node<S, A, data_t, v_t, q_t>;
     
     constexpr auto static select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_uct<S, A, data_t, v_t>, void_descend_callback<S, A, data_t, v_t, q_t>>;
     constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<S, A, data_t>, uct_prop_q_value<S, A, data_t>>;
@@ -74,7 +74,7 @@ private:
 
     data_t common_data;
 
-    std::unique_ptr<uct_state_t> root;
+    std::unique_ptr<state_node_t> root;
     std::unique_ptr<MPSolver> solver;
 public:
     ramcp(
@@ -87,7 +87,7 @@ public:
     , num_sim(_num_sim)
     , risk_thd(_risk_thd)
     , common_data({_risk_thd, _exploration_constant, _gamma, agent<S, A>::handler})
-    , root(std::make_unique<uct_state_t>())
+    , root(std::make_unique<state_node_t>())
     , solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP")))
     {
         // Create the linear solvers with the GLOP backend.
@@ -101,7 +101,7 @@ public:
         for (int i = 0; i < num_sim; i++) {
             spdlog::trace("Simulation {}", i);
             spdlog::trace("Select leaf");
-            uct_state_t* leaf = select_leaf_f(root.get(), true, max_depth);
+            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
             spdlog::trace("Expand leaf");
             expand_state(leaf);
             spdlog::trace("Rollout");
@@ -142,7 +142,7 @@ public:
         spdlog::debug("Play action: {}", a);
         spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
 
-        uct_action_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
             expand_action(an, s, r, p, t);
         }
@@ -166,7 +166,7 @@ public:
         auto states_distr = common_data.handler.outcome_probabilities(root->state, a);
         risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s]);
 
-        std::unique_ptr<uct_state_t> new_root = an->get_child_unique_ptr(s);
+        std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
         root->get_parent() = nullptr;
     }
@@ -201,7 +201,7 @@ public:
         for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
             action_sum->SetCoefficient(ac, 1);
             policy.insert({*ac_it, ac}); // add to policy to access solution
 
@@ -209,7 +209,7 @@ public:
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* st = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
@@ -226,7 +226,7 @@ public:
         return {policy, leaves};
     }
 
-    void LP_policy_rec(uct_state_t* node, MPVariable* var, size_t& ctr, MPConstraint* const risk_cons,
+    void LP_policy_rec(state_node_t* node, MPVariable* var, size_t& ctr, MPConstraint* const risk_cons,
                         MPObjective* const objective, size_t node_depth,
                         std::unordered_map<S, std::vector<MPVariable*>> leaves, S root_succ, double payoff) {
 
@@ -256,14 +256,14 @@ public:
         for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
             auto states_distr = common_data.handler.outcome_probabilities(node->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
@@ -297,14 +297,14 @@ public:
         for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
             auto states_distr = common_data.handler.outcome_probabilities(root->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
@@ -321,7 +321,7 @@ public:
         return objective;
     }
 
-    void LP_risk_rec(uct_state_t* node,
+    void LP_risk_rec(state_node_t* node,
                      MPVariable* const var, size_t& ctr,
                      MPObjective* const objective) {
 
@@ -342,14 +342,14 @@ public:
         for (auto ac_it = actions.begin();
              ac_it != actions.end(); ++ac_it, ++child_it) {
 
-            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++)); // x_h,a
+            MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
             auto states_distr = common_data.handler.outcome_probabilities(node->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
@@ -366,7 +366,7 @@ public:
         spdlog::debug("Reset: {}", name());
         agent<S, A>::reset();
         risk_thd = common_data.risk_thd;
-        root = std::make_unique<uct_state_t>();
+        root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
     }
 

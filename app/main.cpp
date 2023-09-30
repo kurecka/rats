@@ -19,6 +19,7 @@
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/fmt/ostr.h"
 
+
 struct arg_spec {
     std::string name;
     std::string verbose_name;
@@ -204,6 +205,15 @@ int main(int argc, char *argv[]) {
         ));
     } else if (args["--algorithm"] == "dts") {
         o.load_agent(new rats::ts::dual_uct<int, size_t>(
+            h,
+            std::stoi(args["--depth"]),
+            std::stoi(args["--num_sim"]),
+            std::stof(args["--risk_thd"]),
+            0.99f,
+            std::stof(args["--expl_const"])
+        ));
+    } else if (args["--algorithm"] == "ramcp") {
+        o.load_agent(new rats::ts::ramcp<int, size_t>(
             h,
             std::stoi(args["--depth"]),
             std::stoi(args["--num_sim"]),

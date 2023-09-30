@@ -6,6 +6,8 @@
 #include "ortools/linear_solver/linear_solver.h"
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <map>
 
 namespace rats {
 namespace ts {
@@ -16,6 +18,7 @@ template <typename S, typename A>
 struct ramcp_data {
     float risk_thd;
     float exploration_constant;
+    float gamma;
     environment_handler<S, A>& handler;
 };
 
@@ -68,7 +71,6 @@ private:
     int max_depth;
     int num_sim;
     float risk_thd;
-    float gamma;
 
     data_t common_data;
 
@@ -84,12 +86,12 @@ public:
     , max_depth(_max_depth)
     , num_sim(_num_sim)
     , risk_thd(_risk_thd)
-    , gamma(_gamma)
-    , common_data({_risk_thd, _exploration_constant, agent<S, A>::handler})
+    , common_data({_risk_thd, _exploration_constant, _gamma, agent<S, A>::handler})
     , root(std::make_unique<uct_state_t>())
+    , solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP")))
     {
         // Create the linear solvers with the GLOP backend.
-        solver = std::make_unique<MPSolver>(MPSolver::CreateSolver("GLOP"));
+        //solver = std::make_unique<MPSolver>(MPSolver::CreateSolver("GLOP"));
         reset();
     }
 
@@ -105,7 +107,7 @@ public:
             spdlog::trace("Rollout");
             rollout(leaf);
             spdlog::trace("Propagate");
-            propagate_f(leaf, gamma);
+            propagate_f(leaf, common_data.gamma);
             agent<S, A>::handler.sim_reset();
         }
 
@@ -132,8 +134,7 @@ public:
             policy_distr.emplace_back(it->second->solution_value());
         }
 
-        std::discrete_distribution<> ad(policy_distr.begin(), policy_distr.end());
-        int sample = ad(rng::engine);
+        int sample = rng::custom_discrete(policy_distr);
 
         A a = std::next(std::begin(policy), sample)->first;
 
@@ -143,7 +144,7 @@ public:
 
         uct_action_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            an->children[s] = expand_action(an, s, r, p, t);
+            expand_action(an, s, r, p, t);
         }
 
         // adjust risk thd, assuming only observed penalty == leaf in F
@@ -170,7 +171,7 @@ public:
         root->get_parent() = nullptr;
     }
 
-    std::pair<std::unordered_map<A, MPVariable* const>, std::unordered_map<S, std::vector<MPVariable* const>>> define_LP_policy(
+    std::pair<std::unordered_map<A, MPVariable* const>, std::unordered_map<S, std::vector<MPVariable*>>> define_LP_policy(
             double risk_thd) {
 
         solver->Clear();
@@ -178,7 +179,7 @@ public:
         std::unordered_map<A, MPVariable* const> policy;
 
         // root succesor == leaf parent, for alternative risk calculations
-        std::unordered_map<S, std::vector<MPVariable* const>> leaves;
+        std::unordered_map<S, std::vector<MPVariable*>> leaves;
 
         //assert(!root->leaf());
 
@@ -208,7 +209,7 @@ public:
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
-                MPVariable* const st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
+                MPVariable* st = solver->MakeNumVar(0.0, 1.0, std::to_string(ctr++));
 
                 // st = ac * delta (3)
                 MPConstraint* const ac_st = solver->MakeRowConstraint(0, 0);
@@ -225,16 +226,16 @@ public:
         return {policy, leaves};
     }
 
-    void LP_policy_rec(uct_state_t* node, MPVariable* const var, size_t& ctr, MPConstraint* const risk_cons,
+    void LP_policy_rec(uct_state_t* node, MPVariable* var, size_t& ctr, MPConstraint* const risk_cons,
                         MPObjective* const objective, size_t node_depth,
-                        std::unordered_map<S, std::vector<MPVariable* const>> leaves, S root_succ, double payoff) {
+                        std::unordered_map<S, std::vector<MPVariable*>> leaves, S root_succ, double payoff) {
 
-        payoff += std::pow(gamma, node_depth - 1) * node->observed_reward;
+        payoff += std::pow(common_data.gamma, node_depth - 1) * node->observed_reward;
 
         if (node->is_leaf()) {
 
             // objective
-            double coef = payoff + std::pow(gamma, node_depth) * node->rollout_reward;
+            double coef = payoff + std::pow(common_data.gamma, node_depth) * node->rollout_reward;
             objective->SetCoefficient(var, coef);
 
             // risk
@@ -270,7 +271,7 @@ public:
                 double delta = states_distr[it->first];
                 ac_st->SetCoefficient(ac, delta);
 
-                LP_policy_rec(it->second.get(), st, ctr, risk_cons, objective, node_depth + 1, solver, leaves, root_succ, payoff);
+                LP_policy_rec(it->second.get(), st, ctr, risk_cons, objective, node_depth + 1, leaves, root_succ, payoff);
             }
         }
     }
@@ -356,7 +357,7 @@ public:
                 double delta = states_distr[it->first];
                 ac_st->SetCoefficient(ac, delta);
 
-                LP_risk_rec(it->second.get(), st, ctr, objective, solver);
+                LP_risk_rec(it->second.get(), st, ctr, objective);
             }
         } 
     }

@@ -37,7 +37,8 @@ find_package(pybind11 REQUIRED)
 
 find_package(ortools CONFIG REQUIRED)
 
-# find_package(fmt REQUIRED)
+# Define NDEBUG macro
+add_definitions(-DNDEBUG)
 
 # --------------------------------------------------------------------------------
 #                         Locate files (change as needed).
@@ -71,7 +72,6 @@ target_include_directories(${LIBRARY_NAME} SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(${LIBRARY_NAME} PUBLIC Eigen3::Eigen)
 target_link_libraries(${LIBRARY_NAME} PRIVATE ortools::ortools)
 target_link_libraries(${LIBRARY_NAME} PRIVATE pybind11::pybind11)
-# target_link_libraries(${LIBRARY_NAME} PRIVATE fmt::fmt)
 
 # Set the compile options you want (change as needed). Only if PEDANTIC is ON.
 if(PEDANTIC)
@@ -99,7 +99,6 @@ target_link_libraries(${_target} PRIVATE ${LIBRARY_NAME})  # Link the executable
 target_link_libraries(${_target} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 target_link_libraries(${_target} PUBLIC ortools::ortools)
 target_link_libraries(${_target} PRIVATE pybind11::pybind11)
-# target_link_libraries(${_target} PRIVATE fmt::fmt)
 
 # Set the compilation options
 if (PEDANTIC)
@@ -119,6 +118,7 @@ set_target_properties(
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
+        COMPILE_OPTIONS "-O2"
 )
 
 # Set up tests (see tests/CMakeLists.txt).

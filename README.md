@@ -65,8 +65,8 @@ Download the latest version from [here](https://github.com/google/or-tools).
 The following commands should work:
 ```bash
 > cd or-tools
-> cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON
-> cmake --build build --target install  # install the libraries in the system
+> cmake -S . -B build -DBUILD_DEPS:BOOL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2"
+> sudo cmake --build build --config Release --target install  # install the libraries in the system
 ```
 
 ## Install python packages

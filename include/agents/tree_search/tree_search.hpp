@@ -229,25 +229,41 @@ void rollout(SN* sn) {
     using state_node_t = SN;
     using A = SN::A;
 
-    state_node_t* current_sn = sn;
-    float disc_r = 0;
-    float disc_p = 0;
-    float gamma_pow = 1.0;
-    bool terminal = current_sn->is_terminal();
+    auto common_data = sn->common_data;
+    int num_steps = 10;
+    int num_sim = 10;
+    float mean_r = 0;
+    // float mean_p = 0;
 
-    while (!terminal) {
-        gamma_pow *= current_sn->common_data->gamma;
-        A action = current_sn->common_data->handler.get_action(
-            rng::unif_int(current_sn->common_data->handler.num_actions())
-        );
-        auto [s, r, p, t] = current_sn->common_data->handler.sim_action(action);
-        terminal = t;
-        disc_r = r + disc_r * gamma_pow;
-        disc_p = p + disc_p * gamma_pow;
+    state_node_t* current_sn = sn;
+    common_data->handler.make_checkpoint(1);
+
+    for (int i = 0; i < num_sim; ++i) {
+        float disc_r = 0;
+        // float disc_p = 0;
+        float gamma_pow = 1.0;
+        bool terminal = current_sn->is_terminal();
+
+        while (!terminal && (num_steps--) > 0) {
+            gamma_pow *= current_sn->common_data->gamma;
+            A action = current_sn->common_data->handler.get_action(
+                rng::unif_int(current_sn->common_data->handler.num_actions())
+            );
+            auto [s, r, p, t] = current_sn->common_data->handler.sim_action(action);
+            terminal = t;
+            disc_r = r + disc_r * gamma_pow;
+            // disc_p = p + disc_p * gamma_pow;
+        }
+
+        mean_r += disc_r;
+        // mean_p += disc_p;
+        common_data->handler.restore_checkpoint(1);
     }
 
-    current_sn->rollout_reward = disc_r;
-    current_sn->rollout_penalty = disc_p;
+    mean_r /= num_sim;
+    // mean_p /= num_sim;
+    current_sn->rollout_reward = mean_r;
+    current_sn->rollout_penalty = 0; // rollout penalty disabled
 }
 
 
@@ -298,6 +314,7 @@ void constant_rollout_state(SN* sn) {
 template<typename AN, typename AN::A a, int N>
 void constant_rollout_action(AN* an) {
     using A = AN::A;
+
     float mean_r = 0;
     float mean_p = 0;
     auto common_data = an->common_data;

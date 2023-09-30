@@ -22,32 +22,35 @@ struct ramcp_data {
     environment_handler<S, A>& handler;
 };
 
-template<typename S, typename A, typename DATA, typename V>
-A select_action_uct(state_node<S, A, DATA, V, point_value>* node, bool /*explore*/) {
 
-    float c = node->common_data->exploration_constant;
+template<typename SN>
+struct select_action_uct {
+    size_t operator()(SN* node, bool /*explore*/) const {
 
-    auto& children = node->children;
-    float max_v = std::max_element(children.begin(), children.end(),
-                    [](auto& l, auto& r){ return l.q.first < r.q.first; })->q.first;
-    float min_v = std::min_element(children.begin(), children.end(),
-                    [](auto& l, auto& r){ return l.q.first < r.q.first; })->q.first;
+        float c = node->common_data->exploration_constant;
 
-    size_t idxa = 0;
-    float max_uct = 0, uct_value = 0;
-    for (size_t i = 0; i < children.size(); ++i) {
-        uct_value = ((children[i].q.first - min_v) / (max_v - min_v)) +
-            c * static_cast<float>(std::sqrt(std::log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-        );
+        auto& children = node->children;
+        float max_v = std::max_element(children.begin(), children.end(),
+                        [](auto& l, auto& r){ return l.q.first < r.q.first; })->q.first;
+        float min_v = std::min_element(children.begin(), children.end(),
+                        [](auto& l, auto& r){ return l.q.first < r.q.first; })->q.first;
 
-        if (uct_value > max_uct) {
-            max_uct = uct_value;
-            idxa = i;
+        size_t idxa = 0;
+        float max_uct = 0, uct_value = 0;
+        for (size_t i = 0; i < children.size(); ++i) {
+            uct_value = ((children[i].q.first - min_v) / (max_v - min_v)) +
+                c * static_cast<float>(std::sqrt(std::log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
+            );
+
+            if (uct_value > max_uct) {
+                max_uct = uct_value;
+                idxa = i;
+            }
         }
-    }
 
-    return node->actions[idxa];
-}
+        return idxa;
+    }
+};
 
 /*********************************************************************
  * @brief exact ramcp uct agent
@@ -63,9 +66,12 @@ class ramcp : public agent<S, A> {
     using q_t = std::pair<float, float>;
     using state_node_t = state_node<S, A, data_t, v_t, q_t>;
     using action_node_t = action_node<S, A, data_t, v_t, q_t>;
-    
-    constexpr auto static select_leaf_f = select_leaf<S, A, data_t, v_t, q_t, select_action_uct<S, A, data_t, v_t>, void_descend_callback<S, A, data_t, v_t, q_t>>;
-    constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<S, A, data_t>, uct_prop_q_value<S, A, data_t>>;
+
+    using select_action_t = select_action_uct<state_node_t>;
+    using descend_callback_t = void_fn<state_node_t*, A, action_node_t*, S, state_node_t*>;
+    constexpr auto static select_action_f = select_action_t();
+    constexpr auto static select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
+    constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
 
 private:
     int max_depth;

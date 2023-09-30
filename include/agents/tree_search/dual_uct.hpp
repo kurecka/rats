@@ -14,6 +14,7 @@ struct dual_uct_data {
     float sample_risk_thd;
     float lambda;
     float exploration_constant;
+    float gamma;
     environment_handler<S, A>& handler;
 };
 
@@ -109,7 +110,6 @@ private:
     int max_depth;
     int num_sim;
     float risk_thd;
-    float gamma;
     float lr;
     float initial_lambda = 0;
     float d_lambda = 0;
@@ -127,9 +127,8 @@ public:
     , max_depth(_max_depth)
     , num_sim(_num_sim)
     , risk_thd(_risk_thd)
-    , gamma(_gamma)
     , lr(0.0005f)
-    , common_data({_risk_thd, _risk_thd, initial_lambda, _exploration_constant, agent<S, A>::handler})
+    , common_data({_risk_thd, _risk_thd, initial_lambda, _exploration_constant, _gamma, agent<S, A>::handler})
     , root(std::make_unique<state_node_t>())
     {
         reset();
@@ -146,9 +145,9 @@ public:
             spdlog::trace("Expand leaf");
             expand_state(leaf);
             spdlog::trace("Rollout");
-            // void_rollout(leaf);
+            rollout(leaf);
             spdlog::trace("Propagate");
-            propagate_f(leaf, gamma);
+            propagate_f(leaf, common_data.gamma);
             agent<S, A>::handler.sim_reset();
 
             spdlog::trace("Select action");

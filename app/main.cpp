@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     // Run the simulation
     int initial_state = 2;
 
-    orchestrator<int, size_t> o;
+    rats::orchestrator<int, size_t> o;
     o.load_environment(new rats::investor_env(initial_state, 20));
     auto h = o.get_handler();
 

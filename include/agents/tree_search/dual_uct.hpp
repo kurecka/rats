@@ -148,7 +148,7 @@ public:
             rollout(leaf);
             spdlog::trace("Propagate");
             propagate_f(leaf, common_data.gamma);
-            agent<S, A>::handler.sim_reset();
+            agent<S, A>::handler.end_sim();
 
             spdlog::trace("Select action");
             A a = select_action_f(root.get(), false);

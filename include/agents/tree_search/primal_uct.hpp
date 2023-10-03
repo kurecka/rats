@@ -131,7 +131,7 @@ public:
             expand_state(leaf);
             rollout(leaf);
             propagate_f(leaf, gamma);
-            agent<S, A>::handler.sim_reset();
+            agent<S, A>::handler.end_sim();
         }
 
         common_data.sample_risk_thd = common_data.risk_thd;

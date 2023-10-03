@@ -154,7 +154,7 @@ public:
      * @return outcome_t
      */
     outcome_t<S> play_action(A action) {
-        sim_reset();
+        end_sim();
         spdlog::debug("Steps: {} {}", num_steps, max_num_steps);
         if (is_over()) {
             return {get_current_state(), 0, 0, true};
@@ -201,7 +201,7 @@ public:
      * @brief Restore the environment to the last checkpoint
      * 
      */
-    void sim_reset() {
+    void end_sim() {
         if (is_simulating) {
             restore_checkpoint(0);
             is_simulating = false;

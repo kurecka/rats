@@ -230,6 +230,7 @@ void rollout(SN* sn) {
     using A = SN::A;
 
     auto common_data = sn->common_data;
+    auto& handler =  common_data->handler;
     int num_steps = 10;
     int num_sim = 10;
     float mean_r = 0;
@@ -245,11 +246,11 @@ void rollout(SN* sn) {
         bool terminal = current_sn->is_terminal();
 
         while (!terminal && (num_steps--) > 0) {
-            gamma_pow *= current_sn->common_data->gamma;
-            A action = current_sn->common_data->handler.get_action(
-                rng::unif_int(current_sn->common_data->handler.num_actions())
+            gamma_pow *= common_data->gamma;
+            A action = handler.get_action(
+                rng::unif_int(handler.num_actions())
             );
-            auto [s, r, p, t] = current_sn->common_data->handler.sim_action(action);
+            auto [s, r, p, t] = handler.sim_action(action);
             terminal = t;
             disc_r = r + disc_r * gamma_pow;
             // disc_p = p + disc_p * gamma_pow;
@@ -257,7 +258,7 @@ void rollout(SN* sn) {
 
         mean_r += disc_r;
         // mean_p += disc_p;
-        common_data->handler.restore_checkpoint(1);
+        handler.restore_checkpoint(1);
     }
 
     mean_r /= num_sim;

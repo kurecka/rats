@@ -114,7 +114,7 @@ public:
             rollout(leaf);
             spdlog::trace("Propagate");
             propagate_f(leaf, common_data.gamma);
-            agent<S, A>::handler.sim_reset();
+            agent<S, A>::handler.end_sim();
         }
 
         auto [policy, leaf_risk] = define_LP_policy(risk_thd);

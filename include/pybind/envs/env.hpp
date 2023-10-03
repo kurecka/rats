@@ -32,7 +32,7 @@ py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_envir
         .def("reset", &environment_handler<S, A>::reset)
         .def("play_action", &environment_handler<S, A>::play_action)
         .def("sim_action", &environment_handler<S, A>::sim_action)
-        .def("sim_reset", &environment_handler<S, A>::sim_reset)
+        .def("end_sim", &environment_handler<S, A>::end_sim)
         .def("reward_range", &environment_handler<S, A>::reward_range)
         .def("num_actions", &environment_handler<S, A>::num_actions)
         .def("possible_actions", &environment_handler<S, A>::possible_actions)

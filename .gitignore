@@ -30,3 +30,5 @@ logs
 docker_build
 
 build
+
+**/__pycache__

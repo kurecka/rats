@@ -1,23 +1,24 @@
-import rats
-import rats
+import envs
+import agents
+import utils
 import ray
 import numpy as np
 
 ray.init(address="auto")
-# ray.init()
+# # ray.init()
 
 @ray.remote
 def task(thd):
-    rats.set_log_level('info')
-    e = rats.InvestorEnv(2, 20)
-    a = rats.ParetoUCT(
-        rats.EnvironmentHandler(e),
-        max_depth=20, num_sim=1000, risk_thd=thd, gamma=1,
-        exploration_constant=0.05, graphviz_depth=-1
+    utils.set_log_level('info')
+    e = envs.InvestorEnv(2, 20)
+    a = agents.DualUCT(
+        envs.EnvironmentHandler(e),
+        max_depth=20, num_sim=100, risk_thd=thd, gamma=1,
+        exploration_constant=0.5
     )
     e.reset()
     a.reset()
-    while not e.is_over():
+    while not a.get_handler().is_over():
         a.play()
     
     h = a.get_handler()

@@ -111,7 +111,7 @@ class environment_handler {
 private:
     environment<S, A>* env;
     bool is_simulating = false;
-    int checkpoint_num_steps;
+    std::map<size_t, int> checkpoint_num_steps;
 
     float reward;
     float penalty;
@@ -171,12 +171,12 @@ public:
 
     void make_checkpoint(size_t id) {
         env->make_checkpoint(id);
-        checkpoint_num_steps = num_steps;
+        checkpoint_num_steps[id] = num_steps;
     }
 
     void restore_checkpoint(size_t id) {
         env->restore_checkpoint(id);
-        num_steps = checkpoint_num_steps;
+        num_steps = checkpoint_num_steps[id];
     }
 
     /**

@@ -23,6 +23,8 @@ std::tuple<size_t, float, size_t> greedy_mix(const std::vector<float>& rs, const
 
             if ((r - rs[idxa]) * (ps[idxb] - ps[idxa]) < (ps[idx] - ps[idxa]) * (rs[idxb] - rs[idxa])) {
                 hull.pop_back();
+            } else {
+                break;
             }
         }
 
@@ -47,40 +49,4 @@ std::tuple<size_t, float, size_t> greedy_mix(const std::vector<float>& rs, const
         size_t li = static_cast<size_t>(l - hull_ps.begin());
         return {hull[li], (thd - *l) / (*r - *l), hull[li + 1]};
     }
-}
-
-
-std::tuple<size_t, size_t> common_tangent(const std::vector<std::pair<float, float>>& v1, const std::vector<std::pair<float, float>>& v2) {
-    size_t idx1 = 0;
-    size_t idx2 = v2.size() - 1;
-
-    size_t* idx = &idx1;
-    auto* v = &v1;
-
-    size_t without_change = 0;
-    size_t total_trials = 0;
-    do {
-        bool change = false;
-
-        float slope = (v1[idx1].first - v2[idx2].first) / (v1[idx1].second - v2[idx2].second);
-        if (*idx + 1 < v->size() && (*v)[*idx + 1].first - (*v)[*idx].first > slope * ((*v)[*idx + 1].second - (*v)[*idx].second)) {
-            ++*idx;
-            change = true;
-        }
-        if (*idx >= 1 && ((*v)[*idx].first - (*v)[*idx - 1].first) < slope * ((*v)[*idx].second - (*v)[*idx - 1].second)) {
-            --*idx;
-            change = true;
-        }
-
-        idx = idx == &idx1 ? &idx2 : &idx1;
-        v = v == &v1 ? &v2 : &v1;
-        without_change = change ? 0 : without_change + 1;
-        ++total_trials;
-    } while (total_trials < v1.size()*v2.size() + 1 && without_change < 2);
-
-    if (total_trials > v1.size()*v2.size()) {
-        return {v1.size(), v2.size()};
-    }
-
-    return {idx1, idx2};
 }

@@ -14,7 +14,7 @@ def task(thd):
     a = agents.DualUCT(
         envs.EnvironmentHandler(e),
         max_depth=20, num_sim=100, risk_thd=thd, gamma=1,
-        exploration_constant=0.5
+        exploration_constant=0.5, initial_lambda=50, lr=1
     )
     e.reset()
     a.reset()

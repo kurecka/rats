@@ -11,7 +11,6 @@ namespace ts {
 template <typename S, typename A>
 struct dual_uct_data {
     float risk_thd;
-    float sample_risk_thd;
     float lambda;
     float exploration_constant;
     float gamma;
@@ -22,7 +21,7 @@ struct dual_uct_data {
 template<typename SN>
 struct select_action_dual {
     size_t operator()(SN* node, bool explore) const {
-        float risk_thd = node->common_data->sample_risk_thd;
+        float risk_thd = node->common_data->risk_thd;
         float lambda = node->common_data->lambda;
         float c = node->common_data->exploration_constant;
 
@@ -88,7 +87,7 @@ struct select_action_dual {
  * 
  * @note Lambda is preserved between epochs
  * @note Lambda is updated by the following rule:
- * d_lambda = (1-alpha) * d_lambda) + alpha * (sample_risk_thd - risk_thd)
+ * d_lambda = (1-alpha) * d_lambda) + alpha * (sample_risk - risk_thd)
  * lambda = lambda + lr * d_lambda
  *********************************************************************/
 
@@ -111,7 +110,7 @@ private:
     int num_sim;
     float risk_thd;
     float lr;
-    float initial_lambda = 0;
+    float initial_lambda;
     float d_lambda = 0;
 
     data_t common_data;
@@ -121,14 +120,15 @@ public:
     dual_uct(
         environment_handler<S, A> _handler,
         int _max_depth, int _num_sim, float _risk_thd, float _gamma,
-        float _exploration_constant = 5.0
+        float _exploration_constant = 5.0, float _initial_lambda = 0, float _lr = 0.0005
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
     , num_sim(_num_sim)
     , risk_thd(_risk_thd)
-    , lr(0.0005f)
-    , common_data({_risk_thd, _risk_thd, initial_lambda, _exploration_constant, _gamma, agent<S, A>::handler})
+    , lr(_lr)
+    , initial_lambda(_initial_lambda)
+    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, agent<S, A>::handler})
     , root(std::make_unique<state_node_t>())
     {
         reset();
@@ -139,7 +139,6 @@ public:
 
         for (int i = 0; i < num_sim; i++) {
             spdlog::trace("Simulation {}", i);
-            common_data.sample_risk_thd = common_data.risk_thd;
             spdlog::trace("Select leaf");
             state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
             spdlog::trace("Expand leaf");
@@ -155,13 +154,14 @@ public:
             action_node_t* action_node = root->get_child(a);
 
             spdlog::trace("Update lambda");
-            d_lambda += ((action_node->q.second - common_data.risk_thd) - d_lambda) * 0.2f;
+            float grad = action_node->q.second - common_data.risk_thd;
+            // d_lambda += (grad - d_lambda) * 0.2f;
+            d_lambda = grad;
             common_data.lambda += lr * d_lambda;
             common_data.lambda = std::max(0.0f, common_data.lambda);
             // spdlog::info("Lambda: {}", common_data.lambda);
         }
 
-        common_data.sample_risk_thd = common_data.risk_thd;
         A a = select_action_f(root.get(), false);
 
         // static bool logged = false;
@@ -190,8 +190,9 @@ public:
     void reset() override {
         spdlog::debug("Reset: {}", name());
         agent<S, A>::reset();
-        common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
-        // common_data.lambda = initial_lambda;
+        common_data.risk_thd = risk_thd;
+        common_data.lambda = initial_lambda;
+        d_lambda = 0;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
     }

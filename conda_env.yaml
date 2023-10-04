@@ -7,6 +7,9 @@ dependencies:
 - pybind11
 - cmake_setuptools
 - gymnasium
+- hydra-core
+- pandas
+- numpy
 - pip:
-  - ray
+  - hydra-ray-launcher
 name: rats

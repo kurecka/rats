@@ -1,0 +1,4 @@
+defaults:
+  - ts
+
+class: PrimalUCT

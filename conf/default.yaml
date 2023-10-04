@@ -1,0 +1,9 @@
+gamma: 1
+risk_thd: 0.5
+agent: ???
+env: ???
+task: ???
+
+metadata:
+  project: ParetoUCT
+  tag: trial1

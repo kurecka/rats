@@ -1,0 +1,3 @@
+class: InvestorEnv
+initial_wealth: 2
+goal: 20

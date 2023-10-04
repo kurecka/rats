@@ -166,6 +166,7 @@ public:
         spdlog::debug("Play: {}", name());
 
         if (sim_time_limit > 0) {
+            spdlog::debug("Sim time limit: {}", sim_time_limit);
             auto start = std::chrono::high_resolution_clock::now();
             auto end = start + std::chrono::milliseconds(sim_time_limit);
             int i = 0;
@@ -173,6 +174,7 @@ public:
                 simulate(i++);
             }
         } else {
+            spdlog::debug("Num sim: {}", num_sim);
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);
             }

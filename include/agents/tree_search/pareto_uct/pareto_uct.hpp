@@ -79,6 +79,8 @@ struct pareto_uct_data {
     float risk_thd;
     float sample_risk_thd;
     float exploration_constant;
+    float gamma,
+    float gammap,
     environment_handler<S, A>& handler;
 };
 
@@ -222,7 +224,7 @@ public:
     pareto_uct(
         environment_handler<S, A> _handler,
         int _max_depth, int _num_sim, float _risk_thd, float _gamma,
-        float _exploration_constant = 5.0
+        float _exploration_constant = 5.0, float _gammap = 0
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -230,7 +232,7 @@ public:
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
-    , common_data({_risk_thd, _risk_thd, _exploration_constant, agent<S, A>::handler})
+    , common_data({_risk_thd, _risk_thd, _exploration_constant, _gamma, _gammap, agent<S, A>::handler})
     , root(std::make_unique<state_node_t>())
     {
         reset();

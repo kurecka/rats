@@ -185,18 +185,19 @@ SN* select_leaf(SN* root, bool explore = true, int max_depth = 10) {
 }
 
 template<typename SN, typename prop_v_t, typename prop_q_t>
-void propagate(SN* leaf, float gamma) {
+void propagate(SN* leaf) {
     using state_node_t = SN;
     using action_node_t = SN::action_node_t;
 
     state_node_t* current_sn = leaf;
+    auto common_data = current_sn->common_data;
 
     float disc_r = leaf->rollout_reward;
     float disc_p = leaf->rollout_penalty;
 
     while (!current_sn->is_root()) {
         prop_v_t()(current_sn,  disc_r, disc_p);
-        disc_r = current_sn->observed_reward + gamma * disc_r;
+        disc_r = current_sn->observed_reward + common_data->gamma * disc_r;
         disc_p = current_sn->observed_penalty + disc_p;
         action_node_t* current_an = current_sn->get_parent();
         prop_q_t()(current_an, disc_r, disc_p);
@@ -234,37 +235,40 @@ void rollout(SN* sn) {
     int num_steps = 10;
     int num_sim = 10;
     float mean_r = 0;
-    // float mean_p = 0;
+    float mean_p = 0;
 
     state_node_t* current_sn = sn;
     common_data->handler.make_checkpoint(1);
 
     for (int i = 0; i < num_sim; ++i) {
         float disc_r = 0;
-        // float disc_p = 0;
+        float disc_p = 0;
         float gamma_pow = 1.0;
+        float gammap_pow = 1.0;
         bool terminal = current_sn->is_terminal();
 
         while (!terminal && (num_steps--) > 0) {
             gamma_pow *= common_data->gamma;
+            gammap_pow *= common_data->gammap;
             A action = handler.get_action(
                 rng::unif_int(handler.num_actions())
             );
             auto [s, r, p, t] = handler.sim_action(action);
             terminal = t;
             disc_r = r + disc_r * gamma_pow;
-            // disc_p = p + disc_p * gamma_pow;
+            disc_p = p + disc_p * gamma_pow;
         }
 
         mean_r += disc_r;
-        // mean_p += disc_p;
+        mean_p += disc_p;
         handler.restore_checkpoint(1);
     }
 
     mean_r /= num_sim;
-    // mean_p /= num_sim;
+    mean_p /= num_sim;
     current_sn->rollout_reward = mean_r;
-    current_sn->rollout_penalty = 0; // rollout penalty disabled
+    // to disable rollout_pen add if (common_data->gammap > 0)
+    current_sn->rollout_penalty = (common_data->gammap > 0) ? mean_p : 0;
 }
 
 

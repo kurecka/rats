@@ -102,10 +102,7 @@ void orchestrator<S, A>::run(int num_episodes, int num_train_episodes) {
     for (int i = 0; i < num_episodes; i++) {
         auto [r, p] = episode();
         mean_penalty += p / num_episodes;
-        if (p < 0.1f) {
-            num_successes++;
-            mean_reward += (r - mean_reward) / num_successes;
-        }
+        mean_reward += r / num_episodes;
     }
 
     spdlog::info("Evaluation results:");

@@ -10,11 +10,19 @@ ray.init(address="auto")
 @ray.remote
 def task(thd):
     utils.set_log_level('info')
-    e = envs.InvestorEnv(2, 20)
-    a = agents.DualUCT(
+    map = """
+#######
+#BTTTG#
+#..T..#
+#.....#
+#######
+"""
+    e = envs.Hallway(map, 0.1)
+    # e = envs.InvestorEnv(2, 20)
+    a = agents.RAMCP(
         envs.EnvironmentHandler(e),
-        max_depth=20, num_sim=100, risk_thd=thd, gamma=1,
-        exploration_constant=0.5, initial_lambda=50, lr=1
+        max_depth=100, num_sim=1600, risk_thd=thd, gamma=1,
+        exploration_constant=0.5#, initial_lambda=50, lr=1
     )
     e.reset()
     a.reset()

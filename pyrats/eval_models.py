@@ -4,8 +4,8 @@ import envs
 import agents
 
 
-ray.init(address="auto")
-# ray.init()
+# ray.init(address="auto")
+ray.init()
 
 @ray.remote
 def task(agent_name, args):
@@ -13,6 +13,13 @@ def task(agent_name, args):
     from utils import set_log_level
     set_log_level('info')
     e = envs.InvestorEnv(2, 20)
+#     map = """#######
+# #BTTTG#
+# #..T..#
+# #.....#
+# #######
+# """
+#     e = envs.Hallway(map, 0.1)
     a = cls(envs.EnvironmentHandler(e), **args)
     e.reset()
     a.reset()
@@ -25,16 +32,18 @@ def task(agent_name, args):
 
 uct_args = {
     'max_depth': 100,
-    'num_sim': 1000,
+    'num_sim': 0,
+    'sim_time_limit': 200,
     'gamma': 1,
-    'exploration_constant': 0.5,
+    'exploration_constant': 5,
 }
 
-thds = np.linspace(0.1, 0.9, 7)
+thds = np.linspace(0, 1, 11)
 algos = [
+    'DualUCT',
     'ParetoUCT',
     'PrimalUCT',
-    'DualUCT',
+    'RAMCP',
 ]
 
 experiments = []
@@ -43,6 +52,7 @@ for algo in algos:
     for thd in thds:
         args = uct_args.copy()
         if algo == 'DualUCT':
+            # args['sim_time_limit'] = int(args['sim_time_limit'] / 2)
             args['initial_lambda'] = 50
             args['lr'] = 1
         args['risk_thd'] = thd
@@ -51,7 +61,7 @@ for algo in algos:
 futures = {}
 
 for agent_name, args in experiments:
-    futures[(agent_name, args['risk_thd'])] = [task.remote(agent_name, args) for _ in range(5000)]
+    futures[(agent_name, args['risk_thd'])] = [task.remote(agent_name, args) for _ in range(10)]
 
 results_map = {}
 
@@ -69,6 +79,8 @@ for (agent_name, thd), f in futures.items():
         'std_r': std_r,
         'std_p': std_p,
     }
+
+print(args)
 
 for agent_name, data in results_map.items():
     print(agent_name)

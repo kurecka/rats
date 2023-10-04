@@ -44,7 +44,9 @@ struct map_manager {
      * #GT..#
      * ######
     */
-    map_manager(std::string str) {
+    map_manager(std::string str)
+    : width(0), height(0)
+    {
         std::stringstream ss(str);
         std::string line;
         num_gold = 0;
@@ -54,7 +56,7 @@ struct map_manager {
             if (width == 0) {
                 width = line.size();
             } else if (width != line.size()) {
-                throw std::runtime_error("Invalid map: lines have different sizes");
+                throw std::runtime_error("Invalid map: lines have different sizes:\n");
             }
             for (char c : line) {
                 switch (c) {
@@ -136,7 +138,7 @@ public:
 private:
     int position;
     uint64_t gold_mask;
-    int over;
+    bool over;
     state_t checkpoint;
     std::map<size_t, state_t> checkpoints;
     map_manager m;

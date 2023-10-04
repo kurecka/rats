@@ -22,13 +22,13 @@ map = """
 
 set_log_level('debug')
 
-# e = envs.Hallway(map, 0.1)
-e = envs.InvestorEnv(2, 20)
+e = envs.Hallway(map, 0.1)
+# e = envs.InvestorEnv(2, 20)
 h = envs.EnvironmentHandler(e)
-a = agents.PrimalUCT(
+a = agents.ParetoUCT(
     h,
-    max_depth=80, num_sim=4, risk_thd=0.2, gamma=1,
-    exploration_constant=0.6
+    max_depth=80, num_sim=800, risk_thd=0.2, gamma=1,
+    exploration_constant=0.6, graphviz_depth=7
 )
 
 # for i in range(3):
@@ -43,5 +43,5 @@ a.reset()
 
 for i in range(3):
     a.play()
-    # with open(f"../logs/tree_{i}.dot", "w") as f:
-    #     f.write(a.get_graphviz())
+    with open(f"../logs/tree_{i}.dot", "w") as f:
+        f.write(a.get_graphviz())

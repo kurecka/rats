@@ -19,6 +19,7 @@ void register_agents_t(py::module& m, std::string type) {
     register_dual_uct<S, A>(m, agent_type, "DualUCT" + type);
     register_primal_uct<S, A>(m, agent_type, "PrimalUCT" + type);
     register_pareto_uct<S, A>(m, agent_type, "ParetoUCT" + type);
+    register_ramcp<S, A>(m, agent_type, "RAMCP" + type);
 }
 
 void register_agents(py::module& m) {

@@ -108,6 +108,7 @@ class dual_uct : public agent<S, A> {
 private:
     int max_depth;
     int num_sim;
+    int sim_time_limit;
     float risk_thd;
     float lr;
     float initial_lambda;
@@ -119,12 +120,14 @@ private:
 public:
     dual_uct(
         environment_handler<S, A> _handler,
-        int _max_depth, int _num_sim, float _risk_thd, float _gamma,
+        int _max_depth, float _risk_thd, float _gamma,
+        int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _initial_lambda = 0, float _lr = 0.0005
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
     , num_sim(_num_sim)
+    , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , lr(_lr)
     , initial_lambda(_initial_lambda)
@@ -134,32 +137,45 @@ public:
         reset();
     }
 
+    void simulate(int i) {
+        spdlog::trace("Simulation {}", i);
+        spdlog::trace("Select leaf");
+        state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
+        spdlog::trace("Expand leaf");
+        expand_state(leaf);
+        spdlog::trace("Rollout");
+        rollout(leaf);
+        spdlog::trace("Propagate");
+        propagate_f(leaf, common_data.gamma);
+        agent<S, A>::handler.end_sim();
+
+        spdlog::trace("Select action");
+        A a = select_action_f(root.get(), false);
+        action_node_t* action_node = root->get_child(a);
+
+        spdlog::trace("Update lambda");
+        float grad = action_node->q.second - common_data.risk_thd;
+        // d_lambda += (grad - d_lambda) * 0.2f;
+        d_lambda = grad;
+        common_data.lambda += lr * d_lambda;
+        common_data.lambda = std::max(0.0f, common_data.lambda);
+        // spdlog::info("Lambda: {}", common_data.lambda);
+    }
+
     void play() override {
         spdlog::debug("Play: {}", name());
 
-        for (int i = 0; i < num_sim; i++) {
-            spdlog::trace("Simulation {}", i);
-            spdlog::trace("Select leaf");
-            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
-            spdlog::trace("Expand leaf");
-            expand_state(leaf);
-            spdlog::trace("Rollout");
-            rollout(leaf);
-            spdlog::trace("Propagate");
-            propagate_f(leaf, common_data.gamma);
-            agent<S, A>::handler.end_sim();
-
-            spdlog::trace("Select action");
-            A a = select_action_f(root.get(), false);
-            action_node_t* action_node = root->get_child(a);
-
-            spdlog::trace("Update lambda");
-            float grad = action_node->q.second - common_data.risk_thd;
-            // d_lambda += (grad - d_lambda) * 0.2f;
-            d_lambda = grad;
-            common_data.lambda += lr * d_lambda;
-            common_data.lambda = std::max(0.0f, common_data.lambda);
-            // spdlog::info("Lambda: {}", common_data.lambda);
+        if (sim_time_limit > 0) {
+            auto start = std::chrono::high_resolution_clock::now();
+            auto end = start + std::chrono::milliseconds(sim_time_limit);
+            int i = 0;
+            while (std::chrono::high_resolution_clock::now() < end) {
+                simulate(i++);
+            }
+        } else {
+            for (int i = 0; i < num_sim; i++) {
+                simulate(i);
+            }
         }
 
         A a = select_action_f(root.get(), false);
@@ -171,7 +187,7 @@ public:
         // }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
-        spdlog::debug("Play action: {}", a);
+        spdlog::debug("Play action: {}", to_string(a));
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);

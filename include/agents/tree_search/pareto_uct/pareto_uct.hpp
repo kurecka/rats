@@ -227,6 +227,7 @@ public:
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
     , num_sim(_num_sim)
+    , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , common_data({_risk_thd, _risk_thd, _exploration_constant, agent<S, A>::handler})
@@ -235,17 +236,29 @@ public:
         reset();
     }
 
+    void simulate() {
+        spdlog::trace("Simulation {}", i);
+        common_data.sample_risk_thd = common_data.risk_thd;
+        state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
+        expand_state(leaf);
+        void_rollout(leaf);
+        propagate_f(leaf, gamma);
+        agent<S, A>::handler.end_sim();
+    }
+
     void play() override {
         spdlog::debug("Play: {}", name());
 
-        for (int i = 0; i < num_sim; i++) {
-            spdlog::trace("Simulation {}", i);
-            common_data.sample_risk_thd = common_data.risk_thd;
-            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
-            expand_state(leaf);
-            void_rollout(leaf);
-            propagate_f(leaf, gamma);
-            agent<S, A>::handler.end_sim();
+        if (sim_time_limit > 0) {
+            auto start = std::chrono::high_resolution_clock::now();
+            auto end = start + std::chrono::milliseconds(sim_time_limit);
+            while (std::chrono::high_resolution_clock::now() < end) {
+                simulate();
+            }
+        } else {
+            for (int i = 0; i < num_sim; i++) {
+                simulate();
+            }
         }
 
         common_data.sample_risk_thd = common_data.risk_thd;

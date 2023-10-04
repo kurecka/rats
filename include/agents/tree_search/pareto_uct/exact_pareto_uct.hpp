@@ -310,6 +310,7 @@ class pareto_uct : public agent<S, A> {
 private:
     int max_depth;
     int num_sim;
+    int sim_time_limit;
     float risk_thd;
     float gamma;
 
@@ -322,12 +323,14 @@ private:
 public:
     pareto_uct(
         environment_handler<S, A> _handler,
-        int _max_depth, int _num_sim, float _risk_thd, float _gamma,
+        int _max_depth, float _risk_thd, float _gamma,
+        int _num_sim, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, int _graphviz_depth = -1
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
     , num_sim(_num_sim)
+    , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, agent<S, A>::handler, {}, gamma})
@@ -335,34 +338,45 @@ public:
     , root(std::make_unique<state_node_t>())
     {
         reset();
-
-
     }
 
     std::string get_graphviz() const {
         return dot_tree;
     }
 
+    void simulate(int i) {
+         spdlog::trace("Simulation {}", i);
+        common_data.sample_risk_thd = common_data.risk_thd;
+        spdlog::trace("Select");
+        state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
+        spdlog::trace("Expand");
+        expand_state(leaf);
+        spdlog::trace("Rollout");
+        // TODO
+        // for (auto& child : leaf->children) {
+        //     constant_rollout<S, A, data_t, v_t, q_t, 1, 300>(&child);
+        // }
+        // constant_rollout<S, A, data_t, v_t, q_t, 1, 30>(leaf);
+        spdlog::trace("Propagate");
+        propagate_f(leaf, gamma);
+        spdlog::trace("Reset");
+        agent<S, A>::handler.end_sim();
+    }
+
     void play() override {
         spdlog::debug("Play: {}", name());
 
-        for (int i = 0; i < num_sim; i++) {
-            spdlog::trace("Simulation {}", i);
-            common_data.sample_risk_thd = common_data.risk_thd;
-            spdlog::trace("Select");
-            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
-            spdlog::trace("Expand");
-            expand_state(leaf);
-            spdlog::trace("Rollout");
-            // TODO
-            // for (auto& child : leaf->children) {
-            //     constant_rollout<S, A, data_t, v_t, q_t, 1, 300>(&child);
-            // }
-            // constant_rollout<S, A, data_t, v_t, q_t, 1, 30>(leaf);
-            spdlog::trace("Propagate");
-            propagate_f(leaf, gamma);
-            spdlog::trace("Reset");
-            agent<S, A>::handler.end_sim();
+        if (sim_time_limit > 0) {
+            auto start = std::chrono::high_resolution_clock::now();
+            auto end = start + std::chrono::milliseconds(sim_time_limit);
+            int i = 0;
+            while (std::chrono::high_resolution_clock::now() < end) {
+                simulate(i++);
+            }
+        } else {
+            for (int i = 0; i < num_sim; i++) {
+                simulate(i);
+            }
         }
 
         common_data.sample_risk_thd = common_data.risk_thd;
@@ -374,7 +388,7 @@ public:
         }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
-        spdlog::debug("Play action: {}", a);
+        spdlog::debug("Play action: {}", to_string(a));
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);

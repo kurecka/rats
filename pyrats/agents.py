@@ -1,12 +1,5 @@
 import rats
 
-class_names = [
-    "ConstantAgent",
-    "RandomizedAgent",
-    "PrimalUCT",
-    "DualUCT",
-    "ParetoUCT"
-]
 
 class Agent:
     def __init__(self, env_handler, *args, **kwargs):
@@ -37,4 +30,7 @@ class PrimalUCT(Agent):
     pass
 
 class ParetoUCT(Agent):
+    pass
+
+class RAMCP(Agent):
     pass

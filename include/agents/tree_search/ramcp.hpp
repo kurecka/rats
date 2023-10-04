@@ -6,8 +6,8 @@
 #include "ortools/linear_solver/linear_solver.h"
 #include <string>
 #include <vector>
-#include <unordered_map>
 #include <map>
+// #include <map>
 
 namespace rats {
 namespace ts {
@@ -71,11 +71,12 @@ class ramcp : public agent<S, A> {
     using descend_callback_t = void_fn<state_node_t*, A, action_node_t*, S, state_node_t*>;
     constexpr auto static select_action_f = select_action_t();
     constexpr auto static select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
-    constexpr auto static propagate_f = propagate<S, A, data_t, v_t, q_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
+    constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
 
 private:
     int max_depth;
     int num_sim;
+    int sim_time_limit;
     float risk_thd;
 
     data_t common_data;
@@ -85,12 +86,14 @@ private:
 public:
     ramcp(
         environment_handler<S, A> _handler,
-        int _max_depth, int _num_sim, float _risk_thd, float _gamma,
+        int _max_depth, float _risk_thd, float _gamma,
+        int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0 
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
     , num_sim(_num_sim)
+    , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , common_data({_risk_thd, _exploration_constant, _gamma, agent<S, A>::handler})
     , root(std::make_unique<state_node_t>())
@@ -101,20 +104,33 @@ public:
         reset();
     }
 
+    void simulate(int i) {
+        spdlog::trace("Simulation {}", i);
+        spdlog::trace("Select leaf");
+        state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
+        spdlog::trace("Expand leaf");
+        expand_state(leaf);
+        spdlog::trace("Rollout");
+        rollout(leaf);
+        spdlog::trace("Propagate");
+        propagate_f(leaf, common_data.gamma);
+        agent<S, A>::handler.end_sim();
+    }
+
     void play() override {
         spdlog::debug("Play: {}", name());
 
-        for (int i = 0; i < num_sim; i++) {
-            spdlog::trace("Simulation {}", i);
-            spdlog::trace("Select leaf");
-            state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
-            spdlog::trace("Expand leaf");
-            expand_state(leaf);
-            spdlog::trace("Rollout");
-            rollout(leaf);
-            spdlog::trace("Propagate");
-            propagate_f(leaf, common_data.gamma);
-            agent<S, A>::handler.end_sim();
+        if (sim_time_limit > 0) {
+            auto start = std::chrono::high_resolution_clock::now();
+            auto end = start + std::chrono::milliseconds(sim_time_limit);
+            int i = 0;
+            while (std::chrono::high_resolution_clock::now() < end) {
+                simulate(i++);
+            }
+        } else {
+            for (int i = 0; i < num_sim; ++i) {
+                simulate(i);
+            }
         }
 
         auto [policy, leaf_risk] = define_LP_policy(risk_thd);
@@ -145,8 +161,8 @@ public:
         A a = std::next(std::begin(policy), sample)->first;
 
         auto [s, r, p, t] = common_data.handler.play_action(a);
-        spdlog::debug("Play action: {}", a);
-        spdlog::debug(" Result: s={}, r={}, p={}", s, r, p);
+        spdlog::debug("Play action: {}", to_string(a));
+        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
@@ -177,15 +193,15 @@ public:
         root->get_parent() = nullptr;
     }
 
-    std::pair<std::unordered_map<A, MPVariable* const>, std::unordered_map<S, std::vector<MPVariable*>>> define_LP_policy(
+    std::pair<std::map<A, MPVariable* const>, std::map<S, std::vector<MPVariable*>>> define_LP_policy(
             double risk_thd) {
 
         solver->Clear();
 
-        std::unordered_map<A, MPVariable* const> policy;
+        std::map<A, MPVariable* const> policy;
 
         // root succesor == leaf parent, for alternative risk calculations
-        std::unordered_map<S, std::vector<MPVariable*>> leaves;
+        std::map<S, std::vector<MPVariable*>> leaves;
 
         //assert(!root->leaf());
 
@@ -234,7 +250,7 @@ public:
 
     void LP_policy_rec(state_node_t* node, MPVariable* var, size_t& ctr, MPConstraint* const risk_cons,
                         MPObjective* const objective, size_t node_depth,
-                        std::unordered_map<S, std::vector<MPVariable*>> leaves, S root_succ, double payoff) {
+                        std::map<S, std::vector<MPVariable*>> leaves, S root_succ, double payoff) {
 
         payoff += std::pow(common_data.gamma, node_depth - 1) * node->observed_reward;
 

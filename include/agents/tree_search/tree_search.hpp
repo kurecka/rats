@@ -45,6 +45,7 @@ public:
     float rollout_reward = 0;
     float rollout_penalty = 0;
     bool terminal = false;
+    bool leaf = true;
     size_t num_visits = 0;
 
     V v;
@@ -140,6 +141,7 @@ void expand_action(
 ) {
     using state_node_t = AN::state_node_t;
 
+    an->parent->leaf = false;
     an->child_idx[s] = an->children.size();
 
     std::unique_ptr<state_node_t>& new_sn = an->children[s] = std::make_unique<state_node_t>();
@@ -230,6 +232,12 @@ void rollout(SN* sn) {
     using state_node_t = SN;
     using A = SN::A;
 
+    if (sn->is_terminal()) {
+        sn->rollout_reward = 0;
+        sn->rollout_penalty = 0;
+        return;
+    }
+
     auto common_data = sn->common_data;
     auto& handler =  common_data->handler;
     int num_steps = 10;
@@ -256,7 +264,7 @@ void rollout(SN* sn) {
             auto [s, r, p, t] = handler.sim_action(action);
             terminal = t;
             disc_r = r + disc_r * gamma_pow;
-            disc_p = p + disc_p * gamma_pow;
+            disc_p = p + disc_p * gammap_pow;
         }
 
         mean_r += disc_r;

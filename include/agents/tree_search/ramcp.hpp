@@ -101,24 +101,24 @@ public:
     , solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP")))
     {
         // Create the linear solvers with the GLOP backend.
+        root->state = agent<S, A>::handler.get_current_state();
+        // spdlog::debug("root {}", to_string(root->state));
         reset();
     }
 
     void simulate(int i) {
-        spdlog::trace("Simulation {}", i);
-        spdlog::trace("Select leaf");
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
-        spdlog::trace("Expand leaf");
         expand_state(leaf);
-        spdlog::trace("Rollout");
         rollout(leaf);
-        spdlog::trace("Propagate");
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
     }
 
     void play() override {
         spdlog::debug("Play: {}", name());
+
+        root->state = common_data.handler.get_current_state();
+        // spdlog::debug("root {}", to_string(root->state));
 
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();
@@ -146,7 +146,6 @@ public:
             double alt_thd = risk_obj->Value();
             std::tie(policy, leaf_risk) = define_LP_policy(alt_thd);
             result_status = solver->Solve();
-
             //assert(result_status == MPSolver::OPTIMAL);
         }
 
@@ -154,6 +153,7 @@ public:
         std::vector<double> policy_distr;
         for (auto it = policy.begin(); it != policy.end(); it++) {
             policy_distr.emplace_back(it->second->solution_value());
+            // spdlog::debug("actions prob: {}", policy_distr.back());
         }
 
         int sample = rng::custom_discrete(policy_distr);
@@ -211,6 +211,7 @@ public:
         MPObjective* const objective = solver->MutableObjective();
 
         MPConstraint* const risk_cons = solver->MakeRowConstraint(0.0, risk_thd); // risk
+        // spdlog::debug("risk_thd: {}", risk_thd);
 
         MPVariable* const r = solver->MakeIntVar(1, 1, "r"); // (1)
 
@@ -254,7 +255,7 @@ public:
 
         payoff += std::pow(common_data.gamma, node_depth - 1) * node->observed_reward;
 
-        if (node->is_leaf()) {
+        if (node->leaf) {
 
             // objective
             double coef = payoff + std::pow(common_data.gamma, node_depth) * node->rollout_reward;
@@ -266,6 +267,8 @@ public:
             // alternative risk
             if (node->observed_penalty > 0)
                 leaves[root_succ].push_back(var);
+
+            // spdlog::debug("root_succ: {} leaf_payoff: {} p: {}", to_string(root_succ), payoff, node->observed_penalty);
             return;
         }
 

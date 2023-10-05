@@ -101,8 +101,6 @@ public:
     , solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP")))
     {
         // Create the linear solvers with the GLOP backend.
-        root->state = agent<S, A>::handler.get_current_state();
-        // spdlog::debug("root {}", to_string(root->state));
         reset();
     }
 
@@ -116,9 +114,6 @@ public:
 
     void play() override {
         spdlog::debug("Play: {}", name());
-
-        root->state = common_data.handler.get_current_state();
-        // spdlog::debug("root {}", to_string(root->state));
 
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();
@@ -153,7 +148,7 @@ public:
         std::vector<double> policy_distr;
         for (auto it = policy.begin(); it != policy.end(); it++) {
             policy_distr.emplace_back(it->second->solution_value());
-            // spdlog::debug("actions prob: {}", policy_distr.back());
+            spdlog::debug("actions prob: {}", policy_distr.back());
         }
 
         int sample = rng::custom_discrete(policy_distr);
@@ -186,7 +181,15 @@ public:
         // assert(alt_risk <= risk_thd);
 
         auto states_distr = common_data.handler.outcome_probabilities(root->state, a);
-        risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s]);
+        if (alt_risk >= risk_thd) {
+            risk_thd = 0;
+        } else {
+            risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s]);
+        }
+
+        risk_thd = std::min(risk_thd, 1.0f);
+
+        // spdlog::debug("altrisk {}, action prob {}, transtition prob {}, new thd {}", alt_risk, policy[a]->solution_value(), states_distr[s], risk_thd);
 
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
@@ -251,7 +254,7 @@ public:
 
     void LP_policy_rec(state_node_t* node, MPVariable* var, size_t& ctr, MPConstraint* const risk_cons,
                         MPObjective* const objective, size_t node_depth,
-                        std::map<S, std::vector<MPVariable*>> leaves, S root_succ, double payoff) {
+                        std::map<S, std::vector<MPVariable*>>& leaves, S root_succ, double payoff) {
 
         payoff += std::pow(common_data.gamma, node_depth - 1) * node->observed_reward;
 
@@ -265,8 +268,9 @@ public:
             risk_cons->SetCoefficient(var, node->observed_penalty);
 
             // alternative risk
-            if (node->observed_penalty > 0)
+            if (node->observed_penalty > 0) {
                 leaves[root_succ].push_back(var);
+            }
 
             // spdlog::debug("root_succ: {} leaf_payoff: {} p: {}", to_string(root_succ), payoff, node->observed_penalty);
             return;
@@ -393,6 +397,7 @@ public:
         risk_thd = common_data.risk_thd;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
+        root->state = common_data.handler.get_current_state();
     }
 
     std::string name() const override {

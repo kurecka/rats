@@ -164,7 +164,7 @@ public:
         float p = std::get<2>(o);
         ++num_steps;
         reward += r;
-        penalty += p; 
+        penalty += p;
 
         return o;
     }

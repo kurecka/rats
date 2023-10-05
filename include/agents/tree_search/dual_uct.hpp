@@ -14,6 +14,7 @@ struct dual_uct_data {
     float lambda;
     float exploration_constant;
     float gamma;
+    float gammap;
     environment_handler<S, A>& handler;
 };
 
@@ -122,7 +123,8 @@ public:
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _initial_lambda = 0, float _lr = 0.0005
+        float _exploration_constant = 5.0, float _initial_lambda = 0, float _lr = 0.0005,
+        float _gammap = 1
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -131,7 +133,7 @@ public:
     , risk_thd(_risk_thd)
     , lr(_lr)
     , initial_lambda(_initial_lambda)
-    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, agent<S, A>::handler})
+    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, agent<S, A>::handler})
     , root(std::make_unique<state_node_t>())
     {
         reset();
@@ -144,9 +146,9 @@ public:
         spdlog::trace("Expand leaf");
         expand_state(leaf);
         spdlog::trace("Rollout");
-        rollout(leaf);
+        rollout(leaf, true);
         spdlog::trace("Propagate");
-        propagate_f(leaf, common_data.gamma);
+        propagate_f(leaf);
         agent<S, A>::handler.end_sim();
 
         spdlog::trace("Select action");
@@ -213,6 +215,8 @@ public:
         d_lambda = 0;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
+        common_data.handler.gamma = common_data.gamma;
+        common_data.handler.gammap = common_data.gammap;
     }
 
     std::string name() const override {

@@ -118,6 +118,9 @@ private:
     int num_steps;
     int max_num_steps = 100;
 public:
+    float gamma = 0.99;
+    float gammap = 1;
+public:
     // environment_handler(environment<S, A>* env) : env(env) {}
     // environment_handler() = default;
     environment_handler(environment<S, A>& _env, int max_num_steps_ = 100)
@@ -163,8 +166,8 @@ public:
         float r = std::get<1>(o);
         float p = std::get<2>(o);
         ++num_steps;
-        reward += r;
-        penalty += p;
+        reward += std::pow(gamma, num_steps) * r;
+        penalty += std::pow(gammap, num_steps) * p;
 
         return o;
     }

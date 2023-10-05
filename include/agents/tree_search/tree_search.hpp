@@ -228,7 +228,7 @@ struct void_fn {
  * Do a Monte Carlo rollout from the given leaf node. Update its rollout reward and penalty.
  */
 template<typename SN>
-void rollout(SN* sn) {
+void rollout(SN* sn, bool penalty = false) {
     using state_node_t = SN;
     using A = SN::A;
 
@@ -276,7 +276,7 @@ void rollout(SN* sn) {
     mean_p /= num_sim;
     current_sn->rollout_reward = mean_r;
     // to disable rollout_pen add if (common_data->gammap > 0)
-    current_sn->rollout_penalty = (common_data->gammap > 0) ? mean_p : 0;
+    current_sn->rollout_penalty = penalty ? mean_p : 0;
 }
 
 

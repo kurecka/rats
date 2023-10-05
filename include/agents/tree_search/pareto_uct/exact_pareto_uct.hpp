@@ -327,7 +327,7 @@ public:
         int _max_depth, float _risk_thd, float _gamma,
         int _num_sim, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, int _graphviz_depth = -1,
-        float _gammap = 0
+        float _gammap = 1
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -424,6 +424,8 @@ public:
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
         root->state = agent<S, A>::handler.get_current_state();
+        common_data.handler.gamma = common_data.gamma;
+        common_data.handler.gammap = common_data.gammap;
     }
 
     std::string name() const override {

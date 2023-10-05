@@ -224,7 +224,7 @@ public:
     pareto_uct(
         environment_handler<S, A> _handler,
         int _max_depth, int _num_sim, float _risk_thd, float _gamma,
-        float _exploration_constant = 5.0, float _gammap = 0
+        float _exploration_constant = 5.0, float _gammap = 1
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -295,6 +295,8 @@ public:
         common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
+        common_data.handler.gamma = common_data.gamma;
+        common_data.handler.gammap = common_data.gammap;
     }
 
     std::string name() const override {

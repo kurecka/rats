@@ -89,7 +89,7 @@ public:
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _gammap = 0 
+        float _exploration_constant = 5.0, float _gammap = 1 
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -148,7 +148,7 @@ public:
         std::vector<double> policy_distr;
         for (auto it = policy.begin(); it != policy.end(); it++) {
             policy_distr.emplace_back(it->second->solution_value());
-            spdlog::debug("actions prob: {}", policy_distr.back());
+            // spdlog::debug("actions prob: {}", policy_distr.back());
         }
 
         int sample = rng::custom_discrete(policy_distr);
@@ -398,6 +398,8 @@ public:
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
         root->state = common_data.handler.get_current_state();
+        common_data.handler.gamma = common_data.gamma;
+        common_data.handler.gammap = common_data.gammap;
     }
 
     std::string name() const override {

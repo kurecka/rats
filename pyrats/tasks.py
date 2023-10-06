@@ -34,4 +34,4 @@ def run_experiment(agent, env, num_episodes):
 
     df = pd.DataFrame(ray.get(results), columns=['reward', 'penalty'])
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
-    df.to_csv(output_dir / 'reults.csv')
+    df.to_csv(output_dir / 'results.csv', index=False)

@@ -15,6 +15,7 @@ struct dual_uct_data {
     float exploration_constant;
     float gamma;
     environment_handler<S, A>& handler;
+    predictor_manager<S, A> predictor;
 };
 
 
@@ -35,11 +36,6 @@ struct select_action_dual {
             min_v = std::min(min_v, val);
             max_v = std::max(max_v, val);
             uct_values[i] = val;
-        }
-        if (min_v < 0) {
-            max_v = 0.9f * min_v;
-        } else {
-            max_v = 1.1f * min_v;
         }
 
         for (size_t i = 0; i < children.size(); ++i) {
@@ -103,8 +99,8 @@ class dual_uct : public agent<S, A> {
     using descend_callback_t = void_fn<state_node_t*, A, action_node_t*, S, state_node_t*>;
     constexpr auto static select_action_f = select_action_t();
     constexpr auto static select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
-    constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
-
+    // constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
+    constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value_prob<state_node_t>, uct_prop_q_value_prob<action_node_t>>;
 private:
     int max_depth;
     int num_sim;
@@ -116,13 +112,17 @@ private:
 
     data_t common_data;
 
+    int graphviz_depth = -1;
+    std::string dot_tree;
+
     std::unique_ptr<state_node_t> root;
 public:
     dual_uct(
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _initial_lambda = 0, float _lr = 0.0005
+        float _exploration_constant = 5.0, float _initial_lambda = 0, float _lr = 0.0005,
+        int _graphviz_depth = 0
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -131,42 +131,39 @@ public:
     , risk_thd(_risk_thd)
     , lr(_lr)
     , initial_lambda(_initial_lambda)
-    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, agent<S, A>::handler})
+    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, agent<S, A>::handler, {}})
+    , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
         reset();
     }
 
+    std::string get_graphviz() const {
+        return dot_tree;
+    }
+
     void simulate(int i) {
-        spdlog::trace("Simulation {}", i);
-        spdlog::trace("Select leaf");
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
-        spdlog::trace("Expand leaf");
         expand_state(leaf);
-        spdlog::trace("Rollout");
-        rollout(leaf);
-        spdlog::trace("Propagate");
+        // TODO: rollout
+        // rollout(leaf);
         propagate_f(leaf, common_data.gamma);
         agent<S, A>::handler.end_sim();
 
-        spdlog::trace("Select action");
         A a = select_action_f(root.get(), false);
         action_node_t* action_node = root->get_child(a);
 
-        spdlog::trace("Update lambda");
         float grad = action_node->q.second - common_data.risk_thd;
         // d_lambda += (grad - d_lambda) * 0.2f;
         d_lambda = grad;
         common_data.lambda += lr * d_lambda;
         common_data.lambda = std::max(0.0f, common_data.lambda);
-        // spdlog::info("Lambda: {}", common_data.lambda);
     }
 
     void play() override {
         spdlog::debug("Play: {}", name());
 
         if (sim_time_limit > 0) {
-            spdlog::debug("Sim time limit: {}", sim_time_limit);
             auto start = std::chrono::high_resolution_clock::now();
             auto end = start + std::chrono::milliseconds(sim_time_limit);
             int i = 0;
@@ -174,27 +171,21 @@ public:
                 simulate(i++);
             }
         } else {
-            spdlog::debug("Num sim: {}", num_sim);
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);
             }
         }
 
         A a = select_action_f(root.get(), false);
-
-        // static bool logged = false;
-        // if (!logged) {
-        //     spdlog::get("graphviz")->info(to_graphviz_tree(*root.get(), 9));
-        //     logged = true;
-        // }
+        if (graphviz_depth > 0) {
+            dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
+        }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
-        spdlog::debug("Play action: {}", to_string(a));
-        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            expand_action(an, s, r, p, t);
+            full_expand_action(an, s, r, p, t);
         }
 
         common_data.risk_thd = an->children[s]->v.second;

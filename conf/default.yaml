@@ -1,3 +1,7 @@
+defaults:
+  - hydra: default
+  - _self_
+
 gamma: 1
 risk_thd: 0.5
 agent: ???

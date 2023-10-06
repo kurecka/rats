@@ -20,6 +20,7 @@ struct ramcp_data {
     float exploration_constant;
     float gamma;
     environment_handler<S, A>& handler;
+    predictor_manager<S, A> predictor;
 };
 
 
@@ -71,7 +72,7 @@ class ramcp : public agent<S, A> {
     using descend_callback_t = void_fn<state_node_t*, A, action_node_t*, S, state_node_t*>;
     constexpr auto static select_action_f = select_action_t();
     constexpr auto static select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
-    constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
+    constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value_prob<state_node_t>, uct_prop_q_value_prob<action_node_t>>;
 
 private:
     int max_depth;
@@ -95,7 +96,7 @@ public:
     , num_sim(_num_sim)
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
-    , common_data({_risk_thd, _exploration_constant, _gamma, agent<S, A>::handler})
+    , common_data({_risk_thd, _exploration_constant, _gamma, agent<S, A>::handler, {}})
     , root(std::make_unique<state_node_t>())
     , solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP")))
     {
@@ -166,7 +167,7 @@ public:
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            expand_action(an, s, r, p, t);
+            full_expand_action(an, s, r, p, t);
         }
 
         // adjust risk thd, assuming only observed penalty == leaf in F

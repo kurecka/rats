@@ -34,17 +34,21 @@ RUN cd or-tools && sudo cmake --build build --target install -j 24
 # ENV PATH=/root/miniconda3/bin:$PATH
 # RUN conda init bash
 
-COPY docker_build/rats /work/rats
 RUN conda install -n base pybind11
 RUN conda install -n base -c rapidsai-nightly cmake_setuptools
 RUN conda install -n base -c conda-forge gymnasium
+RUN conda install -n base -c conda-forge hydra-core
+RUN conda install -n base -c anaconda pandas
+RUN conda install -n base -c anaconda numpy
+RUN conda install -n base -c anaconda matplotlib
 
+COPY docker_build/rats /work/rats
 RUN sudo chmod -R 777 /work/rats
 RUN conda run -n base sh -c "export CMAKE_COMMON_VARIABLES=-DPEDANTIC=OFF && cd /work/rats && pip install -e ."
 
 RUN wget https://github.com/prometheus/prometheus/releases/download/v2.47.0/prometheus-2.47.0.linux-amd64.tar.gz -O /work/prometheus.tar.gz && tar -xzf /work/prometheus.tar.gz && rm /work/prometheus.tar.gz
 # run in background
-RUN cd prometheus-2.47.0.linux-amd64
+# RUN cd prometheus-2.47.0.linux-amd64
 
 # RUN sudo apt-get install -y adduser libfontconfig1 musl
 # RUN wget https://dl.grafana.com/enterprise/release/grafana-enterprise_10.1.2_amd64.deb

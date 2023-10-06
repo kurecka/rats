@@ -25,7 +25,6 @@
 logs
 *.log
 pyrats/outputs
-pyrats/multirun
 
 *.egg-info
 

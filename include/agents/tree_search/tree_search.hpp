@@ -151,6 +151,24 @@ void expand_action(
     new_sn->terminal = t;
 }
 
+template<typename AN>
+void full_expand_action(
+    AN* an, typename AN::S s, float r, float p, bool t
+) {
+    using state_node_t = AN::state_node_t;
+
+    auto& predictor = an->common_data->predictor;
+    typename AN::A a1 = an->action;
+    typename AN::S s0 = an->parent->state;
+    predictor.add(an->parent->state, an->action, s, r, p, t);
+    for (auto& [s1, signals] : predictor.predict_signals(s0, a1)) {
+        if (an->children.find(s1) == an->children.end()) {
+            auto [r1, p1, t1] = signals;
+            expand_action(an, s1, r1, p1, t1);
+        }
+    }
+}
+
 /**
  * @brief Start at the root node and select actions until a leaf node is reached or a maximum depth is reached.
  * 
@@ -173,9 +191,10 @@ SN* select_leaf(SN* root, bool explore = true, int max_depth = 10) {
         action_node_t *an = sn->get_child(a_idx);
         A action = an->action;
         auto [s, r, p, t] = sn->common_data->handler.sim_action(action);
-        if (an->children.find(s) == an->children.end()) {
-            expand_action(an, s, r, p, t);
-        }
+        full_expand_action(an, s, r, p, t);
+        // if (an->children.find(s) == an->children.end()) {
+        //     expand_action(an, s, r, p, t);
+        // }
         state_node_t* new_sn = an->get_child(s);
         descend_cb(sn, action, an, s, new_sn);
         depth++;
@@ -205,6 +224,54 @@ void propagate(SN* leaf, float gamma) {
 
     prop_v_t()(current_sn, disc_r, disc_p);
 }
+
+template <typename S, typename A>
+class predictor_manager {
+    struct state_record {
+        size_t count;
+        float reward;
+        float penalty;
+        bool terminal;
+    };
+
+    struct action_record {
+        size_t count;
+        std::map<S, state_record> records;
+    };
+
+    std::map<std::pair<S, A>, action_record> records;
+public:
+    void add(S s0, A a1, S s1, float r, float p, bool t) {
+        action_record& ar = records[{s0, a1}];
+        ++ar.count;
+        state_record& sr = ar.records[s1];
+        ++sr.count;
+        sr.reward = r;
+        sr.penalty = p;
+        sr.terminal = t;
+    }
+
+    std::map<S, float> predict_probs(S s0, A a1) {
+        std::map<S, float> probs;
+        action_record& ar = records[{s0, a1}];
+
+        for (auto& [s1, sr] : ar.records) {
+            probs[s1] = static_cast<float>(sr.count) / ar.count;
+        }
+        return probs;
+    }
+
+    std::map<S, std::tuple<float, float, float>> predict_signals(S s0, A a1) {
+        std::map<S, std::tuple<float, float, float>> signals;
+        action_record& ar = records[{s0, a1}];
+
+        for (auto& [s1, sr] : ar.records) {
+            signals[s1] = {sr.reward, sr.penalty, sr.terminal};
+        }
+        return signals;
+    }
+};
+
 
 /*********************************************************************
  * CALLBACKS AND PLUGIN FUNCTIONS
@@ -347,6 +414,7 @@ void constant_rollout_action(AN* an) {
     an->rollout_penalty = mean_p / N;
 }
 
+/** Propagate by point **/
 template<typename SN>
 struct uct_prop_v_value {
     void operator()(SN* sn, float disc_r, float disc_p) const {
@@ -365,6 +433,50 @@ struct uct_prop_q_value {
         an->q.second += (disc_p - an->q.second) / an->num_visits;
     }
 };
+
+/** Propagate by probability **/
+template<typename SN>
+struct uct_prop_v_value_prob {
+    void operator()(SN* sn, float disc_r, float disc_p) const {
+        sn->num_visits++;
+        if (sn->children.size()) {
+            float r = 0;
+            float p = 0;
+            for (auto& child : sn->children) {
+                float prob = child.num_visits / static_cast<float>(sn->num_visits);
+                r += prob * child.q.first;
+                p += prob * child.q.second;
+            }
+            sn->v.first = r;
+            sn->v.second = p;
+        }
+        sn->v.first += sn->observed_reward;
+        sn->v.second += sn->observed_penalty;
+    }
+};
+
+template<typename AN>
+struct uct_prop_q_value_prob {
+    void operator()(AN* an, float disc_r, float disc_p) const {
+        an->num_visits++;
+        if (an->children.size()) {
+            float r = 0;
+            float p = 0;
+            auto probs = an->common_data->predictor.predict_probs(an->parent->state, an->action);
+            for (auto& [s, child] : an->children) {
+                float prob = probs[s];
+                r += prob * child->v.first;
+                p += prob * child->v.second;
+            }
+            an->q.first = r;
+            an->q.second = p;
+        }
+        float gamma = an->common_data->gamma;
+        an->q.first *= gamma;
+        an->q.second *= gamma;
+    }
+};
+
 
 } // namespace ts
 } // namespace rats

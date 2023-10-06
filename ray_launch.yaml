@@ -3,7 +3,7 @@ docker:
     container_name: "ray_container"
 #     # If true, pulls latest version of image. Otherwise, `docker run` will only pull the image
 #     # if no cached version is present.
-    pull_before_run: False
+    pull_before_run: True
     run_options:   # Extra options to pass into "docker run"
         - -v /var/data/xkurecka/rats/pyrats:/work/rats/pyrats
         - -v /var/data/xkurecka/rats/include:/work/rats/include

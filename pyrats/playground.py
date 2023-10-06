@@ -12,22 +12,22 @@ from utils import set_log_level
 # #############
 # """
 
-map = """
-#######
-#BTTTG#
-#..T..#
-#.....#
-#######
-"""
+# map = """
+# #######
+# #BTTTG#
+# #..T..#
+# #.....#
+# #######
+# """
 
-set_log_level('debug')
+# set_log_level('debug')
 
-e = envs.Hallway(map, 0.1)
-# e = envs.InvestorEnv(2, 20)
+# e = envs.Hallway(map, 0.1)
+e = envs.InvestorEnv(2, 20)
 h = envs.EnvironmentHandler(e)
-a = agents.ParetoUCT(
+a = agents.DualUCT(
     h,
-    max_depth=80, num_sim=800, risk_thd=0.2, gamma=1,
+    max_depth=80, num_sim=8, risk_thd=0.2, gamma=1,
     exploration_constant=0.6, graphviz_depth=7
 )
 

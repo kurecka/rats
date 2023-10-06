@@ -13,74 +13,14 @@ namespace rats {
 namespace ts {
 
 template <typename S, typename A>
-class predictor_manager {
-    struct state_record {
-        size_t count;
-        float reward;
-        float penalty;
-        bool terminal;
-    };
-
-    struct action_record {
-        size_t count;
-        std::map<S, state_record> records;
-    };
-
-    std::map<std::pair<S, A>, action_record> records;
-public:
-    void add(S s0, A a1, S s1, float r, float p, bool t) {
-        action_record& ar = records[{s0, a1}];
-        ++ar.count;
-        state_record& sr = ar.records[s1];
-        ++sr.count;
-        sr.reward = r;
-        sr.penalty = p;
-        sr.terminal = t;
-    }
-
-    std::map<S, float> predict_probs(S s0, A a1) {
-        std::map<S, float> probs;
-        action_record& ar = records[{s0, a1}];
-
-        for (auto& [s1, sr] : ar.records) {
-            probs[s1] = static_cast<float>(sr.count) / ar.count;
-        }
-        return probs;
-    }
-
-    std::map<S, std::tuple<float, float, float>> predict_signals(S s0, A a1) {
-        std::map<S, std::tuple<float, float, float>> signals;
-        action_record& ar = records[{s0, a1}];
-
-        for (auto& [s1, sr] : ar.records) {
-            signals[s1] = {sr.reward, sr.penalty, sr.terminal};
-        }
-        return signals;
-    }
-};
-
-// template <typename S, typename A>
-// class exact_predictor_manager {
-//     std::map<std::tuple<S, A, S>, float> probs;
-// public:
-//     void add(S s0, A a1, S s1, float p) {
-//         probs[{s0, a1, s1}] = p;
-//     }
-
-//     float predict(S s0, A a1, S s1) {
-//         return probs[{s0, a1, s1}];
-//     }
-// };
-
-template <typename S, typename A>
 struct pareto_uct_data {
     float risk_thd;
     float sample_risk_thd;
     size_t descent_point;
     float exploration_constant;
+    float gamma;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
-    float gamma;
 };
 
 struct pareto_value {
@@ -183,16 +123,6 @@ struct descend_callback {
     using DATA = typename SN::DATA;
     void operator()(state_node_t* s0, A a, action_node_t* action, S s, state_node_t* new_state) const {
         DATA* common_data = action->common_data;
-
-
-
-        expand_state_neighbours(action, s, new_state->observed_reward, new_state->observed_penalty, new_state->is_terminal());
-        // common_data->predictor.add(s0->state, a, s);
-        // if (new_state->is_leaf()) {
-        //     auto probs = common_data->handler.outcome_probabilities(s0->state, a);
-        //     common_data->predictor.add(s0->state, a, s, probs[s]);
-        // }
-
         size_t point_idx = common_data->descent_point;
         size_t state_idx = action->child_idx[s];
         auto& [r, p, supp] = action->q.curve.points[point_idx];
@@ -266,24 +196,7 @@ void exact_pareto_propagate(SN* leaf, float gamma) {
 }
 
 
-template<typename AN>
-void expand_state_neighbours(
-    AN* an, typename AN::S s, float r, float p, bool t
-) {
-    using state_node_t = AN::state_node_t;
 
-
-    auto& predictor = an->common_data->predictor;
-    typename AN::A a1 = an->action;
-    typename AN::S s0 = an->parent->state;
-    predictor.add(an->parent->state, an->action, s, r, p, t);
-    for (auto& [s1, signals] : predictor.predict_signals(s0, a1)) {
-        if (an->children.find(s1) == an->children.end()) {
-            auto [r1, p1, t1] = signals;
-            expand_action(an, s1, r1, p1, t1);
-        }
-    }
-}
 
 
 // /*********************************************************************
@@ -333,7 +246,7 @@ public:
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
-    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, agent<S, A>::handler, {}, gamma})
+    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, _gamma, agent<S, A>::handler, {}})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
@@ -345,27 +258,20 @@ public:
     }
 
     void simulate(int i) {
-         spdlog::trace("Simulation {}", i);
         common_data.sample_risk_thd = common_data.risk_thd;
-        spdlog::trace("Select");
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
-        spdlog::trace("Expand");
         expand_state(leaf);
-        spdlog::trace("Rollout");
-        // TODO
+        // TODO: rollout
         // for (auto& child : leaf->children) {
         //     constant_rollout<S, A, data_t, v_t, q_t, 1, 300>(&child);
         // }
         // constant_rollout<S, A, data_t, v_t, q_t, 1, 30>(leaf);
-        spdlog::trace("Propagate");
         propagate_f(leaf, gamma);
-        spdlog::trace("Reset");
         agent<S, A>::handler.end_sim();
     }
 
     void play() override {
         spdlog::debug("Play: {}", name());
-
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();
             auto end = start + std::chrono::milliseconds(sim_time_limit);
@@ -381,27 +287,15 @@ public:
 
         common_data.sample_risk_thd = common_data.risk_thd;
         A a = select_action_f(root.get(), false);
-
         if (graphviz_depth > 0) {
-            spdlog::debug("Graphviz checkpoint: {}", graphviz_depth);
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
-        spdlog::debug("Play action: {}", to_string(a));
-        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
-            expand_action(an, s, r, p, t);
-        }
-        for (auto& [_r, _p, supp] : an->q.curve.points) {
-            spdlog::debug("  r={}, p={}, supp size={}", _r, _p, supp.support.size());
-            std::string supp_str;
-            for (auto& [aidx, vidx] : supp.support) {
-                supp_str += "state=" + to_string(aidx) + ", vtx=" + to_string(vidx) + "; ";
-            }
-            spdlog::debug("   {}", supp_str);
+            full_expand_action(an, s, r, p, t);
         }
 
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
@@ -409,7 +303,6 @@ public:
         float old_risk_thd = common_data.risk_thd;
         descend_callback_f(root.get(), a, an, s, new_root.get());
         common_data.risk_thd = common_data.sample_risk_thd;
-        spdlog::debug("Old vs New thd: {} -> {}", old_risk_thd, common_data.risk_thd);
 
         root = std::move(new_root);
         root->get_parent() = nullptr;

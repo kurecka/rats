@@ -68,9 +68,10 @@ def mount_files(file_mounts, head_ip, user):
         cmd = f'rsync -avz --mkpath {source} {user}@{head_ip}:{target}'
         os.system(cmd)
 
-def cluster_sync(files, head_ip, worker_ips, user):
+def cluster_sync(files, exclude_files, head_ip, worker_ips, user):
+    exclude = ''.join([f'--exclude {f}' for f in exclude_files])
     params = [(head_ip, [
-        f'rsync -avz --mkpath {file} {user}@{worker}:{file}' for file in files
+        f'rsync -avz {exclude} --mkpath {file} {user}@{worker}:{file}' for file in files
     ], user) for worker in worker_ips]
     with multiprocessing.Pool(processes=max(len(worker_ips), 1)) as pool:
         pool.map(tuple_run_remote_commands, params)
@@ -139,7 +140,10 @@ def load_config(config_path):
             'container_name': str,
             'pull_before_run': Maybe(bool),
             'run_options': Maybe([str]),
-        })
+        }),
+        'cluster_synced_files': Maybe([str]),
+        'file_mounts': Maybe(dict),
+        'rsync_exclude': Maybe([str]),
     }
     
     with open(config_path) as f:
@@ -166,6 +170,11 @@ def load_config(config_path):
     if 'cluster_synced_files' in config:
         conf['cluster_synced_files'] = config['cluster_synced_files']
     
+    if 'rsync_exclude' in config:
+        conf['rsync_exclude'] = config['rsync_exclude']
+    else:
+        conf['rsync_exclude'] = []
+    
     return conf
 
 def help():
@@ -186,12 +195,12 @@ if __name__ == '__main__':
             if 'file_mounts' in config:
                 mount_files(config['file_mounts'], config['head_ip'], config['user'])
             if 'cluster_synced_files' in config:
-                cluster_sync(config['cluster_synced_files'], config['head_ip'], config['worker_ips'], config['user'])
+                cluster_sync(config['cluster_synced_files'], config['rsync_exclude'], config['head_ip'], config['worker_ips'], config['user'])
         elif argv[1] == 'sync':
             if 'file_mounts' in config:
                 mount_files(config['file_mounts'], config['head_ip'], config['user'])
             if 'cluster_synced_files' in config:
-                cluster_sync(config['cluster_synced_files'], config['head_ip'], config['worker_ips'], config['user'])
+                cluster_sync(config['cluster_synced_files'], config['rsync_exclude'], config['head_ip'], config['worker_ips'], config['user'])
         elif argv[1] == 'down':
             if 'docker' in config:
                 ray_down_docker(

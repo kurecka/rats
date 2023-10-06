@@ -110,9 +110,9 @@ private:
 public:
     primal_uct(
         environment_handler<S, A> _handler,
-        int _max_depth, float _risk_thd, float _gamma,
+        int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _gammap = 1
+        float _exploration_constant = 5.0
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)

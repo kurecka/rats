@@ -40,7 +40,10 @@ file_mounts: {
 # list of paths. The same path on the head node will be copied to the worker node.
 # This behavior is a subset of the file_mounts behavior. In the vast majority of cases
 # you should just use file_mounts. Only use this if you know what you're doing!
-cluster_synced_files: [
-    '/var/data/xkurecka/rats/build/rats.so',
-    '/var/data/xkurecka/rats/pyrats/'
-]
+cluster_synced_files: 
+    - /var/data/xkurecka/rats/build/rats.so'
+    - /var/data/xkurecka/rats/pyrats/
+
+
+rsync_exclude:
+    - /var/data/xkurecka/rats/pyrats/outputs

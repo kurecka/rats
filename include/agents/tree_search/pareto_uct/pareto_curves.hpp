@@ -101,6 +101,7 @@ public:
             r *= fs.first;
             prob *= fs.second;
         }
+        return *this;
     }
 };
 

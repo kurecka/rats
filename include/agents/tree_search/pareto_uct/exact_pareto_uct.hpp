@@ -19,6 +19,7 @@ struct pareto_uct_data {
     size_t descent_point;
     float exploration_constant;
     float gamma;
+    float gammap;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
 };
@@ -134,7 +135,7 @@ struct descend_callback {
 };
 
 template<typename SN>
-void exact_pareto_propagate(SN* leaf, float gamma) {
+void exact_pareto_propagate(SN* leaf) {
     using state_node_t = SN;
     using S = typename SN::S;
     using action_node_t = typename SN::action_node_t;
@@ -143,8 +144,8 @@ void exact_pareto_propagate(SN* leaf, float gamma) {
     state_node_t* current_sn = leaf;
 
     // TODO
-    // std::get<0>(current_sn->v.curve.points[0]) = current_sn->rollout_reward;
-    // std::get<1>(current_sn->v.curve.points[0]) = current_sn->rollout_penalty;
+    std::get<0>(current_sn->v.curve.points[0]) = current_sn->rollout_reward;
+    std::get<1>(current_sn->v.curve.points[0]) = current_sn->rollout_penalty;
 
     // if (!current_sn->is_terminal()) {
     //     for (auto& child : current_sn->children) {
@@ -188,7 +189,8 @@ void exact_pareto_propagate(SN* leaf, float gamma) {
         merged_curve = weighted_merge(state_curves, weights, state_refs);
         ++current_an->num_visits;
         merged_curve.num_samples = current_an->num_visits;
-        merged_curve *= gamma;
+        std::pair<float, float> gammas = {current_an->common_data->gamma, current_an->common_data->gammap};
+        merged_curve *= gammas;
         current_an->q.curve = merged_curve;
 
         current_sn = current_an->get_parent();
@@ -236,9 +238,9 @@ private:
 public:
     pareto_uct(
         environment_handler<S, A> _handler,
-        int _max_depth, float _risk_thd, float _gamma,
-        int _num_sim, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, int _graphviz_depth = -1
+        int _max_depth, float _risk_thd, float _gamma, float _gammap = 1
+        int _num_sim = 100, int _sim_time_limit = 0,
+        float _exploration_constant = 5.0, int _graphviz_depth = -1,
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -246,7 +248,7 @@ public:
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
-    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, _gamma, agent<S, A>::handler, {}})
+    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, _gamma, _gammap, agent<S, A>::handler, {}})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
@@ -261,12 +263,8 @@ public:
         common_data.sample_risk_thd = common_data.risk_thd;
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
-        // TODO: rollout
-        // for (auto& child : leaf->children) {
-        //     constant_rollout<S, A, data_t, v_t, q_t, 1, 300>(&child);
-        // }
-        // constant_rollout<S, A, data_t, v_t, q_t, 1, 30>(leaf);
-        propagate_f(leaf, gamma);
+        rollout(leaf);
+        propagate_f(leaf);
         agent<S, A>::handler.end_sim();
     }
 
@@ -315,6 +313,8 @@ public:
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
         root->state = agent<S, A>::handler.get_current_state();
+        common_data.handler.gamma = common_data.gamma;
+        common_data.handler.gammap = common_data.gammap;
     }
 
     std::string name() const override {

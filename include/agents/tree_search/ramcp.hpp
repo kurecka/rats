@@ -19,6 +19,7 @@ struct ramcp_data {
     float risk_thd;
     float exploration_constant;
     float gamma;
+    float gammap;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
 };
@@ -89,32 +90,26 @@ public:
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0 
+        float _exploration_constant = 5.0, float _gammap = 1 
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
     , num_sim(_num_sim)
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
-    , common_data({_risk_thd, _exploration_constant, _gamma, agent<S, A>::handler, {}})
+    , common_data({_risk_thd, _exploration_constant, _gamma, _gammap, agent<S, A>::handler, {}})
     , root(std::make_unique<state_node_t>())
     , solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP")))
     {
         // Create the linear solvers with the GLOP backend.
-        //solver = std::make_unique<MPSolver>(MPSolver::CreateSolver("GLOP"));
         reset();
     }
 
     void simulate(int i) {
-        spdlog::trace("Simulation {}", i);
-        spdlog::trace("Select leaf");
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
-        spdlog::trace("Expand leaf");
         expand_state(leaf);
-        spdlog::trace("Rollout");
         rollout(leaf);
-        spdlog::trace("Propagate");
-        propagate_f(leaf, common_data.gamma);
+        propagate_f(leaf);
         agent<S, A>::handler.end_sim();
     }
 
@@ -147,7 +142,6 @@ public:
             double alt_thd = risk_obj->Value();
             std::tie(policy, leaf_risk) = define_LP_policy(alt_thd);
             result_status = solver->Solve();
-
             //assert(result_status == MPSolver::OPTIMAL);
         }
 
@@ -155,6 +149,7 @@ public:
         std::vector<double> policy_distr;
         for (auto it = policy.begin(); it != policy.end(); it++) {
             policy_distr.emplace_back(it->second->solution_value());
+            // spdlog::debug("actions prob: {}", policy_distr.back());
         }
 
         int sample = rng::custom_discrete(policy_distr);
@@ -187,7 +182,15 @@ public:
         // assert(alt_risk <= risk_thd);
 
         auto states_distr = common_data.handler.outcome_probabilities(root->state, a);
-        risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s]);
+        if (alt_risk >= risk_thd) {
+            risk_thd = 0;
+        } else {
+            risk_thd = (risk_thd - alt_risk) / (policy[a]->solution_value() * states_distr[s]);
+        }
+
+        risk_thd = std::min(risk_thd, 1.0f);
+
+        // spdlog::debug("altrisk {}, action prob {}, transtition prob {}, new thd {}", alt_risk, policy[a]->solution_value(), states_distr[s], risk_thd);
 
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
@@ -212,6 +215,7 @@ public:
         MPObjective* const objective = solver->MutableObjective();
 
         MPConstraint* const risk_cons = solver->MakeRowConstraint(0.0, risk_thd); // risk
+        // spdlog::debug("risk_thd: {}", risk_thd);
 
         MPVariable* const r = solver->MakeIntVar(1, 1, "r"); // (1)
 
@@ -251,11 +255,11 @@ public:
 
     void LP_policy_rec(state_node_t* node, MPVariable* var, size_t& ctr, MPConstraint* const risk_cons,
                         MPObjective* const objective, size_t node_depth,
-                        std::map<S, std::vector<MPVariable*>> leaves, S root_succ, double payoff) {
+                        std::map<S, std::vector<MPVariable*>>& leaves, S root_succ, double payoff) {
 
         payoff += std::pow(common_data.gamma, node_depth - 1) * node->observed_reward;
 
-        if (node->is_leaf()) {
+        if (node->leaf) {
 
             // objective
             double coef = payoff + std::pow(common_data.gamma, node_depth) * node->rollout_reward;
@@ -265,8 +269,11 @@ public:
             risk_cons->SetCoefficient(var, node->observed_penalty);
 
             // alternative risk
-            if (node->observed_penalty > 0)
+            if (node->observed_penalty > 0) {
                 leaves[root_succ].push_back(var);
+            }
+
+            // spdlog::debug("root_succ: {} leaf_payoff: {} p: {}", to_string(root_succ), payoff, node->observed_penalty);
             return;
         }
 
@@ -391,6 +398,9 @@ public:
         risk_thd = common_data.risk_thd;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
+        root->state = common_data.handler.get_current_state();
+        common_data.handler.gamma = common_data.gamma;
+        common_data.handler.gammap = common_data.gammap;
     }
 
     std::string name() const override {

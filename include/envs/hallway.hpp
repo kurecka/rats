@@ -146,7 +146,7 @@ private:
 public:
     hallway(std::string, float trap_prob = 0.2f);
 
-    std::string name() const override { return "FrozenLake 4x4"; }
+    std::string name() const override { return "Hallway"; }
 
     std::pair<float, float> reward_range() const override { return {0, 1}; }
     size_t num_actions() const override { return 4; }
@@ -177,7 +177,7 @@ outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
     auto [new_pos, new_gold_mask, tile, hit] = m.move(action, position, gold_mask);
     float reward = new_gold_mask != gold_mask;
     if (hit) reward -= 0.1f;
-    spdlog::debug("hit: {}", hit);
+    // spdlog::debug("hit: {}", hit);
     float penalty = (tile == map_manager::TRAP) && (rng::unif_float() < trap_prob);
     if (penalty > 0) { new_pos = -1; }
     over = (new_gold_mask == 0) || penalty > 0;

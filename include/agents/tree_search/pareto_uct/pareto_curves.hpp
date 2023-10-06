@@ -95,6 +95,13 @@ public:
         }
         return *this;
     }
+
+    EPC operator*=(std::pair<float, float> fs) {
+        for (auto& [r, prob, supp] : points) {
+            r *= fs.first;
+            prob *= fs.second;
+        }
+    }
 };
 
 EPC convex_hull_merge(std::vector<EPC*> curves) {

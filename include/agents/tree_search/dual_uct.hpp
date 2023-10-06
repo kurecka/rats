@@ -14,6 +14,7 @@ struct dual_uct_data {
     float lambda;
     float exploration_constant;
     float gamma;
+    float gammap;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
 };
@@ -119,7 +120,7 @@ private:
 public:
     dual_uct(
         environment_handler<S, A> _handler,
-        int _max_depth, float _risk_thd, float _gamma,
+        int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _initial_lambda = 0, float _lr = 0.0005,
         int _graphviz_depth = 0
@@ -131,7 +132,7 @@ public:
     , risk_thd(_risk_thd)
     , lr(_lr)
     , initial_lambda(_initial_lambda)
-    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, agent<S, A>::handler, {}})
+    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, agent<S, A>::handler, {}})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
@@ -145,16 +146,15 @@ public:
     void simulate(int i) {
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
-        // TODO: rollout
-        // rollout(leaf);
-        propagate_f(leaf, common_data.gamma);
+        rollout(leaf);
+        propagate_f(leaf);
         agent<S, A>::handler.end_sim();
 
         A a = select_action_f(root.get(), false);
         action_node_t* action_node = root->get_child(a);
 
         float grad = action_node->q.second - common_data.risk_thd;
-        // d_lambda += (grad - d_lambda) * 0.2f;
+        d_lambda += (grad - d_lambda) * 0.3f;
         d_lambda = grad;
         common_data.lambda += lr * d_lambda;
         common_data.lambda = std::max(0.0f, common_data.lambda);
@@ -204,6 +204,8 @@ public:
         d_lambda = 0;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
+        common_data.handler.gamma = common_data.gamma;
+        common_data.handler.gammap = common_data.gammap;
     }
 
     std::string name() const override {

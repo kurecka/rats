@@ -117,6 +117,8 @@ private:
     float penalty;
     int num_steps;
     int max_num_steps = 100;
+
+    std::map<S, size_t> leaf_visits;
 public:
     float gamma = 0.99;
     float gammap = 1;
@@ -143,6 +145,10 @@ public:
 
     int get_num_steps() const {
         return num_steps;
+    }
+
+    std::map<S, size_t> get_leaf_visits() const {
+        return leaf_visits;
     }
 
     void reset() {
@@ -178,6 +184,7 @@ public:
     }
 
     void restore_checkpoint(size_t id) {
+        if (id==0) { leaf_visits[get_current_state()] += 1; }
         env->restore_checkpoint(id);
         num_steps = checkpoint_num_steps[id];
     }

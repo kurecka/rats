@@ -204,6 +204,7 @@ public:
         d_lambda = 0;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
+        root->state = agent<S, A>::handler.get_current_state();
         common_data.handler.gamma = common_data.gamma;
         common_data.handler.gammap = common_data.gammap;
     }

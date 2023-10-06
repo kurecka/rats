@@ -16,7 +16,7 @@ template <typename S, typename A>
 struct pareto_uct_data {
     float risk_thd;
     float sample_risk_thd;
-    size_t descent_point;
+    float descent_thd;
     float exploration_constant;
     float gamma;
     float gammap;
@@ -74,37 +74,10 @@ struct select_action_pareto {
             merged_curve = convex_hull_merge(curve_ptrs);
         }
 
-        size_t idx;
-        // TODO: bin search
-        for (idx = 0; idx < curve_ptr->points.size()-1; ++idx) {
-            if (std::get<1>(curve_ptr->points[idx + 1]) > risk_thd) {
-                break;
-            }
-        }
-
-
-        size_t opt_vertex_idx;
-
-        if (idx == curve_ptr->points.size() - 1) {
-            opt_vertex_idx = curve_ptr->points.size() - 1;
-        } else {
-            float p1 = std::get<1>(curve_ptr->points[idx]);
-            float p2 = std::get<1>(curve_ptr->points[idx + 1]);
-
-            float prob2 = (risk_thd - p1) / (p2 - p1);
-
-            if (p1 > risk_thd) {
-                opt_vertex_idx = idx;
-            } if (rng::unif_float() < prob2) {
-                opt_vertex_idx = idx + 1;
-            } else {
-                opt_vertex_idx = idx;
-            }
-        }
-        auto& [r, p, supp] = curve_ptr->points[opt_vertex_idx];
-        auto [o, vtx] = supp.support[0];
-
-        node->common_data->descent_point = vtx;
+        size_t idx = curve_ptr->select_vertex(risk_thd);
+        auto& [r, p, supp] = curve_ptr->points[idx];
+        node->common_data->descent_thd = ((risk_thd < p && idx == 0) || (risk_thd > p && idx == curve_ptr->points.size() - 1)) ? risk_thd : p;
+        auto [o, thd] = supp.support[0];
         return o;
     }
 };
@@ -124,13 +97,17 @@ struct descend_callback {
     using DATA = typename SN::DATA;
     void operator()(state_node_t* s0, A a, action_node_t* action, S s, state_node_t* new_state) const {
         DATA* common_data = action->common_data;
-        size_t point_idx = common_data->descent_point;
+        float risk_thd = common_data->sample_risk_thd;
+        spdlog::debug("Action risk: {}", risk_thd);
+        size_t point_idx = action->q.curve.select_vertex(risk_thd);
         size_t state_idx = action->child_idx[s];
         auto& [r, p, supp] = action->q.curve.points[point_idx];
+        float overflow = ((risk_thd < p && point_idx == 0) || (risk_thd > p && point_idx == action->q.curve.points.size() - 1)) ? risk_thd - p : 0;
         if (supp.support.size() > state_idx) {
-            auto& [o, vtx] = supp.support[state_idx];
-            common_data->sample_risk_thd = std::get<1>(new_state->v.curve.points[vtx]);
-        }   
+            auto& [o, new_thd] = supp.support[state_idx];
+            spdlog::debug("Outcome risk: {}", new_thd);
+            common_data->sample_risk_thd = new_thd + overflow;
+        }
     }
 };
 
@@ -301,6 +278,7 @@ public:
         float old_risk_thd = common_data.risk_thd;
         descend_callback_f(root.get(), a, an, s, new_root.get());
         common_data.risk_thd = common_data.sample_risk_thd;
+        spdlog::debug("Risk thd: {} -> {}", old_risk_thd, common_data.risk_thd);
 
         root = std::move(new_root);
         root->get_parent() = nullptr;

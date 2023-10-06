@@ -4,31 +4,35 @@ import envs
 import agents
 from utils import set_log_level
 
-# map = """
-# #############
-# #B...T#.G...#
-# #.##..#TTT..#
-# #..G#.......#
-# #############
-# """
+# 08 09 10 11 12
+# 15 16 17 18 19
+# 22 23 24 25 26
+# 29 30 31 32 33
+# 36 37 38 39 40
+# 43 44 45 46 47
 
-# map = """
-# #######
-# #BTTTG#
-# #..T..#
-# #.....#
-# #######
-# """
 
-# set_log_level('debug')
 
-# e = envs.Hallway(map, 0.1)
-e = envs.InvestorEnv(2, 20)
+map = """
+#######
+#BTTTG#
+#..T..#
+#.....#
+##TT#.#
+#GTTG.#
+#..T..#
+#######
+"""
+
+set_log_level('debug')
+
+e = envs.Hallway(map, 0.1)
+# e = envs.InvestorEnv(2, 20)
 h = envs.EnvironmentHandler(e)
-a = agents.DualUCT(
+a = agents.ParetoUCT(
     h,
-    max_depth=80, num_sim=8, risk_thd=0.2, gamma=1,
-    exploration_constant=0.6, graphviz_depth=7
+    max_depth=80, sim_time_limit=100, risk_thd=0.2, gamma=0.99,
+    exploration_constant=5, graphviz_depth=3
 )
 
 # for i in range(3):
@@ -41,7 +45,11 @@ a = agents.DualUCT(
 e.reset()
 a.reset()
 
-for i in range(3):
+i = 0
+while not a.get_handler().is_over():
+# for i in range(2):
+    print(f'{i}: {a.get_handler().get_current_state()}')
     a.play()
     with open(f"../logs/tree_{i}.dot", "w") as f:
         f.write(a.get_graphviz())
+    i+=1

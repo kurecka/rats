@@ -46,11 +46,11 @@ std::vector<std::tuple<float, float, T>> upper_hull(std::vector<std::tuple<float
 }
 
 struct outcome_support {
-    // outcome index, curve vertex index
-    std::vector<std::pair<size_t, size_t>> support;
+    // outcome index, new_thd
+    std::vector<std::pair<size_t, float>> support;
 
     outcome_support() = default;
-    outcome_support(size_t o, size_t vtx) : support({{o, vtx}}) {}
+    outcome_support(size_t o, float thd) : support({{o, thd}}) {}
 
     outcome_support& operator+=(const outcome_support& other) {
         support.insert(support.end(), other.support.begin(), other.support.end());
@@ -85,6 +85,9 @@ public:
         for (auto& [r, prob, supp] : points) {
             r += dr;
             prob = std::max(0.f, prob + dp);
+            for (auto& [o, thd] : supp.support) {
+                thd = std::max(0.f, thd + dp);
+            }
         }
         return *this;
     }
@@ -100,8 +103,32 @@ public:
         for (auto& [r, prob, supp] : points) {
             r *= fs.first;
             prob *= fs.second;
+            for (auto& [o, thd] : supp.support) {
+                thd *= fs.second;
+            }
         }
         return *this;
+    }
+
+    size_t select_vertex(float thd) {
+        size_t idx;
+        // find idx of first point with risk > risk_thd or idx = points.size()
+        for (idx = 0; idx < points.size() && std::get<1>(points[idx]) <= thd; ++idx);
+
+        size_t selected_vertex;
+
+        if (idx == 0) {
+            selected_vertex = 0;
+        } else if (idx == points.size()) {
+            selected_vertex = points.size() - 1;
+        } else {
+            float p1 = std::get<1>(points[idx - 1]);
+            float p2 = std::get<1>(points[idx]);
+
+            float prob2 = (thd - p1) / (p2 - p1);
+            selected_vertex = rng::unif_float() < prob2 ? idx : idx - 1;
+        }
+        return selected_vertex;
     }
 };
 
@@ -110,7 +137,7 @@ EPC convex_hull_merge(std::vector<EPC*> curves) {
     for (size_t i = 0; i < curves.size(); ++i) {
         for (size_t j = 0; j < curves[i]->points.size(); ++j) {
             auto [r, p, supp] = curves[i]->points[j];
-            points.push_back({r, p, {i, j}});
+            points.push_back({r, p, {i, p}});
         }
     }
 
@@ -135,7 +162,7 @@ EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights, std::ve
         float w = weights[i];
         for (size_t j = 0; j < curves[i]->points.size(); ++j) {
             auto [r, p, supp] = curves[i]->points[j];
-            points[i].push_back({w * r, w * p, {state_refs[i], j}});
+            points[i].push_back({w * r, w * p, {state_refs[i], p}});
         }
     }
 

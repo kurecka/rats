@@ -194,9 +194,6 @@ SN* select_leaf(SN* root, bool explore = true, int max_depth = 10) {
         A action = an->action;
         auto [s, r, p, t] = sn->common_data->handler.sim_action(action);
         full_expand_action(an, s, r, p, t);
-        // if (an->children.find(s) == an->children.end()) {
-        //     expand_action(an, s, r, p, t);
-        // }
         state_node_t* new_sn = an->get_child(s);
         descend_cb(sn, action, an, s, new_sn);
         depth++;

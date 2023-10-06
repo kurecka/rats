@@ -181,6 +181,7 @@ public:
         common_data.risk_thd = common_data.sample_risk_thd = risk_thd;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
+        root->state = agent<S, A>::handler.get_current_state();
         common_data.handler.gamma = common_data.gamma;
         common_data.handler.gammap = common_data.gammap;
     }

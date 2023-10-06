@@ -29,6 +29,7 @@ py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_envir
         .def("get_reward", &environment_handler<S, A>::get_reward)
         .def("get_penalty", &environment_handler<S, A>::get_penalty)
         .def("get_num_steps", &environment_handler<S, A>::get_num_steps)
+        .def("get_leaf_visits", &environment_handler<S, A>::get_leaf_visits)
         .def("reset", &environment_handler<S, A>::reset)
         .def("play_action", &environment_handler<S, A>::play_action)
         .def("sim_action", &environment_handler<S, A>::sim_action)

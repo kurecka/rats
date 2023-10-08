@@ -88,7 +88,7 @@ struct select_action_pareto {
  * 
  * Update sample risk threshold after a descent through an action and a state node.
  */
-template<typename SN>
+template<typename SN, bool debug>
 struct descend_callback {
     using state_node_t = SN;
     using S = typename SN::S;
@@ -98,15 +98,20 @@ struct descend_callback {
     void operator()(state_node_t* s0, A a, action_node_t* action, S s, state_node_t* new_state) const {
         DATA* common_data = action->common_data;
         float risk_thd = common_data->sample_risk_thd;
-        spdlog::debug("Action risk: {}", risk_thd);
         size_t point_idx = action->q.curve.select_vertex(risk_thd);
         size_t state_idx = action->child_idx[s];
         auto& [r, p, supp] = action->q.curve.points[point_idx];
-        float overflow = ((risk_thd < p && point_idx == 0) || (risk_thd > p && point_idx == action->q.curve.points.size() - 1)) ? risk_thd - p : 0;
         if (supp.support.size() > state_idx) {
             auto& [o, new_thd] = supp.support[state_idx];
-            spdlog::debug("Outcome risk: {}", new_thd);
-            common_data->sample_risk_thd = new_thd + overflow;
+            if (risk_thd < p && point_idx == 0) {
+                float overflow_ratio = (risk_thd - p) / p;
+                new_thd += overflow_ratio * new_thd;
+            }
+            if (risk_thd > p && point_idx == action->q.curve.points.size() - 1) {
+                float overflow_ratio = (risk_thd - p) / (1 - p);
+                new_thd += overflow_ratio * (1 - new_thd);
+            }
+            common_data->sample_risk_thd = new_thd;
         }
     }
 };
@@ -195,8 +200,8 @@ class pareto_uct : public agent<S, A> {
     
     using select_action_t = select_action_pareto<state_node_t>;
     constexpr static auto select_action_f = select_action_pareto<state_node_t>();
-    using descend_callback_t = descend_callback<state_node_t>;
-    constexpr static auto descend_callback_f = descend_callback<state_node_t>();
+    using descend_callback_t = descend_callback<state_node_t, false>;
+    constexpr static auto descend_callback_f = descend_callback<state_node_t, true>();
     constexpr static auto select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
     constexpr static auto propagate_f = exact_pareto_propagate<state_node_t>;
 private:

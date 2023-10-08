@@ -69,7 +69,7 @@ def mount_files(file_mounts, head_ip, user):
         os.system(cmd)
 
 def cluster_sync(files, exclude_files, head_ip, worker_ips, user):
-    exclude = ''.join([f'--exclude {f}' for f in exclude_files])
+    exclude = ''.join([f"--exclude '{f}'" for f in exclude_files])
     params = [(head_ip, [
         f'rsync -avz {exclude} --mkpath {file} {user}@{worker}:{file}' for file in files
     ], user) for worker in worker_ips]

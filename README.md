@@ -92,3 +92,9 @@ conda env update -f conda_env.yaml
 ```bash
 conda env export --no-build --from-history | grep -v prefix > conda_env.yaml
 ``` -->
+
+
+## Run experiment through ray
+```
+python experiment.py -m +task=run +agent=pareto_uct,dual_uct ++agent.exploration_constant=1 ++risk_thd=0.2 ++agent.sim_time_limit=-1 ++agent.num_sim=1000 +env=large_hw ++metadata.tag=profiling ++task.num_episodes=300 ++gamma=0.9999
+```

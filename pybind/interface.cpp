@@ -3,6 +3,7 @@
 #include "pybind/agents.hpp"
 #include "pybind/LP_example.hpp"
 #include "pybind/kernell.pybind.hpp"
+#include "exampleConfig.h"
 
 // #include <fstream>
 // #include "spdlog/spdlog.h"
@@ -28,6 +29,12 @@ void set_log_level(std::string level) {
     spdlog::set_level(level_map[level]);
 }
 
+std::string build_info() {
+    std::string info = "rats version: " + std::to_string(PROJECT_VERSION_MAJOR) + "." + std::to_string(PROJECT_VERSION_MINOR);
+    info += "(" + std::string(__DATE__) + " " + std::string(__TIME__) + ")";
+    return info;
+}
+
 // void set_graphviz_file(std::string file_name) {
 //     std::ofstream file(file_name, std::ofstream::out | std::ofstream::trunc);
 //     file.close();
@@ -45,5 +52,6 @@ PYBIND11_MODULE(rats, m) {
     rats::py::example::register_lp_example(m);
 
     m.def("set_log_level", &set_log_level, "Set the log level");
+    m.def("build_info", &build_info, "Get the build info");
     // m.def("set_graphviz_file", &set_graphviz_file, "Set the graphviz file");
 }

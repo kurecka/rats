@@ -2,7 +2,7 @@ defaults:
   - hydra: default
   - _self_
 
-gamma: 1
+gamma: 0.999
 risk_thd: 0.5
 agent: ???
 env: ???

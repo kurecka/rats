@@ -75,7 +75,7 @@ def process_job_dir(job_dir):
         ax[0].grid()
         ax[1].grid()
         # clip ax[0] to [-0.1, 1.1]
-        # ax[0].set_ylim(bottom=-0.1, top=1.1)
+        # ax[0].set_ylim(bottom=-0.1, top=3.1)
         for agent, df_agent in df.groupby('agent'):
             ax[0].plot(df_agent.risk_thd, df_agent.reward['mean'], label=agent)
             # ax[0].fill_between(df_agent.risk_thd, df_agent.low_reward, df_agent.high_reward, alpha=0.25)

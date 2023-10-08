@@ -172,8 +172,10 @@ public:
         float r = std::get<1>(o);
         float p = std::get<2>(o);
         ++num_steps;
-        reward += std::pow(gamma, num_steps) * r;
-        penalty += std::pow(gammap, num_steps) * p;
+        reward += r;
+        penalty += p;
+        // reward += std::pow(gamma, num_steps) * r;
+        // penalty += std::pow(gammap, num_steps) * p;
 
         return o;
     }

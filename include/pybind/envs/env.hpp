@@ -25,7 +25,7 @@ py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_envir
         });
     
     py::class_<environment_handler<S, A>>(m, ("EnvironmentHandler" + type_name).c_str())
-        .def(py::init<environment<S, A>&>())
+        .def(py::init<environment<S, A>&, int>(), py::arg("env"), py::arg("max_num_steps") = 100)
         .def("get_reward", &environment_handler<S, A>::get_reward)
         .def("get_penalty", &environment_handler<S, A>::get_penalty)
         .def("get_num_steps", &environment_handler<S, A>::get_num_steps)

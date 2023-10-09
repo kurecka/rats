@@ -19,9 +19,9 @@ provider:
     head_ip: erinys02.fi.muni.cz
     worker_ips:
         - erinys03.fi.muni.cz
-        # - erinys04.fi.muni.cz
-        # - erinys05.fi.muni.cz
-        # - erinys06.fi.muni.cz
+        - erinys04.fi.muni.cz
+        - erinys05.fi.muni.cz
+        - erinys06.fi.muni.cz
 
 
 auth:
@@ -42,7 +42,7 @@ file_mounts: {
 # This behavior is a subset of the file_mounts behavior. In the vast majority of cases
 # you should just use file_mounts. Only use this if you know what you're doing!
 cluster_synced_files: 
-    - /var/data/xkurecka/rats/build/rats.so'
+    - /var/data/xkurecka/rats/build/rats.so
     - /var/data/xkurecka/rats/pyrats/
 
 

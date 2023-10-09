@@ -6,10 +6,10 @@ import ray
 import pandas as pd
 import hydra
 from pathlib import Path
-
+from rats import build_info
 
 @ray.remote
-def single_run(agent, env):
+def single_run(agent, env, rats_version):
     env_class = getattr(envs, env['class'])
     conf = OmegaConf.to_container(env, resolve=True)
     conf.pop('class')
@@ -24,14 +24,22 @@ def single_run(agent, env):
         agent.play()
     
     h = agent.get_handler()
+
+    from rats import build_info
+    assert rats_version == build_info(), "rats version mismatch"
+
     return h.get_reward(), h.get_penalty()
 
 
 def run_experiment(agent, env, num_episodes):
+    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    rats_version = build_info()
+    with open(output_dir / 'rats_version.txt', 'w') as f:
+        f.write(rats_version)
+
     results = []
     for i in range(num_episodes):
-        results.append(single_run.remote(agent, env))
+        results.append(single_run.remote(agent, env, rats_version))
 
     df = pd.DataFrame(ray.get(results), columns=['reward', 'penalty'])
-    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
     df.to_csv(output_dir / 'results.csv', index=False)

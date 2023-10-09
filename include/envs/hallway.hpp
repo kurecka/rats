@@ -176,7 +176,7 @@ outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
     }
     auto [new_pos, new_gold_mask, tile, hit] = m.move(action, position, gold_mask);
     float reward = new_gold_mask != gold_mask;
-    if (hit) reward -= 0.1f;
+    if (hit) reward -= 0.01f;
     float penalty = (tile == map_manager::TRAP) && (rng::unif_float() < trap_prob);
     if (penalty > 0) { new_pos = -1; }
     over = (new_gold_mask == 0) || penalty > 0;

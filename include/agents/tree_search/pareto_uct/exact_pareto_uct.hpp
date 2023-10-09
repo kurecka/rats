@@ -77,6 +77,7 @@ struct select_action_pareto {
         size_t idx = curve_ptr->select_vertex(risk_thd);
         auto& [r, p, supp] = curve_ptr->points[idx];
         node->common_data->descent_thd = ((risk_thd < p && idx == 0) || (risk_thd > p && idx == curve_ptr->points.size() - 1)) ? risk_thd : p;
+        node->common_data->descent_thd = (node->common_data->descent_thd - risk_thd) * 0.1f + risk_thd;
         auto [o, thd] = supp.support[0];
         return o;
     }
@@ -97,19 +98,46 @@ struct descend_callback {
     using DATA = typename SN::DATA;
     void operator()(state_node_t* s0, A a, action_node_t* action, S s, state_node_t* new_state) const {
         DATA* common_data = action->common_data;
-        float risk_thd = common_data->sample_risk_thd;
+        float risk_thd = common_data->descent_thd;
         size_t point_idx = action->q.curve.select_vertex(risk_thd);
         size_t state_idx = action->child_idx[s];
+        if (debug){
+            spdlog::trace("Descent: risk_thd={}, point_idx={}, state_idx={}", risk_thd, point_idx, state_idx);
+            for (auto [s, idx] : action->child_idx) {
+                spdlog::trace("Child: s={}, idx={}", to_string(s), idx);
+            }
+        }
         auto& [r, p, supp] = action->q.curve.points[point_idx];
         if (supp.support.size() > state_idx) {
-            auto& [o, new_thd] = supp.support[state_idx];
+            if (debug){
+                for (auto& [o, thd] : supp.support) {
+                    spdlog::trace("Supp: o={}, thd={}", to_string(o), thd);
+                }
+            }
+            size_t support_idx = 0;
+            auto& [o, new_thd] = supp.support[0];
+            while(o != state_idx){
+                support_idx++;
+                std::tie(o, new_thd) = supp.support[support_idx];
+            }
+
+            new_thd = (new_thd - risk_thd) * 0.1f + risk_thd;
+            
+            if (debug){
+                spdlog::trace("Descent: p={}, new_thd={}", p, new_thd);
+            }
             if (risk_thd < p && point_idx == 0) {
+                p = (p - risk_thd) * 0.1f + risk_thd;
                 float overflow_ratio = (risk_thd - p) / p;
                 new_thd += overflow_ratio * new_thd;
             }
             if (risk_thd > p && point_idx == action->q.curve.points.size() - 1) {
+                p = (p - risk_thd) * 0.1f + risk_thd;
                 float overflow_ratio = (risk_thd - p) / (1 - p);
                 new_thd += overflow_ratio * (1 - new_thd);
+            }
+            if (debug){
+                spdlog::trace("Descent: update new_thd={}", new_thd);
             }
             common_data->sample_risk_thd = new_thd;
         }
@@ -154,9 +182,6 @@ void exact_pareto_propagate(SN* leaf) {
 
         action_node_t* current_an = current_sn->get_parent();
         std::vector<EPC*> state_curves;
-        for (auto& [s, child] : current_an->children) {
-            state_curves.push_back(&(child->v.curve));
-        }
         std::vector<float> weights;
         weights.reserve(current_an->children.size());
         S s0 = current_an->parent->state;
@@ -165,6 +190,7 @@ void exact_pareto_propagate(SN* leaf) {
         std::vector<size_t> state_refs;
         auto probs = current_an->common_data->predictor.predict_probs(s0, a1);
         for (auto& [s1, child] : current_an->children) {
+            state_curves.push_back(&(child->v.curve));
             weights.push_back(probs[s1]);
             state_refs.push_back(current_an->child_idx[s1]);
         }

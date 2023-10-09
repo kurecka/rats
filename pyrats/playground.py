@@ -24,49 +24,32 @@ map = """
 #######
 """
 
-# set_log_level('debug')
+set_log_level('debug')
 
-r = 0
-p = 0
-sr = 0
-sp = 0
 
-for i in range(100):
-    e = envs.Hallway(map, 0.1)
-    # e = envs.InvestorEnv(2, 20)
-    h = envs.EnvironmentHandler(e, 100)
-    a = agents.ParetoUCT(
-        h,
-        max_depth=100, num_sim=1000, sim_time_limit=-1, risk_thd=0.2, gamma=0.9999,
-        exploration_constant=1, graphviz_depth=-1
-    )
+e = envs.Hallway(map, 0.1)
+# e = envs.InvestorEnv(2, 20)
+h = envs.EnvironmentHandler(e, 100)
+a = agents.ParetoUCT(
+    h,
+    max_depth=100, num_sim=-1, sim_time_limit=800, risk_thd=0.2, gamma=0.999,
+    exploration_constant=5, graphviz_depth=3
+)
 
-    e.reset()
-    a.reset()
-    while not a.get_handler().is_over():
-        a.play()
-    h = a.get_handler()
-    # print(h.get_reward())
-    r += (h.get_reward() - r) / (i+1)
-    sr += h.get_reward()
-    p += (h.get_penalty() - p) / (i+1)
-    sp += h.get_penalty()
-    print(f'{i}: {r} {p}')
+# e.reset()
+# a.reset()
+# while not a.get_handler().is_over():
+#     a.play()
 
-print(sr/100, sp/100)
-# r /= 300
-# p /= 300
-# print(f"Average reward: {r}")
-# print(f"Average penalty: {p}")
 
 # e.reset()
 # a.reset()
 
 # i = 0
 # while not a.get_handler().is_over():
-# # for i in range(10):
-#     print(f'{i}: {a.get_handler().get_current_state()}')
-#     a.play()
-#     with open(f"../logs/tree_{i}.dot", "w") as f:
-#         f.write(a.get_graphviz())
-#     i+=1
+for i in range(30):
+    print(f'{i}: {a.get_handler().get_current_state()}')
+    a.play()
+    with open(f"../logs/tree_{i}.dot", "w") as f:
+        f.write(a.get_graphviz())
+    # i+=1

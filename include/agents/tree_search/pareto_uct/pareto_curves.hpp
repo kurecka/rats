@@ -148,10 +148,6 @@ EPC convex_hull_merge(std::vector<EPC*> curves) {
 }
 
 EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights, std::vector<size_t> state_refs) {
-    if (curves.size() == 1) {
-        return *curves[0];
-    }
-
     std::vector<std::vector<std::tuple<float, float, outcome_support>>> points(curves.size());
     size_t total_points = 0;
     for (size_t i = 0; i < curves.size(); ++i) {
@@ -200,7 +196,7 @@ EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights, std::ve
         r += r2 - r1;
         p += p2 - p1;
         point_idxs[max_idx] += 1;
-        supp.support[max_idx].first = point_idxs[max_idx];
+        supp.support[max_idx] = supp2.support.front();
     }
 
     EPC curve;

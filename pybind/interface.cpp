@@ -30,8 +30,8 @@ void set_log_level(std::string level) {
 }
 
 std::string build_info() {
-    std::string info = "rats version: " + std::to_string(PROJECT_VERSION_MAJOR) + "." + std::to_string(PROJECT_VERSION_MINOR);
-    info += "(" + std::string(__DATE__) + " " + std::string(__TIME__) + ")";
+    std::string info = "rats " + std::to_string(PROJECT_VERSION_MAJOR) + "." + std::to_string(PROJECT_VERSION_MINOR);
+    info += " (" + std::string(__DATE__) + ", " + std::string(__TIME__) + ")";
     return info;
 }
 

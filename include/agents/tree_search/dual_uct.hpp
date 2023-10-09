@@ -11,6 +11,7 @@ namespace ts {
 template <typename S, typename A>
 struct dual_uct_data {
     float risk_thd;
+    float descent_risk_thd;
     float lambda;
     float exploration_constant;
     float gamma;
@@ -65,11 +66,15 @@ struct select_action_dual {
         }
 
         auto [a1, p2, a2] = greedy_mix(rs, ps, risk_thd);
+        float low_p = ps[a1];
+        float high_p = ps[a2];
         a1 = eps_best_actions[a1];
         a2 = eps_best_actions[a2];
         if (rng::unif_float() < p2) {
+            node->common_data->descent_risk_thd = std::max(risk_thd, high_p);
             return a2;
         } else {
+            node->common_data->descent_risk_thd = std::max(risk_thd, low_p);
             return a1;
         }
     }
@@ -110,6 +115,7 @@ private:
     float lr;
     float initial_lambda;
     float d_lambda = 0;
+    float lambda_max = 100;
 
     data_t common_data;
 
@@ -132,7 +138,7 @@ public:
     , risk_thd(_risk_thd)
     , lr(_lr)
     , initial_lambda(_initial_lambda)
-    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, agent<S, A>::handler, {}})
+    , common_data({_risk_thd, _risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, agent<S, A>::handler, {}})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
@@ -153,11 +159,10 @@ public:
         A a = select_action_f(root.get(), false);
         action_node_t* action_node = root->get_child(a);
 
-        float grad = action_node->q.second - common_data.risk_thd;
-        d_lambda += (grad - d_lambda) * 0.3f;
-        d_lambda = grad;
-        common_data.lambda += lr * d_lambda;
+        double gradient = (action_node->q.second - risk_thd) < 0 ? -1 : 1;
+        common_data.lambda += 1.0 / (i + 1.0) * gradient;
         common_data.lambda = std::max(0.0f, common_data.lambda);
+        common_data.lambda = std::min(lambda_max, common_data.lambda);
     }
 
     void play() override {
@@ -188,7 +193,7 @@ public:
             full_expand_action(an, s, r, p, t);
         }
 
-        common_data.risk_thd = an->children[s]->v.second;
+        common_data.risk_thd = common_data.descent_risk_thd;
 
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);

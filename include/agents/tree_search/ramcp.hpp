@@ -149,7 +149,7 @@ public:
         std::vector<double> policy_distr;
         for (auto it = policy.begin(); it != policy.end(); it++) {
             policy_distr.emplace_back(it->second->solution_value());
-            spdlog::debug("actions prob: {}", policy_distr.back());
+            // spdlog::debug("actions prob: {}", policy_distr.back());
         }
 
         int sample = rng::custom_discrete(policy_distr);

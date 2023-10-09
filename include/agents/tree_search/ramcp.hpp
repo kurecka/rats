@@ -89,8 +89,8 @@ public:
     ramcp(
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma,
-        int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _gammap = 1 
+        float _gammap = 1, int _num_sim = 100, int _sim_time_limit = 0,
+        float _exploration_constant = 5.0
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -181,7 +181,7 @@ public:
 
         // assert(alt_risk <= risk_thd);
 
-        auto states_distr = common_data.handler.outcome_probabilities(root->state, a);
+        auto states_distr = common_data.predictor.predict_probs(root->state, a);
         if (alt_risk >= risk_thd) {
             risk_thd = 0;
         } else {
@@ -232,7 +232,7 @@ public:
             action_sum->SetCoefficient(ac, 1);
             policy.insert({*ac_it, ac}); // add to policy to access solution
 
-            auto states_distr = common_data.handler.outcome_probabilities(root->state, *ac_it);
+            auto states_distr = common_data.predictor.predict_probs(root->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
@@ -289,7 +289,7 @@ public:
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
-            auto states_distr = common_data.handler.outcome_probabilities(node->state, *ac_it);
+            auto states_distr = common_data.predictor.predict_probs(node->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
@@ -330,7 +330,7 @@ public:
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
-            auto states_distr = common_data.handler.outcome_probabilities(root->state, *ac_it);
+            auto states_distr = common_data.predictor.predict_probs(root->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 
@@ -375,7 +375,7 @@ public:
             MPVariable* const ac = solver->MakeNumVar(0.0, 1.0, to_string(ctr++)); // x_h,a
             action_sum->SetCoefficient(ac, 1);
 
-            auto states_distr = common_data.handler.outcome_probabilities(node->state, *ac_it);
+            auto states_distr = common_data.predictor.predict_probs(node->state, *ac_it);
 
             for (auto it = child_it->children.begin(); it != child_it->children.end(); ++it) {
 

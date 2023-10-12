@@ -33,7 +33,7 @@ h = envs.EnvironmentHandler(e, 100)
 a = agents.ParetoUCT(
     h,
     max_depth=100, num_sim=-1, sim_time_limit=800, risk_thd=0.2, gamma=0.999,
-    exploration_constant=5, graphviz_depth=3
+    exploration_constant=5, risk_exploration_ratio=0.01, graphviz_depth=3
 )
 
 # e.reset()

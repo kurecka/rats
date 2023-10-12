@@ -110,25 +110,24 @@ public:
         return *this;
     }
 
-    size_t select_vertex(float thd) {
+
+    std::pair<size_t, float> select_vertex(float thd, float risk_explore_ration=1) {
         size_t idx;
         // find idx of first point with risk > risk_thd or idx = points.size()
         for (idx = 0; idx < points.size() && std::get<1>(points[idx]) <= thd; ++idx);
 
-        size_t selected_vertex;
-
         if (idx == 0) {
-            selected_vertex = 0;
+            return {0, thd};
         } else if (idx == points.size()) {
-            selected_vertex = points.size() - 1;
+            return {points.size() - 1, thd};
         } else {
             float p1 = std::get<1>(points[idx - 1]);
             float p2 = std::get<1>(points[idx]);
+            p1 = (p1-thd) * risk_explore_ration + thd;
 
             float prob2 = (thd - p1) / (p2 - p1);
-            selected_vertex = rng::unif_float() < prob2 ? idx : idx - 1;
+            return ((rng::unif_float() < prob2) ? std::make_pair(idx, p2) : std::make_pair(idx - 1, p1));
         }
-        return selected_vertex;
     }
 };
 

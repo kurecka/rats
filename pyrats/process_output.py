@@ -17,6 +17,9 @@ def process_run_results(run_directory):
         config = yaml.safe_load(f)
     agent = config['agent']['class'] + "_" + str(config['agent']['sim_time_limit']) + "_" + str(config['agent']['exploration_constant'])
     risk_thd = config['risk_thd']
+    if 'risk_exploration_ratio' in config['agent']:
+        risk_exploration = config['agent']['risk_exploration_ratio']
+        agent += "_" + str(risk_exploration)
 
     df = pd.read_csv(results_file).agg(['mean', 'std'])
     df = pd.concat([df.reward, df.penalty], keys=['reward', 'penalty'], axis=0).to_frame().T
@@ -75,7 +78,7 @@ def process_job_dir(job_dir):
         ax[0].grid()
         ax[1].grid()
         # clip ax[0] to [-0.1, 1.1]
-        ax[0].set_ylim(bottom=-0.1, top=3.1)
+        ax[0].set_ylim(bottom=1.4, top=3.1)
         ax[1].set_ylim(bottom=0, top=0.5)
         for agent, df_agent in df.groupby('agent'):
             ax[0].plot(df_agent.risk_thd, df_agent.reward['mean'], label=agent)

@@ -23,6 +23,7 @@ struct pareto_uct_data {
     float gammap;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
+    bool use_predictor;
 };
 
 struct pareto_value {
@@ -160,9 +161,12 @@ void exact_pareto_propagate(SN* leaf) {
 
     state_node_t* current_sn = leaf;
 
-    // TODO
-    std::get<0>(current_sn->v.curve.points[0]) = current_sn->rollout_reward;
-    std::get<1>(current_sn->v.curve.points[0]) = current_sn->rollout_penalty;
+    // ALREADY IN ROLLOUT
+    if (!current_sn->common_data->use_predictor) {
+        std::get<0>(current_sn->v.curve.points[0]) = current_sn->rollout_reward;
+        std::get<1>(current_sn->v.curve.points[0]) = current_sn->rollout_penalty;
+    }
+    
 
     // if (!current_sn->is_terminal()) {
     //     for (auto& child : current_sn->children) {
@@ -213,7 +217,19 @@ void exact_pareto_propagate(SN* leaf) {
 }
 
 
-
+template<typename SN>
+void pareto_predictor_rollout(SN* leaf, float thd) {
+    using S = typename SN::S;
+    using A = typename SN::A;
+    predictor_manager<S, A>& predictor = leaf->common_data->predictor;
+    S s = leaf->state;
+    std::vector<float> thds = {0, thd / 2, thd, thd + (1 - thd) / 2, 1};
+    leaf->v.curve.points.clear();
+    for (float t : thds) {
+        leaf->v.curve.points.emplace_back(predictor.predict_value(t, s), t, outcome_support());
+    }
+    leaf->v.curve.points = upper_hull(leaf->v.curve.points);
+}
 
 
 // /*********************************************************************
@@ -243,6 +259,7 @@ private:
     int sim_time_limit;
     float risk_thd;
     float gamma;
+    bool use_predictor;
 
     data_t common_data;
 
@@ -250,12 +267,15 @@ private:
     std::string dot_tree;
 
     std::unique_ptr<state_node_t> root;
+
+    std::vector<std::tuple<S, A, float, float>> episode_history;
 public:
     pareto_uct(
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, int _graphviz_depth = -1
+        float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, int _graphviz_depth = -1,
+        bool _use_predictor = false
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -263,7 +283,8 @@ public:
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , gamma(_gamma)
-    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, agent<S, A>::handler, {}})
+    , use_predictor(_use_predictor)
+    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, agent<S, A>::handler, {}, _use_predictor})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
@@ -274,11 +295,25 @@ public:
         return dot_tree;
     }
 
+    std::string get_state_curve(S s) {
+        std::vector<float> thds = {0, 0.25, 0.5, 0.75, 1};
+        std::string curve_str = "";
+        for (float t : thds) {
+            curve_str += fmt::format("{} ", common_data.predictor.predict_value(t, s));
+        }
+        return curve_str;
+    }
+
     void simulate(int i) {
         common_data.sample_risk_thd = common_data.risk_thd;
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
-        rollout(leaf);
+        if (use_predictor) {
+            pareto_predictor_rollout(leaf, common_data.sample_risk_thd);
+        } else {
+            rollout(leaf);
+        }
+        pareto_predictor_rollout(leaf, common_data.sample_risk_thd);
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
     }
@@ -305,6 +340,7 @@ public:
         }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
+        episode_history.push_back({root->state, a, r, common_data.sample_risk_thd});
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
@@ -335,6 +371,23 @@ public:
 
     std::string name() const override {
         return "pareto_uct";
+    }
+
+    constexpr bool is_trainable() const override {
+        return true;
+    }
+
+    void train() {
+        spdlog::debug("Train: {}", name());
+        // iterate backwards through the episode history
+        float cumulative_reward = 0;
+        for (auto it = episode_history.rbegin(); it != episode_history.rend(); ++it) {
+            cumulative_reward *= common_data.gamma;
+            auto [s, a, r, p] = *it;
+            cumulative_reward += r;
+            common_data.predictor.add_value(cumulative_reward, p, s);
+        }
+        episode_history.clear();
     }
 };
 

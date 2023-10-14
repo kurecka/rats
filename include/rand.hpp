@@ -29,6 +29,15 @@ private:
     }
 
     /**
+     * @brief Get a random number from the standard normal distribution
+    */
+    template <typename T>
+    static T normal() {
+        std::normal_distribution<T> dist;
+        return dist(engine);
+    }
+
+    /**
      * @brief Get a random integer in [0, max-1]
      * 
      * @param max upper bound on the random number

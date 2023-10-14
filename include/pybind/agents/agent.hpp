@@ -18,7 +18,9 @@ py::class_<agent<S, A>, std::shared_ptr<agent<S, A>>> register_agent(py::module&
             std::string delim = "__";
             size_t pos = name.rfind(delim);
             return name.substr(pos + delim.length());
-        });
+        })
+        .def("is_trainable", &agent<S, A>::is_trainable)
+        .def("train", &agent<S, A>::train);
     return agent_type;
 }
 

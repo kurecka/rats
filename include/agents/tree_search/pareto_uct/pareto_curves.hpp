@@ -239,6 +239,123 @@ std::tuple<size_t, size_t> common_tangent(const std::vector<std::pair<float, flo
 }
 
 
+/**
+ * @brief A general linear model class
+ */
+class linear_model {
+private:
+    size_t num_samples;
+    Eigen::MatrixXf moments;
+    Eigen::VectorXf mean_xy;
+    Eigen::VectorXf beta;
+    bool invalid_beta;
+
+public:
+    linear_model(size_t n = 1)
+    : num_samples(0)
+    , moments(Eigen::MatrixXf::Zero(n, n))
+    , mean_xy(Eigen::VectorXf::Zero(n))
+    , beta(Eigen::VectorXf::Zero(n))
+    , invalid_beta(false)
+    {}
+
+    void update(float y, Eigen::VectorXf x) {
+        invalid_beta = true;
+        ++num_samples;
+        moments += (x * x.transpose() - moments) / num_samples;
+        mean_xy += (y * x - mean_xy) / num_samples;
+
+        std::string s = "";
+        for (size_t i = 0; i < x.size(); ++i) {
+            s += to_string(x[i]) + ", ";
+        }
+        spdlog::trace("x: {}", s);
+        s = "";
+        for (size_t i = 0; i < beta.size(); ++i) {
+            s += to_string(beta[i]) + ", ";
+        }
+        spdlog::trace("beta: {}", s);
+    }
+
+    void set_samples(Eigen::VectorXf y, Eigen::MatrixXf x) {
+        invalid_beta = true;
+        num_samples = x.rows();
+        moments = x.transpose() * x / num_samples;
+        mean_xy = x.transpose() * y / num_samples;
+    }
+
+    float predict(Eigen::VectorXf x) {
+        if (invalid_beta) {
+            auto QR = moments.fullPivHouseholderQr();
+            beta = QR.solve(mean_xy);
+            for (float& b : beta) b = std::max(0.f, b);
+            invalid_beta = false;
+        }
+        return beta.dot(x);
+    }
+};
+
+
+class relu_pareto_curve {
+private:
+    std::vector<std::pair<float, float>> samples;
+    std::vector<float> thds;
+    linear_model model;
+
+    float min_thd = 1;
+    float max_thd = 0;
+public:
+    relu_pareto_curve()
+    : model()
+    {}
+
+    float rrelu(float p, float thd) const {
+        return 1-std::max(0.f, thd - p);
+    }
+
+    Eigen::VectorXf get_features(float p) const {
+        // Eigen::VectorXf x(thds.size() + 1);
+        Eigen::VectorXf x(thds.size());
+        for (size_t i = 0; i < thds.size(); ++i) {
+            x[i] = rrelu(p, thds[i]);
+        }
+        // x[thds.size()] = 1;
+        return x;
+    }
+
+    void update(float r, float p) {
+        samples.push_back({r, p});
+        if (p >= min_thd && p <= max_thd) {
+            model.update(r, get_features(p));   
+        } else {
+            min_thd = std::min(min_thd, p);
+            max_thd = std::max(max_thd, p);
+            if (min_thd + 0.001 < max_thd) {
+                thds = {(min_thd + max_thd) / 2, max_thd};
+            } else {
+                thds = {max_thd};
+            }
+        }
+    }
+
+    float predict(float p) {
+        if (p < min_thd) {
+            return 0;
+        } else {
+            return model.predict(get_features(p));
+        }
+    }
+
+    void set_thresholds(std::vector<float> thds) {
+        this->thds = thds;
+        model = linear_model(thds.size() + 1);
+        for (auto [r, p] : samples) {
+            model.update(r, get_features(p));
+        }
+    }
+};
+
+
 // /**
 //  * @brief A class to represent a quadratic approximation of a pareto curve
 //  * 

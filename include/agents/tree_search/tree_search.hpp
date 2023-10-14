@@ -6,6 +6,7 @@
 #include <map>
 #include <algorithm>
 #include <string>
+#include "pareto_uct/pareto_curves.hpp"
 
 namespace rats {
 namespace ts {
@@ -240,6 +241,7 @@ class predictor_manager {
     };
 
     std::map<std::pair<S, A>, action_record> records;
+    std::map<S, relu_pareto_curve> value_curves;
 public:
     void add(S s0, A a1, S s1, float r, float p, bool t) {
         action_record& ar = records[{s0, a1}];
@@ -249,6 +251,19 @@ public:
         sr.reward = r;
         sr.penalty = p;
         sr.terminal = t;
+    }
+
+    void add_value(float r, float p, S s) {
+        value_curves[s].update(r, p);
+    }
+
+    float predict_value(float p, S s) {
+        auto it = value_curves.find(s);
+        if (it == value_curves.end()) {
+            return 0;
+        } else {
+            return it->second.predict(p);
+        }
     }
 
     std::map<S, float> predict_probs(S s0, A a1) {

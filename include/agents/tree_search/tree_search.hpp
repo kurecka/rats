@@ -41,6 +41,7 @@ public:
     std::vector<action_node_t> children;
     std::vector<A> actions;
     
+    int depth = 0;
     float observed_reward = 0;
     float observed_penalty = 0;
     float rollout_reward = 0;
@@ -55,6 +56,7 @@ public:
     action_node_t* get_child(size_t a_idx) {return &children[a_idx];}
     action_node_t*& get_parent() {return parent;}
     size_t get_num_visits() const {return num_visits;}
+    int node_depth() const {return depth;}
     bool is_terminal() const {return terminal;}
     bool is_root() const {return parent == nullptr;}
     bool is_leaf() const {return children.empty();}
@@ -152,6 +154,7 @@ void expand_action(
     new_sn->observed_reward = r;
     new_sn->observed_penalty = p;
     new_sn->terminal = t;
+    new_sn->depth = an->parent->depth + 1;
 }
 
 template<typename AN>

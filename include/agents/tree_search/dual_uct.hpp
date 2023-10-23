@@ -83,7 +83,7 @@ struct select_action_dual {
 
 template<typename SN>
 struct select_action_dual_anal {
-    size_t operator()(SN* node, bool explore) const {
+    size_t operator()(SN* node, bool explore, bool not_sim=false) const {
         float risk_thd = node->common_data->risk_thd;
         float lambda = node->common_data->lambda;
         float c = node->common_data->exploration_constant;
@@ -93,7 +93,8 @@ struct select_action_dual_anal {
         std::vector<float> uct_values(children.size());
         for (size_t i = 0; i < children.size(); ++i) {
             uct_values[i] = children[i].q.first - lambda * children[i].q.second;
-            // spdlog::debug("action: {} value: {}", i, uct_values[i]);
+            if (not_sim)
+                spdlog::debug("action: {} value: {} lambda: {}", i, uct_values[i], lambda);
         }
 
         for (size_t i = 0; i < children.size(); ++i) {
@@ -150,36 +151,18 @@ struct select_action_dual_anal {
             p2 = (risk_thd - low_p) / (high_p - low_p);
         }
 
-        // spdlog::debug("a1: {} low_p: {} a2: {} high_p: {} p2: {}", a1, low_p, a2, high_p, p2);
+        if (not_sim)
+            spdlog::debug("a1: {} low_p: {} a2: {} high_p: {} p2: {}", a1, low_p, a2, high_p, p2);
+
         if (rng::unif_float() < p2) {
             node->common_data->descent_risk_thd = std::max(risk_thd, high_p);
             return a2;
         } else {
-            node->common_data->descent_risk_thd = low_p;
+            node->common_data->descent_risk_thd = std::min(low_p, risk_thd);
             return a1;
         }
     }
 };
-
-/**
- * @brief Update the nodes after a descent
- * 
- * Update risk threshold after a descent through an action and a state node.
- */
-template<typename SN>
-struct descend_callback {
-    using state_node_t = SN;
-    using S = typename SN::S;
-    using action_node_t = typename SN::action_node_t;
-    using A = typename SN::A;
-    using DATA = typename SN::DATA;
-    void operator()(state_node_t* s0, A a, action_node_t* action, S s, state_node_t* new_state) const {
-            DATA* common_data = action->common_data;
-            
-        }
-    }
-};
-
 
 /*********************************************************************
  * @brief dual uct agent
@@ -228,7 +211,7 @@ public:
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _initial_lambda = 0, float _lr = 0.0005,
+        float _exploration_constant = 5.0, float _initial_lambda = 2, float _lr = 0.0005,
         int _graphviz_depth = 0
     )
     : agent<S, A>(_handler)
@@ -259,11 +242,13 @@ public:
         A a = select_action_f(root.get(), false);
         action_node_t* action_node = root->get_child(a);
 
-        // spdlog::debug("lambda: {}", common_data.lambda);
         double gradient = (action_node->q.second - risk_thd) < 0 ? -1 : 1;
         common_data.lambda += 1.0 / (i + 1.0) * gradient;
         common_data.lambda = std::max(0.0f, common_data.lambda);
         common_data.lambda = std::min(lambda_max, common_data.lambda);
+
+        // if (root->state == 39)
+        //     spdlog::debug("lambda: {} i: {}, a: {}, gradient: {}", common_data.lambda, i, to_string(a), gradient);
     }
 
     void play() override {
@@ -282,7 +267,7 @@ public:
             }
         }
 
-        A a = select_action_f(root.get(), false);
+        A a = select_action_f(root.get(), false, true);
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
@@ -297,7 +282,19 @@ public:
             full_expand_action(an, s, r, p, t);
         }
 
-        common_data.risk_thd = common_data.descent_risk_thd;
+        // admissable cost
+        float immediate_cost = 0;
+        auto outcomes = common_data.predictor.predict_probs(root->state, a);
+        for (auto& [os, op] : outcomes) {
+            state_node_t* sn = an->get_child(os);
+            if (sn->observed_penalty > 0) {
+                immediate_cost += op;
+            }
+        }
+
+        common_data.risk_thd = std::max(common_data.descent_risk_thd - immediate_cost, 0.0f);
+        
+        spdlog::debug("descent risk thd: {}, immidiate_cost: {}", common_data.descent_risk_thd, immediate_cost);
 
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);

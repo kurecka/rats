@@ -24,20 +24,20 @@ map = """
 #######
 """
 
-# set_log_level('debug')
+set_log_level('debug')
 
 r = 0
 p = 0
 sr = 0
 sp = 0
 
-for i in range(100):
-    e = envs.Hallway(map, 0.1)
+for i in range(1):
+    e = envs.Hallway(map, 0.8)
     # e = envs.InvestorEnv(2, 20)
     h = envs.EnvironmentHandler(e, 100)
     a = agents.DualUCT(
         h,
-        max_depth=100, num_sim=1000, sim_time_limit=250, risk_thd=0.2, gamma=0.9999,
+        max_depth=100, num_sim=1000, sim_time_limit=250, risk_thd=0.8, gamma=0.9999,
         exploration_constant=1
     )
 

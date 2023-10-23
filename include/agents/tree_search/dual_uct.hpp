@@ -93,8 +93,8 @@ struct select_action_dual_anal {
         std::vector<float> uct_values(children.size());
         for (size_t i = 0; i < children.size(); ++i) {
             uct_values[i] = children[i].q.first - lambda * children[i].q.second;
-            if (not_sim)
-                spdlog::debug("action: {} value: {} lambda: {}", i, uct_values[i], lambda);
+            // if (not_sim)
+            //     spdlog::debug("action: {} value: {} lambda: {}", i, uct_values[i], lambda);
         }
 
         for (size_t i = 0; i < children.size(); ++i) {
@@ -129,7 +129,9 @@ struct select_action_dual_anal {
         float low_p = 1, high_p = 0;
         for (size_t idx : eps_best_actions) {
             float p = children[idx].q.second;
-            // spdlog::debug("idx: {}, p: {}", idx, p);
+
+            // if (not_sim)
+                // spdlog::debug("idx: {}, p: {}", idx, p);
 
             if (p <= low_p) {
                 low_p = p;
@@ -151,8 +153,8 @@ struct select_action_dual_anal {
             p2 = (risk_thd - low_p) / (high_p - low_p);
         }
 
-        if (not_sim)
-            spdlog::debug("a1: {} low_p: {} a2: {} high_p: {} p2: {}", a1, low_p, a2, high_p, p2);
+        // if (not_sim)
+        //     spdlog::debug("a1: {} low_p: {} a2: {} high_p: {} p2: {}", a1, low_p, a2, high_p, p2);
 
         if (rng::unif_float() < p2) {
             node->common_data->descent_risk_thd = std::max(risk_thd, high_p);
@@ -294,7 +296,7 @@ public:
 
         common_data.risk_thd = std::max(common_data.descent_risk_thd - immediate_cost, 0.0f);
         
-        spdlog::debug("descent risk thd: {}, immidiate_cost: {}", common_data.descent_risk_thd, immediate_cost);
+        // spdlog::debug("descent risk thd: {}, immediate_cost: {}", common_data.descent_risk_thd, immediate_cost);
 
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);

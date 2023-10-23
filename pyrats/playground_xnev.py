@@ -24,20 +24,20 @@ map = """
 #######
 """
 
-set_log_level('debug')
+# set_log_level('debug')
 
 r = 0
 p = 0
 sr = 0
 sp = 0
 
-for i in range(1):
+for i in range(100):
     e = envs.Hallway(map, 0.1)
     # e = envs.InvestorEnv(2, 20)
     h = envs.EnvironmentHandler(e, 100)
     a = agents.DualUCT(
         h,
-        max_depth=100, num_sim=1000, sim_time_limit=500, risk_thd=0.2, gamma=0.9999,
+        max_depth=100, num_sim=1000, sim_time_limit=250, risk_thd=0.2, gamma=0.9999,
         exploration_constant=1
     )
 
@@ -53,7 +53,7 @@ for i in range(1):
     sp += h.get_penalty()
     print(f'{i}: {r} {p}')
 
-print(sr/100, sp/100)
+print(sr/10, sp/10)
 # r /= 300
 # p /= 300
 # print(f"Average reward: {r}")

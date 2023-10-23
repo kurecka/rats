@@ -161,6 +161,25 @@ struct select_action_dual_anal {
     }
 };
 
+/**
+ * @brief Update the nodes after a descent
+ * 
+ * Update risk threshold after a descent through an action and a state node.
+ */
+template<typename SN>
+struct descend_callback {
+    using state_node_t = SN;
+    using S = typename SN::S;
+    using action_node_t = typename SN::action_node_t;
+    using A = typename SN::A;
+    using DATA = typename SN::DATA;
+    void operator()(state_node_t* s0, A a, action_node_t* action, S s, state_node_t* new_state) const {
+            DATA* common_data = action->common_data;
+            
+        }
+    }
+};
+
 
 /*********************************************************************
  * @brief dual uct agent

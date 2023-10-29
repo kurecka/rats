@@ -244,13 +244,12 @@ public:
         A a = select_action_f(root.get(), false);
         action_node_t* action_node = root->get_child(a);
 
-        double gradient = (action_node->q.second - risk_thd) < 0 ? -1 : 1;
+        double gradient = (action_node->q.second - common_data.risk_thd) < 0 ? -1 : 1;
         common_data.lambda += 1.0 / (i + 1.0) * gradient;
         common_data.lambda = std::max(0.0f, common_data.lambda);
         common_data.lambda = std::min(lambda_max, common_data.lambda);
 
-        // if (root->state == 39)
-        //     spdlog::debug("lambda: {} i: {}, a: {}, gradient: {}", common_data.lambda, i, to_string(a), gradient);
+        // spdlog::debug("lambda: {} i: {}, a: {}, gradient: {}, thd: {}, a_risk: {}", common_data.lambda, i, to_string(a), gradient, common_data.risk_thd, action_node->q.second);
     }
 
     void play() override {

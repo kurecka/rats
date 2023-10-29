@@ -237,7 +237,7 @@ public:
     void simulate(int i) {
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
-        rollout(leaf);
+        rollout(leaf, true);
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
 

@@ -79,7 +79,7 @@ struct select_action_pareto {
             merged_curve = convex_hull_merge(curve_ptrs);
         }
 
-        auto [idx, descent_thd] = curve_ptr->select_vertex(risk_thd, node->common_data->risk_exploration_ratio, explore);
+        auto [idx, descent_thd] = curve_ptr->select_vertex(risk_thd, node->common_data->risk_exploration_ratio);
         auto& [r, p, supp] = curve_ptr->points[idx];
         auto& [o, thd] = supp.support[0];
 

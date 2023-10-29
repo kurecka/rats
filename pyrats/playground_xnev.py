@@ -24,14 +24,14 @@ map = """
 #######
 """
 
-set_log_level('debug')
+# set_log_level('debug')
 
 r = 0
 p = 0
 sr = 0
 sp = 0
 
-for i in range(1):
+for i in range(10):
     e = envs.Hallway(map, 0.1)
     # e = envs.InvestorEnv(2, 20)
     h = envs.EnvironmentHandler(e, 100)

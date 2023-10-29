@@ -123,9 +123,11 @@ public:
         } else {
             float p1 = std::get<1>(points[idx - 1]);
             float p2 = std::get<1>(points[idx]);
-            p1 = (p1-thd) * risk_explore_ration + thd;
+            // p1 = (p1-thd) * risk_explore_ration + thd;
 
             float prob2 = (thd - p1) / (p2 - p1);
+            // if (explore)
+                // p1 = thd;
             return ((rng::unif_float() < prob2) ? std::make_pair(idx, p2) : std::make_pair(idx - 1, p1));
         }
     }

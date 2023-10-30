@@ -19,8 +19,32 @@ map = """
 #..T..#
 #.....#
 ##TT#.#
-#GTTG.#
-#..T..#
+#GTT..#
+#..T.G#
+#######
+"""
+
+map2 = """
+#######
+#BTTTG#
+#..TT.#
+#....T#
+##TT#T#
+#TTTTT#
+#.TT..#
+#GG..G#
+#######
+"""
+
+map3 = """
+#######
+#BTTTG#
+#..TT.#
+#....T#
+##TT#T#
+#TTT.T#
+#.TT..#
+#GG..G#
 #######
 """
 
@@ -31,14 +55,24 @@ p = 0
 sr = 0
 sp = 0
 
-for i in range(10):
+<<<<<<< Updated upstream:pyrats/playground copy.py
+for i in range(1):
     e = envs.Hallway(map, 0.1)
+=======
+for i in range(10):
+    e = envs.Hallway(map2, 0.1)
+>>>>>>> Stashed changes:pyrats/playground_xnev.py
     # e = envs.InvestorEnv(2, 20)
     h = envs.EnvironmentHandler(e, 100)
     a = agents.DualUCT(
         h,
-        max_depth=100, num_sim=1000, sim_time_limit=250, risk_thd=0.1, gamma=0.9999,
+<<<<<<< Updated upstream:pyrats/playground copy.py
+        max_depth=20, num_sim=10000, sim_time_limit=250, risk_thd=0.2, gamma=0.9999,
+        exploration_constant=1
+=======
+        max_depth=100, num_sim=1000, sim_time_limit=250, risk_thd=0.2, gamma=0.9999,
         exploration_constant=0.1
+>>>>>>> Stashed changes:pyrats/playground_xnev.py
     )
 
     e.reset()

@@ -21,6 +21,7 @@ struct pareto_uct_data {
     float risk_exploration_ratio;
     float gamma;
     float gammap;
+    int num_steps;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
     bool use_predictor;
@@ -68,7 +69,7 @@ struct select_action_pareto {
                     p_uct = 0;
                 } else {
                     r_uct = c * powf(static_cast<float>(node->num_visits), 0.8f) / child.q.curve.num_samples;
-                    p_uct = -c * powf(static_cast<float>(node->num_visits), 0.6f) / child.q.curve.num_samples;
+                    // p_uct = -c * powf(static_cast<float>(node->num_visits), 0.6f) / child.q.curve.num_samples;
                 }
                 p_ucts.push_back(p_uct);
                 action_curves.back().add_and_fix(r_uct, p_uct);
@@ -79,12 +80,22 @@ struct select_action_pareto {
             merged_curve = convex_hull_merge(curve_ptrs);
         }
 
-        auto [idx, descent_thd] = curve_ptr->select_vertex(risk_thd, node->common_data->risk_exploration_ratio);
+        auto [idx, descent_thd] = curve_ptr->select_vertex(risk_thd, node->common_data->risk_exploration_ratio, explore);
         auto& [r, p, supp] = curve_ptr->points[idx];
         auto& [o, thd] = supp.support[0];
 
         if (explore) {
-            descent_thd = std::min(1.f, descent_thd + 2*p_ucts[o]);
+            // descent_thd = std::min(1.f, descent_thd + 2*p_ucts[o]);
+            float dev = 0.1;
+
+            // eps step
+            // float eps = 0.05;
+            // if (rng::unif_float() < eps)
+            //     descent_thd = std::min(1.f, std::max(0.f, descent_thd + rng::normal(0, dev)));
+
+            int tree_depth = node->node_depth() - node->common_data->num_steps;
+            dev = exp(-tree_depth) * dev;
+            descent_thd = std::min(1.f, std::max(0.f, descent_thd + rng::normal(0, dev)));
         }
         node->common_data->descent_thd = descent_thd;
         return o;
@@ -284,7 +295,7 @@ public:
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , use_predictor(_use_predictor)
-    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, agent<S, A>::handler, {}, _use_predictor})
+    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, _use_predictor})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
@@ -327,6 +338,7 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
+            // spdlog::debug("number of sims: {}", i);
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);
@@ -340,7 +352,11 @@ public:
         }
 
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
+        ++common_data.num_steps;
         episode_history.push_back({root->state, a, r, common_data.sample_risk_thd});
+
+        spdlog::debug("Play action: {}", to_string(a));
+        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
@@ -367,6 +383,7 @@ public:
         root->state = agent<S, A>::handler.get_current_state();
         common_data.handler.gamma = common_data.gamma;
         common_data.handler.gammap = common_data.gammap;
+        common_data.num_steps = 0;
     }
 
     std::string name() const override {

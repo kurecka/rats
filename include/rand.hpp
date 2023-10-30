@@ -31,9 +31,8 @@ private:
     /**
      * @brief Get a random number from the standard normal distribution
     */
-    template <typename T>
-    static T normal() {
-        std::normal_distribution<T> dist;
+    static float normal(float mean = 0, float dev = 0.1) {
+        std::normal_distribution<float> dist(mean, dev);
         return dist(engine);
     }
 

@@ -111,7 +111,7 @@ public:
     }
 
 
-    std::pair<size_t, float> select_vertex(float thd, float risk_explore_ration=1) {
+    std::pair<size_t, float> select_vertex(float thd, float risk_explore_ration=1, bool explore=true) {
         size_t idx;
         // find idx of first point with risk > risk_thd or idx = points.size()
         for (idx = 0; idx < points.size() && std::get<1>(points[idx]) <= thd; ++idx);
@@ -121,13 +121,36 @@ public:
         } else if (idx == points.size()) {
             return {points.size() - 1, thd};
         } else {
+<<<<<<< Updated upstream
             float p1 = std::get<1>(points[idx - 1]);
             float p2 = std::get<1>(points[idx]);
+            p1 = (p1-thd) * risk_explore_ration + thd;
+=======
+            // float p1 = std::get<1>(points[idx - 1]);
+            // float p2 = std::get<1>(points[idx]);
             // p1 = (p1-thd) * risk_explore_ration + thd;
+>>>>>>> Stashed changes
+
+            
+
+            auto& [r1, p1, supp1] = points[idx - 1];
+            auto& [r2, p2, supp2] = points[idx];
+            auto& [a1, t1] = supp1.support[0];
+            auto& [a2, t2] = supp2.support[0];
 
             float prob2 = (thd - p1) / (p2 - p1);
-            // if (explore)
-                // p1 = thd;
+<<<<<<< Updated upstream
+=======
+
+            if (!explore) {
+                spdlog::debug("a1: {}, r1: {}, p1: {}, a2: {}, r2: {}, p2: {}, prob2: {}", a1, r1, p1, a2, r2, p2, prob2);
+            }
+
+            if (a1 == a2) {
+                return {idx, thd};
+            }
+
+>>>>>>> Stashed changes
             return ((rng::unif_float() < prob2) ? std::make_pair(idx, p2) : std::make_pair(idx - 1, p1));
         }
     }

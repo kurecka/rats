@@ -81,6 +81,8 @@ struct select_action_dual {
     }
 };
 
+<<<<<<< Updated upstream
+=======
 template<typename SN>
 struct select_action_dual_anal {
     size_t operator()(SN* node, bool explore, bool not_sim=false) const {
@@ -127,8 +129,10 @@ struct select_action_dual_anal {
 
         size_t a1 = 0, a2 = 0;
         float low_p = 1, high_p = 0;
+        float low_r = 0, high_r = 0;
         for (size_t idx : eps_best_actions) {
             float p = children[idx].q.second;
+            float r = children[idx].q.first;
 
             // if (not_sim)
                 // spdlog::debug("idx: {}, p: {}", idx, p);
@@ -136,11 +140,13 @@ struct select_action_dual_anal {
             if (p <= low_p) {
                 low_p = p;
                 a1 = idx;
+                low_r = r;
             }
 
             if (p >= high_p) {
                 high_p = p;
                 a2 = idx;
+                high_r = r;
             }
         }
 
@@ -154,7 +160,7 @@ struct select_action_dual_anal {
         }
 
         // if (not_sim)
-        //     spdlog::debug("a1: {} low_p: {} a2: {} high_p: {} p2: {}", a1, low_p, a2, high_p, p2);
+        //     spdlog::debug("a1: {}, low_r: {}, low_p: {}, a2: {}, high_r: {}, high_p: {}, p2: {}", a1, low_r, low_p, a2, high_r, high_p, p2);
 
         if (rng::unif_float() < p2) {
             node->common_data->descent_risk_thd = std::max(risk_thd, high_p);
@@ -165,6 +171,7 @@ struct select_action_dual_anal {
         }
     }
 };
+>>>>>>> Stashed changes
 
 /*********************************************************************
  * @brief dual uct agent
@@ -262,6 +269,7 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
+            // spdlog::debug("number of sims: {}", i);
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);

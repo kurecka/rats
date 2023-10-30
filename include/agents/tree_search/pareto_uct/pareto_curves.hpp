@@ -121,15 +121,9 @@ public:
         } else if (idx == points.size()) {
             return {points.size() - 1, thd};
         } else {
-<<<<<<< Updated upstream
-            float p1 = std::get<1>(points[idx - 1]);
-            float p2 = std::get<1>(points[idx]);
-            p1 = (p1-thd) * risk_explore_ration + thd;
-=======
             // float p1 = std::get<1>(points[idx - 1]);
             // float p2 = std::get<1>(points[idx]);
             // p1 = (p1-thd) * risk_explore_ration + thd;
->>>>>>> Stashed changes
 
             
 
@@ -139,8 +133,6 @@ public:
             auto& [a2, t2] = supp2.support[0];
 
             float prob2 = (thd - p1) / (p2 - p1);
-<<<<<<< Updated upstream
-=======
 
             if (!explore) {
                 spdlog::debug("a1: {}, r1: {}, p1: {}, a2: {}, r2: {}, p2: {}, prob2: {}", a1, r1, p1, a2, r2, p2, prob2);
@@ -150,7 +142,6 @@ public:
                 return {idx, thd};
             }
 
->>>>>>> Stashed changes
             return ((rng::unif_float() < prob2) ? std::make_pair(idx, p2) : std::make_pair(idx - 1, p1));
         }
     }

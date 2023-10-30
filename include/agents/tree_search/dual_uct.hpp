@@ -81,8 +81,6 @@ struct select_action_dual {
     }
 };
 
-<<<<<<< Updated upstream
-=======
 template<typename SN>
 struct select_action_dual_anal {
     size_t operator()(SN* node, bool explore, bool not_sim=false) const {
@@ -171,7 +169,6 @@ struct select_action_dual_anal {
         }
     }
 };
->>>>>>> Stashed changes
 
 /*********************************************************************
  * @brief dual uct agent

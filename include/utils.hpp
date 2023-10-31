@@ -4,8 +4,6 @@
 #include <tuple>
 #include "rand.hpp"
 
-std::tuple<size_t, float, size_t> greedy_mix(const std::vector<float>& rs, const std::vector<float>& ps, float thd);
-
 template <typename T>
 struct mixture {
     T v1, v2;
@@ -22,6 +20,13 @@ struct mixture {
 
     template <typename U>
     U operator()(U u1, U u2) {
-        return rng::unif_float() < p2 ? u2 : u1;
+        if (deterministic) {
+            return p2 > p1 ? u2 : u1;
+        } else {
+            return rng::unif_float() < p2 ? u2 : u1;
+        }
     }
 };
+
+
+mixture<size_t> greedy_mix(const std::vector<float>& rs, const std::vector<float>& ps, float thd);

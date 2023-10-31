@@ -2,11 +2,8 @@
 #include <algorithm>
 #include <tuple>
 
-std::tuple<size_t, float, size_t> greedy_mix(const std::vector<float>& rs, const std::vector<float>& ps, float thd) {
-    if (rs.size() == 1) {
-        return {0, 1.f, 0};
-    }
 
+mixture<size_t> greedy_mix(const std::vector<float>& rs, const std::vector<float>& ps, float thd) {
     std::vector<std::pair<float, size_t>> action_values(rs.size());
     for (size_t i = 0; i < action_values.size(); ++i) {
         action_values[i] = {ps[i], i};
@@ -40,13 +37,14 @@ std::tuple<size_t, float, size_t> greedy_mix(const std::vector<float>& rs, const
 
     auto r = std::upper_bound(hull_ps.begin(), hull_ps.end(), thd);
     if (r == hull_ps.end()) {
-        return {hull.back(), 1., hull.back()};
+        return {hull.back(), hull.back(), 0., 1., true};
     } else if (r == hull_ps.begin()) {
-        return {hull.front(), 1., hull.front()};
+        return {hull.front(), hull.front(), 1., 0., true};
     } else {
         auto l = r;
         --l;
         size_t li = static_cast<size_t>(l - hull_ps.begin());
-        return {hull[li], (thd - *l) / (*r - *l), hull[li + 1]};
+        float p2 = (thd - *l) / (*r - *l);
+        return {hull[li], hull[li + 1], 1 - p2, p2, false};
     }
 }

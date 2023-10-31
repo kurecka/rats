@@ -52,7 +52,7 @@ struct select_action_primal {
             if (lcts[i] < 0) lcts[i] = 0;
         }
 
-        auto [a1, p2, a2] = greedy_mix(ucts, lcts, risk_thd);
+        auto mix = greedy_mix(ucts, lcts, risk_thd);
         if (!explore) {
             std::string ucts_str = "";
             for (auto u : ucts) ucts_str += to_string(u) + ", ";
@@ -60,17 +60,13 @@ struct select_action_primal {
             for (auto l : lcts) lcts_str += to_string(l) + ", ";
             spdlog::trace("ucts: {}", ucts_str);
             spdlog::trace("lcts: {}", lcts_str);
-            spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", to_string(a1), p2, to_string(a2), risk_thd);
+            spdlog::trace("a1: {}, p2: {}, a2: {}, thd: {}", to_string(mix.v1), mix.p2, to_string(mix.v2), risk_thd);
         }
 
         if constexpr (deterministic) {
-            return a1;
+            return mix.v1;
         } else {
-            if (rng::unif_float() < p2) {
-                return a2;
-            } else {
-                return a1;
-            }
+            return mix();
         }
     }
 };

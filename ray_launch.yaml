@@ -10,6 +10,7 @@ docker:
         - -v /var/data/xkurecka/rats/src:/work/rats/src
         - -v /var/data/xkurecka/rats/logs:/work/rats/logs
         - -v /var/data/xkurecka/rats/conf:/work/rats/conf
+        - -v /var/data/xkurecka/rats/outputs:/work/rats/outputs
         - -v /var/data/xkurecka/rats/pybind:/work/rats/pybind
         # - -v /var/data/xkurecka/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
         - -u 19281:10100
@@ -18,6 +19,7 @@ provider:
     type: local
     head_ip: erinys02.fi.muni.cz
     worker_ips:
+        # - erinys01.fi.muni.cz
         - erinys03.fi.muni.cz
         - erinys04.fi.muni.cz
         - erinys05.fi.muni.cz
@@ -45,6 +47,8 @@ cluster_synced_files:
     - /var/data/xkurecka/rats/build/rats.so
     - /var/data/xkurecka/rats/pyrats/
 
+collect_to_head:
+    - /var/data/xkurecka/rats/outputs/
 
 rsync_exclude:
     - /var/data/xkurecka/rats/pyrats/outputs

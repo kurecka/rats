@@ -220,7 +220,7 @@ void propagate(SN* leaf) {
     while (!current_sn->is_root()) {
         prop_v_t()(current_sn,  disc_r, disc_p);
         disc_r = current_sn->observed_reward + common_data->gamma * disc_r;
-        disc_p = current_sn->observed_penalty + disc_p;
+        disc_p = current_sn->observed_penalty + common_data->gammap * disc_p;
         action_node_t* current_an = current_sn->get_parent();
         prop_q_t()(current_an, disc_r, disc_p);
         current_sn = current_an->get_parent();
@@ -338,15 +338,15 @@ void rollout(SN* sn, bool penalty = false) {
         bool terminal = current_sn->is_terminal();
 
         while (!terminal && (num_steps--) > 0) {
-            gamma_pow *= common_data->gamma;
-            gammap_pow *= common_data->gammap;
             A action = handler.get_action(
                 rng::unif_int(handler.num_actions())
             );
             auto [s, r, p, t] = handler.sim_action(action);
             terminal = t;
-            disc_r = r + disc_r * gamma_pow;
-            disc_p = p + disc_p * gammap_pow;
+            disc_r += r * gamma_pow;
+            disc_p += p * gammap_pow;
+            gamma_pow *= common_data->gamma;
+            gammap_pow *= common_data->gammap;
         }
 
         mean_r += disc_r;
@@ -359,86 +359,6 @@ void rollout(SN* sn, bool penalty = false) {
     current_sn->rollout_reward = mean_r;
     // to disable rollout_pen add if (common_data->gammap > 0)
     current_sn->rollout_penalty = penalty ? mean_p : 0;
-}
-
-
-/**
- * @brief Monte carlo rollout function
- * 
- * @param sn A leaf node to rollout
-*/
-template<typename SN, typename SN::A a, int N>
-void constant_rollout_state(SN* sn) {
-    using state_node_t = SN;
-
-    float mean_r = 0;
-    // float mean_p = 0;
-    auto common_data = sn->common_data;
-
-    common_data->handler.make_checkpoint(1);
-
-    for (int i = 0; i < N; ++i) {
-        state_node_t* current_sn = sn;
-        float disc_r = 0;
-        // float disc_p = 0;
-        float gamma_pow = 1.0;
-        bool terminal = current_sn->is_terminal();
-
-        while (!terminal) {
-            gamma_pow *= common_data->gamma;
-            auto [s, r, p, t] = common_data->handler.sim_action(a);
-            terminal = t;
-            disc_r = r + disc_r * gamma_pow;
-            // disc_p = p + disc_p * gamma_pow;
-        }
-
-        mean_r += disc_r;
-        // mean_p += disc_p;
-        common_data->handler.restore_checkpoint(1);
-    }
-
-    sn->rollout_reward = mean_r / N;
-    float probs[] = {1.000000f,0.428571f,0.183673f,0.078717f,0.033736f,0.014458f,0.006196f,0.002656f,0.001138f,0.000488f,0.000209f,0.000090f,0.000038f,0.000016f,0.000007f,0.000003f,0.000001f,0.000001f,0.000000f,0.000000f,0.000000f};
-    int s = sn->state;
-    s = std::min(s, 20);
-    s = std::max(s, 0);
-    sn->rollout_penalty = probs[s];
-}
-
-
-template<typename AN, typename AN::A a, int N>
-void constant_rollout_action(AN* an) {
-    using A = AN::A;
-
-    float mean_r = 0;
-    float mean_p = 0;
-    auto common_data = an->common_data;
-
-    common_data->handler.make_checkpoint(1);
-
-    for (int i = 0; i < N; ++i) {
-        A initial_action = an->action;
-        auto [s, r, p, t] = common_data->handler.sim_action(initial_action);
-        bool terminal = t;
-        float disc_r = r;
-        float disc_p = p;
-        float gamma_pow = 1.0;
-
-        while (!terminal) {
-            gamma_pow *= common_data->gamma;
-            auto [s_, r_, p_, t_] = common_data->handler.sim_action(a);
-            terminal = t_;
-            disc_r = r_ + disc_r * gamma_pow;
-            disc_p = p_ + disc_p * gamma_pow;
-        }
-
-        mean_r += disc_r;
-        mean_p += disc_p;
-        common_data->handler.restore_checkpoint(1);
-    }
-
-    an->rollout_reward = mean_r / N;
-    an->rollout_penalty = mean_p / N;
 }
 
 /** Propagate by point **/
@@ -477,8 +397,6 @@ struct uct_prop_v_value_prob {
             sn->v.first = r;
             sn->v.second = p;
         }
-        sn->v.first += sn->observed_reward;
-        sn->v.second += sn->observed_penalty;
     }
 };
 
@@ -486,21 +404,20 @@ template<typename AN>
 struct uct_prop_q_value_prob {
     void operator()(AN* an, float disc_r, float disc_p) const {
         an->num_visits++;
+        float gamma = an->common_data->gamma;
+        float gammap = an->common_data->gammap;
         if (an->children.size()) {
             float r = 0;
             float p = 0;
             auto probs = an->common_data->predictor.predict_probs(an->parent->state, an->action);
             for (auto& [s, child] : an->children) {
                 float prob = probs[s];
-                r += prob * child->v.first;
-                p += prob * child->v.second;
+                r += prob * (child->v.first * gamma + child->observed_reward);
+                p += prob * (child->v.second * gammap + child->observed_penalty);
             }
             an->q.first = r;
             an->q.second = p;
         }
-        float gamma = an->common_data->gamma;
-        an->q.first *= gamma;
-        an->q.second *= gamma;
     }
 };
 

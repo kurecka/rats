@@ -103,46 +103,31 @@ public:
         for (auto& [r, prob, supp] : points) {
             r *= fs.first;
             prob *= fs.second;
-            for (auto& [o, thd] : supp.support) {
-                thd *= fs.second;
-            }
+            // for (auto& [o, thd] : supp.support) {
+            //     thd *= fs.second;
+            // }
         }
         return *this;
     }
 
 
-    std::pair<size_t, float> select_vertex(float thd, float risk_explore_ration=1, bool explore=true) {
+    mixture<size_t> select_vertex(float thd, bool debug=false) {
         size_t idx;
+
+        if (debug) {
+            spdlog::debug("select thd: {}", thd);
+        }
+
         // find idx of first point with risk > risk_thd or idx = points.size()
         for (idx = 0; idx < points.size() && std::get<1>(points[idx]) <= thd; ++idx);
 
         if (idx == 0) {
-            return {0, thd};
+            return {0, 0, 1, 0, true};
         } else if (idx == points.size()) {
-            return {points.size() - 1, thd};
+            return {points.size() - 1, points.size() - 1, 0, 1, true};
         } else {
-            // float p1 = std::get<1>(points[idx - 1]);
-            // float p2 = std::get<1>(points[idx]);
-            // p1 = (p1-thd) * risk_explore_ration + thd;
-
-            
-
-            auto& [r1, p1, supp1] = points[idx - 1];
-            auto& [r2, p2, supp2] = points[idx];
-            auto& [a1, t1] = supp1.support[0];
-            auto& [a2, t2] = supp2.support[0];
-
             float prob2 = (thd - p1) / (p2 - p1);
-
-            if (!explore) {
-                spdlog::debug("a1: {}, r1: {}, p1: {}, a2: {}, r2: {}, p2: {}, prob2: {}", a1, r1, p1, a2, r2, p2, prob2);
-            }
-
-            if (a1 == a2) {
-                return {idx, thd};
-            }
-
-            return ((rng::unif_float() < prob2) ? std::make_pair(idx, p2) : std::make_pair(idx - 1, p1));
+            return {idx - 1, idx, 1-prob2, prob2, false};
         }
     }
 };
@@ -210,7 +195,7 @@ EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights, std::ve
         auto& [r2, p2, supp2] = points[max_idx][point_idxs[max_idx] + 1];
         r += r2 - r1;
         p += p2 - p1;
-        point_idxs[max_idx] += 1;
+        ++point_idxs[max_idx];
         supp.support[max_idx] = supp2.support.front();
     }
 

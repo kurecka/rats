@@ -69,6 +69,7 @@ struct select_action_pareto {
                     p_uct = 0;
                 } else {
                     r_uct = c * powf(static_cast<float>(node->num_visits), 0.8f) / child.q.curve.num_samples;
+                    p_uct = 0;
                     // p_uct = -c * powf(static_cast<float>(node->num_visits), 0.6f) / child.q.curve.num_samples;
                 }
                 p_ucts.push_back(p_uct);
@@ -80,25 +81,43 @@ struct select_action_pareto {
             merged_curve = convex_hull_merge(curve_ptrs);
         }
 
-        auto [idx, descent_thd] = curve_ptr->select_vertex(risk_thd, node->common_data->risk_exploration_ratio, explore);
-        auto& [r, p, supp] = curve_ptr->points[idx];
-        auto& [o, thd] = supp.support[0];
-
-        if (explore) {
-            // descent_thd = std::min(1.f, descent_thd + 2*p_ucts[o]);
-            float dev = 0.1;
-
-            // eps step
-            // float eps = 0.05;
-            // if (rng::unif_float() < eps)
-            //     descent_thd = std::min(1.f, std::max(0.f, descent_thd + rng::normal(0, dev)));
-
-            int tree_depth = node->node_depth() - node->common_data->num_steps;
-            dev = exp(-tree_depth) * dev;
-            descent_thd = std::min(1.f, std::max(0.f, descent_thd + rng::normal(0, dev)));
+        if (!explore) {
+            spdlog::debug("Select from state curve");
         }
-        node->common_data->descent_thd = descent_thd;
-        return o;
+        auto mix = curve_ptr->select_vertex(risk_thd, !explore);
+        // auto [idx, descent_thd] = curve_ptr->select_vertex(risk_thd, !explore);
+
+        auto& [r1, p1, supp1] = curve_ptr->points[mix.v1];
+        auto& [a1, thd1] = supp1.support[0];
+        auto& [r2, p2, supp2] = curve_ptr->points[mix.v2];
+        auto& [a2, thd2] = supp2.support[0];
+
+        if (!explore) {
+            spdlog::debug("mixing actions: {}({}): {} {}({}): {}", a1, p1, mix.p1, a2, p2, mix.p2);
+        }
+
+        if (a1 == a2 || mix.deterministic) {
+            node->common_data->descent_thd = risk_thd;
+            return a1;
+        } else {
+            auto [a, descent_thd] = mix(std::make_pair(a1, thd1), std::make_pair(a2, thd2));
+            if (explore) {
+                // descent_thd = std::min(1.f, descent_thd + 2*p_ucts[o]);
+                float dev = 0.1;
+
+                // eps step
+                // float eps = 0.05;
+                // if (rng::unif_float() < eps)
+                //     descent_thd = std::min(1.f, std::max(0.f, descent_thd + rng::normal(0, dev)));
+
+                int tree_depth = node->node_depth() - node->common_data->num_steps;
+                dev = exp(-tree_depth) * dev;
+                descent_thd = std::min(1.f, std::max(0.f, descent_thd + rng::normal(0, dev)));
+            }
+            
+            node->common_data->descent_thd = descent_thd;
+            return a;
+        }
     }
 };
 
@@ -117,48 +136,30 @@ struct descend_callback {
     using DATA = typename SN::DATA;
     void operator()(state_node_t* s0, A a, action_node_t* action, S s, state_node_t* new_state) const {
         DATA* common_data = action->common_data;
-        // float risk_thd = 
-        auto [point_idx, risk_thd] = action->q.curve.select_vertex(common_data->descent_thd, common_data->risk_exploration_ratio);
+        if (debug) {
+            spdlog::debug("Select from action curve");
+        }
+        auto mix = action->q.curve.select_vertex(common_data->descent_thd, debug);
         size_t state_idx = action->child_idx[s];
-        // if (debug){
-        //     spdlog::trace("Descent: risk_thd={}, point_idx={}, state_idx={}", risk_thd, point_idx, state_idx);
-        //     for (auto [s, idx] : action->child_idx) {
-        //         spdlog::trace("Child: s={}, idx={}", to_string(s), idx);
-        //     }
-        // }
-        auto& [r, p, supp] = action->q.curve.points[point_idx];
-        if (supp.support.size() > state_idx) {
-            // if (debug){
-            //     for (auto& [o, thd] : supp.support) {
-            //         spdlog::trace("Supp: o={}, thd={}", to_string(o), thd);
-            //     }
-            // }
-            size_t support_idx = 0;
-            auto& [o, new_thd] = supp.support[0];
-            while(o != state_idx){
-                support_idx++;
-                std::tie(o, new_thd) = supp.support[support_idx];
+        auto& [r1, p1, supp1] = action->q.curve.points[mix.v1];
+        auto& [r2, p2, supp2] = action->q.curve.points[mix.v2];
+
+        if (supp1.support.size() > state_idx) {
+            auto& [o1, thd1] = supp1.support[state_idx];
+            auto& [o2, thd2] = supp2.support[state_idx];
+            if (debug) {
+                spdlog::debug("thd1: {}, thd2: {}", thd1, thd2);
+                spdlog::debug("o1: {}, o2: {}", to_string(o1), to_string(o2));
+                spdlog::debug("state_idx: {}", state_idx);
+                spdlog::debug("state: {}", to_string(s));
             }
-            
-            // if (debug){
-            //     spdlog::trace("Descent: p={}, new_thd={}", p, new_thd);
-            // }
-            if (risk_thd < p) {
-                // p = (p - risk_thd) * 0.1f + risk_thd;
-                float overflow_ratio = (risk_thd - p) / p;
-                new_thd += overflow_ratio * new_thd;
-            } else if (risk_thd > p) {
-                // p = (p - risk_thd) * 0.1f + risk_thd;
-                float overflow_ratio = (risk_thd - p) / (1 - p);
-                new_thd += overflow_ratio * (1 - new_thd);
-            }
-            // } else if (risk_thd > p) {
-            //     new_thd = (new_thd - risk_thd) * 0.3f + risk_thd;
-            // }
-            // if (debug){
-            //     spdlog::trace("Descent: update new_thd={}", new_thd);
-            // }
-            common_data->sample_risk_thd = new_thd;
+            // TODO: underflow
+
+            // if (mix.deterministic) {
+            //     common_data->sample_risk_thd = common_data->descent_thd;
+            // } else {
+            common_data->sample_risk_thd = mix.p1 * thd1 + mix.p2 * thd2;
+            // }            
         }
     }
 };
@@ -172,7 +173,7 @@ void exact_pareto_propagate(SN* leaf) {
 
     state_node_t* current_sn = leaf;
 
-    // ALREADY IN ROLLOUT
+    // Already updated in rollout if predictor is used
     if (!current_sn->common_data->use_predictor) {
         std::get<0>(current_sn->v.curve.points[0]) = current_sn->rollout_reward;
         std::get<1>(current_sn->v.curve.points[0]) = current_sn->rollout_penalty;
@@ -195,6 +196,7 @@ void exact_pareto_propagate(SN* leaf) {
         EPC merged_curve = convex_hull_merge(action_curves);
         ++current_sn->num_visits;
         merged_curve.num_samples = current_sn->num_visits;
+        merged_curve *= {current_sn->common_data->gamma, current_sn->common_data->gammap};
         merged_curve += {current_sn->observed_reward, current_sn->observed_penalty};
         current_sn->v.curve = merged_curve;
 
@@ -219,8 +221,6 @@ void exact_pareto_propagate(SN* leaf) {
         merged_curve = weighted_merge(state_curves, weights, state_refs);
         ++current_an->num_visits;
         merged_curve.num_samples = current_an->num_visits;
-        std::pair<float, float> gammas = {current_an->common_data->gamma, current_an->common_data->gammap};
-        merged_curve *= gammas;
         current_an->q.curve = merged_curve;
 
         current_sn = current_an->get_parent();
@@ -324,7 +324,6 @@ public:
         } else {
             rollout(leaf);
         }
-        pareto_predictor_rollout(leaf, common_data.sample_risk_thd);
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
     }

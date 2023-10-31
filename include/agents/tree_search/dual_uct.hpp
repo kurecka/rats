@@ -66,18 +66,10 @@ struct select_action_dual {
             ps[idx] = children[idx].q.second;
         }
 
-        auto [a1, p2, a2] = greedy_mix(rs, ps, risk_thd);
-        float low_p = ps[a1];
-        float high_p = ps[a2];
-        a1 = eps_best_actions[a1];
-        a2 = eps_best_actions[a2];
-        if (rng::unif_float() < p2) {
-            node->common_data->descent_risk_thd = std::max(risk_thd, high_p);
-            return a2;
-        } else {
-            node->common_data->descent_risk_thd = low_p;
-            return a1;
-        }
+        auto mix = greedy_mix(rs, ps, risk_thd);
+        size_t sample = mix();
+        node->common_data->descent_risk_thd = mix.deterministic ? risk_thd : ps[sample];
+        return eps_best_actions[sample];
     }
 };
 
@@ -93,16 +85,12 @@ struct select_action_dual_anal {
         std::vector<float> uct_values(children.size());
         for (size_t i = 0; i < children.size(); ++i) {
             uct_values[i] = children[i].q.first - lambda * children[i].q.second;
-            // if (not_sim)
-            //     spdlog::debug("action: {} value: {} lambda: {}", i, uct_values[i], lambda);
         }
 
         for (size_t i = 0; i < children.size(); ++i) {
             uct_values[i] += explore * c * static_cast<float>(
                 sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
             );
-            // spdlog::debug("node: {}, i: {}, {}", node->num_visits, children[i].num_visits, i);
-            // spdlog::debug("action: {} val with bonus: {}", i, uct_values[i]);
         }
 
         auto best_a = std::max_element(uct_values.begin(), uct_values.end());
@@ -195,7 +183,6 @@ class dual_uct : public agent<S, A> {
     constexpr auto static select_action_f = select_action_t();
     constexpr auto static select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
     constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value<state_node_t>, uct_prop_q_value<action_node_t>>;
-    // constexpr auto static propagate_f = propagate<state_node_t, uct_prop_v_value_prob<state_node_t>, uct_prop_q_value_prob<action_node_t>>;
 private:
     int max_depth;
     int num_sim;

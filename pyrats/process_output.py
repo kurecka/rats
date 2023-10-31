@@ -33,69 +33,79 @@ def process_run_results(run_directory):
 
     return df, agent, experiment_desc
 
-def process_job_dir(job_dir):
-    job_dir = Path(job_dir)
+def process_job_dir(output_dir, job_dirs):
+    job_dirs = [Path(job_dir) for job_dir in job_dirs]
+    output_dir = Path(output_dir)
 
-    if not (job_dir / 'sweep').exists():
-        return process_run_results(job_dir)
-    else:
-        data = {}
-        for sub_job_dir in (job_dir/'sweep').iterdir():
-            if sub_job_dir.is_dir():
-                try:
-                    df, agent, experiment = process_run_results(sub_job_dir)
-                    if agent not in data:
-                        data[agent] = df
-                    else:
-                        data[agent] = pd.concat([data[agent], df])
-                except FileNotFoundError:
-                    pass
-        for df in data.values():
-            df.sort_index(inplace=True)
-        
-        table = pd.concat(data.values(), keys=data.keys(), axis=1)
-        with open(job_dir / 'table.txt', 'w') as f:
-            with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
-                f.write(str(table))
-        
-        df = pd.concat(data.values(), keys=data.keys(), axis=0)
-        df.reset_index(inplace=True, names=['agent', 'risk_thd'])
-        
-        # plot rewards with stripes
-        df['low_reward'] = df.reward['mean'] - df.reward['std']
-        df['high_reward'] = df.reward['mean'] + df.reward['std']
-        df['low_penalty'] = df.penalty['mean'] - df.penalty['std']
-        df['high_penalty'] = df.penalty['mean'] + df.penalty['std']
+    data = {}
 
-        # plot rewards and penalties on different subplots
-        fig, ax = plt.subplots(2, 1, sharex=True)
-        # set dimensions
-        fig.set_figheight(8)
-        fig.set_figwidth(16)
-        # set ticks
-        ax[0].set_xticks(np.linspace(0, 1, 11))
-        # add grid
-        ax[0].grid()
-        ax[1].grid()
-        # clip ax[0] to [-0.1, 1.1]
-        ax[0].set_ylim(bottom=1.4, top=3.1)
-        ax[1].set_ylim(bottom=0, top=0.5)
-        for agent, df_agent in df.groupby('agent'):
-            ax[0].plot(df_agent.risk_thd, df_agent.reward['mean'], label=agent)
-            # ax[0].fill_between(df_agent.risk_thd, df_agent.low_reward, df_agent.high_reward, alpha=0.25)
-            ax[1].plot(df_agent.risk_thd, df_agent.penalty['mean'], label=agent, linestyle='--')
-            # ax[1].fill_between(df_agent.risk_thd, df_agent.low_penalty, df_agent.high_penalty, alpha=0.25)
-        # plot diagonal on ax[1]
-        ax[1].plot([0, 0.5], [0, 0.5], color='red', linestyle=':')
-        # set labels
-        ax[0].set_ylabel('Expected reward')
-        ax[1].set_ylabel('Expected penalty')
-        ax[1].set_xlabel('Risk threshold')
-        ax[0].legend()
-        ax[1].legend()
+    for job_dir in job_dirs:
+        if not (job_dir / 'sweep').exists():
+            try:
+                df, agent, experiment = process_run_results(job_dir)
+                if agent not in data:
+                    data[agent] = df
+                else:
+                    data[agent] = pd.concat([data[agent], df])
+            except FileNotFoundError:
+                pass
+        else:
+            for sub_job_dir in (job_dir/'sweep').iterdir():
+                if sub_job_dir.is_dir():
+                    try:
+                        df, agent, experiment = process_run_results(sub_job_dir)
+                        if agent not in data:
+                            data[agent] = df
+                        else:
+                            data[agent] = pd.concat([data[agent], df])
+                    except FileNotFoundError:
+                        pass
+    for df in data.values():
+        df.sort_index(inplace=True)
+    
+    table = pd.concat(data.values(), keys=data.keys(), axis=1)
+    with open(output_dir / 'table.txt', 'w') as f:
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+            f.write(str(table))
+    
+    df = pd.concat(data.values(), keys=data.keys(), axis=0)
+    df.reset_index(inplace=True, names=['agent', 'risk_thd'])
+    
+    # plot rewards with stripes
+    df['low_reward'] = df.reward['mean'] - df.reward['std']
+    df['high_reward'] = df.reward['mean'] + df.reward['std']
+    df['low_penalty'] = df.penalty['mean'] - df.penalty['std']
+    df['high_penalty'] = df.penalty['mean'] + df.penalty['std']
 
-        # set title
-        fig.suptitle(f'Env {experiment["env"]}, {experiment["num_episodes"]} episodes')
-        fig.savefig(job_dir / 'results.png')
+    # plot rewards and penalties on different subplots
+    fig, ax = plt.subplots(2, 1, sharex=True)
+    # set dimensions
+    fig.set_figheight(16)
+    fig.set_figwidth(16)
+    # set ticks
+    ax[0].set_xticks(np.linspace(0, 1, 11))
+    # add grid
+    ax[0].grid()
+    ax[1].grid()
+    # clip ax[0] to [-0.1, 1.1]
+    ax[0].set_ylim(bottom=1.4, top=3.1)
+    ax[1].set_ylim(bottom=0, top=0.5)
+    for agent, df_agent in df.groupby('agent'):
+        ax[0].plot(df_agent.risk_thd, df_agent.reward['mean'], label=agent)
+        # ax[0].fill_between(df_agent.risk_thd, df_agent.low_reward, df_agent.high_reward, alpha=0.25)
+        ax[1].plot(df_agent.risk_thd, df_agent.penalty['mean'], label=agent, linestyle='--')
+        # ax[1].fill_between(df_agent.risk_thd, df_agent.low_penalty, df_agent.high_penalty, alpha=0.25)
+    # plot diagonal on ax[1]
+    ax[1].plot([0, 0.5], [0, 0.5], color='red', linestyle=':')
+    # set labels
+    ax[0].set_ylabel('Expected reward')
+    ax[1].set_ylabel('Expected penalty')
+    ax[1].set_xlabel('Risk threshold')
+    ax[0].legend()
+    ax[1].legend()
 
-process_job_dir(argv[1])
+    # set title
+    fig.suptitle(f'Env {experiment["env"]}, {experiment["num_episodes"]} episodes')
+    fig.savefig(output_dir / 'results.png')
+
+process_job_dir(argv[1], argv[1:])

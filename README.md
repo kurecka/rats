@@ -96,5 +96,9 @@ conda env export --no-build --from-history | grep -v prefix > conda_env.yaml
 
 ## Run experiment through ray
 ```
-python experiment.py -m +task=run +agent=pareto_uct,dual_uct ++agent.exploration_constant=1 ++risk_thd=0.2 ++agent.sim_time_limit=-1 ++agent.num_sim=1000 +env=large_hw ++metadata.tag=profiling ++task.num_episodes=300 ++gamma=0.9999
+python experiment.py -m +task=train_runs +agent=pareto_uct ++agent.exploration_constant=1,5,15 ++risk_thd=0,0.1,0.2,0.3,0.5 ++agent.sim_time_limit=10,50,200 +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01,0.1,1
+
+python experiment.py -m +task=train_runs +agent=pareto_uct ++agent.exploration_constant=1  ++agent.sim_time_limit=10  +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01
+
+python experiment.py -m +task=train_runs +agent=pareto_uct ++agent.exploration_constant=1,5,15 ++risk_thd=0,0.1,0.2,0.3,0.5 ++agent.sim_time_limit=10,50,200 +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01,0.1,1 ++agent.use_predictor=true,false
 ```

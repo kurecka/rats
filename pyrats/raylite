@@ -51,7 +51,8 @@ def ray_up_docker(head_ip, worker_ips, user, docker_image, docker_container_name
     volume = '-v /tmp/ray:/tmp/ray'
     docker_command = f'docker run --network host -d -it --rm --name {docker_container_name} {volume} {" ".join(docker_run_options)} {docker_image}'
     
-    head_commands.append(docker_command + f" sh -c 'ray start --head --port={port} --disable-usage-stats; bash'")
+    resource = "--resources=\"\'\"\'\"{\\\\\\\"HeadResource\\\\\\\": 10000}\"\'\"\'\""
+    head_commands.append(docker_command + f" sh -c 'ray start --head --port={port} {resource} --disable-usage-stats; bash'")
     run_remote_commands(head_ip, head_commands, user, msg=f'Starting head node {head_ip}:{port}...')
 
     worker_commands = [f'docker stop {docker_container_name}']
@@ -74,6 +75,13 @@ def cluster_sync(files, exclude_files, head_ip, worker_ips, user):
         f'rsync -avz {exclude} --mkpath {file} {user}@{worker}:{file}' for file in files
     ], user) for worker in worker_ips]
     with multiprocessing.Pool(processes=max(len(worker_ips), 1)) as pool:
+        pool.map(tuple_run_remote_commands, params)
+
+def collect_to_head(files, head_ip, worker_ips, user):
+    params = [(worker, [
+        f'rsync -avz --mkpath {file} {user}@{head_ip}:{file}' for file in files
+    ], user) for worker in worker_ips]
+    with multiprocessing.Pool(processes=max(len(params), 1)) as pool:
         pool.map(tuple_run_remote_commands, params)
 
 def ray_down(head_ip, worker_ips, user):
@@ -144,6 +152,7 @@ def load_config(config_path):
         'cluster_synced_files': Maybe([str]),
         'file_mounts': Maybe(dict),
         'rsync_exclude': Maybe([str]),
+        'collect_to_head': Maybe([str]),
     }
     
     with open(config_path) as f:
@@ -175,6 +184,11 @@ def load_config(config_path):
     else:
         conf['rsync_exclude'] = []
     
+    if 'collect_to_head' in config:
+        conf['collect_to_head'] = config['collect_to_head']
+    else:
+        conf['collect_to_head'] = []
+    
     return conf
 
 def help():
@@ -201,6 +215,8 @@ if __name__ == '__main__':
                 mount_files(config['file_mounts'], config['head_ip'], config['user'])
             if 'cluster_synced_files' in config:
                 cluster_sync(config['cluster_synced_files'], config['rsync_exclude'], config['head_ip'], config['worker_ips'], config['user'])
+        elif argv[1] == 'collect':
+            collect_to_head(config['collect_to_head'], config['head_ip'], config['worker_ips'], config['user'])
         elif argv[1] == 'down':
             if 'docker' in config:
                 ray_down_docker(
@@ -214,13 +230,18 @@ if __name__ == '__main__':
         else:
             help()
             exit(1)
-    elif len(argv) == 4:
+    elif len(argv) >= 4:
         config = load_config(argv[2])
         if argv[1] == 'cmd':
-            cmd = argv[3]
+            cmd = ' '.join(argv[3:])
             print(cmd)
             for worker in config['worker_ips']:
                 run_remote_command(worker, cmd, config['user'])
+        elif argv[1] == 'dcmd':
+            cmd = ' '.join(argv[3:])
+            print(cmd)
+            for worker in config['worker_ips']:
+                run_remote_docker_command(worker, cmd, config['user'], config['docker']['container_name'])
         else:
             help()
             exit(1)

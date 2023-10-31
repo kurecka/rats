@@ -25,6 +25,7 @@
 logs
 *.log
 pyrats/outputs
+outputs
 
 *.egg-info
 

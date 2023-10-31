@@ -1,5 +1,6 @@
 defaults:
   - hydra: default
+  # - override hydra/launcher: joblib
   - _self_
 
 gamma: 0.999

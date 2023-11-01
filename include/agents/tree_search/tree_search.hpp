@@ -140,7 +140,7 @@ void expand_state(SN* sn) {
 
 template<typename AN>
 void expand_action(
-    AN* an, typename AN::S s, float r, float p, bool t
+    AN* an, typename AN::S s, float r, float p, bool t, float future_r, float future_p
 ) {
     using state_node_t = AN::state_node_t;
 
@@ -153,6 +153,8 @@ void expand_action(
     new_sn->common_data = an->common_data;
     new_sn->observed_reward = r;
     new_sn->observed_penalty = p;
+    new_sn->rollout_reward = future_r;
+    new_sn->rollout_penalty = future_p;
     new_sn->terminal = t;
     new_sn->depth = an->parent->depth + 1;
 }
@@ -169,8 +171,8 @@ void full_expand_action(
     predictor.add(an->parent->state, an->action, s, r, p, t);
     for (auto& [s1, signals] : predictor.predict_signals(s0, a1)) {
         if (an->children.find(s1) == an->children.end()) {
-            auto [r1, p1, t1] = signals;
-            expand_action(an, s1, r1, p1, t1);
+            auto [r1, p1, t1, fr1, fp1] = signals;
+            expand_action(an, s1, r1, p1, t1, fr1, fp1);
         }
     }
 }
@@ -236,6 +238,8 @@ class predictor_manager {
         float reward;
         float penalty;
         bool terminal;
+        float future_reward;
+        float future_penalty;
     };
 
     struct action_record {
@@ -245,6 +249,9 @@ class predictor_manager {
 
     std::map<std::pair<S, A>, action_record> records;
     std::map<S, relu_pareto_curve> value_curves;
+
+    std::map<S, float> future_rewards;
+    std::map<S, float> future_penalties;
 public:
     void add(S s0, A a1, S s1, float r, float p, bool t) {
         action_record& ar = records[{s0, a1}];
@@ -254,6 +261,11 @@ public:
         sr.reward = r;
         sr.penalty = p;
         sr.terminal = t;
+    }
+
+    void add_future(S s, float fr, float fp) {
+        future_rewards[s] = fr;
+        future_penalties[s] = fp;
     }
 
     void add_value(float r, float p, S s) {
@@ -279,12 +291,12 @@ public:
         return probs;
     }
 
-    std::map<S, std::tuple<float, float, float>> predict_signals(S s0, A a1) {
-        std::map<S, std::tuple<float, float, float>> signals;
+    std::map<S, std::tuple<float, float, float, float, float>> predict_signals(S s0, A a1) {
+        std::map<S, std::tuple<float, float, float, float, float>> signals;
         action_record& ar = records[{s0, a1}];
 
         for (auto& [s1, sr] : ar.records) {
-            signals[s1] = {sr.reward, sr.penalty, sr.terminal};
+            signals[s1] = {sr.reward, sr.penalty, sr.terminal, future_rewards[s1], future_penalties[s1]};
         }
         return signals;
     }
@@ -302,6 +314,38 @@ struct void_fn {
     void operator()(Args...) const {}
 };
 
+
+template<typename SN>
+std::pair<float, float> v_rollout_sample(SN* sn) {
+    using state_node_t = SN;
+    using A = SN::A;
+
+    auto common_data = sn->common_data;
+    auto& handler =  common_data->handler;
+    int num_steps = 10;
+
+    float disc_r = 0;
+    float disc_p = 0;
+    float gamma_pow = 1.0;
+    float gammap_pow = 1.0;
+    bool terminal = sn->is_terminal();
+
+    while (!terminal && (num_steps--) > 0) {
+        A action = handler.get_action(
+            rng::unif_int(handler.num_actions())
+        );
+        auto [s, r, p, t] = handler.sim_action(action);
+        terminal = t;
+        disc_r += r * gamma_pow;
+        disc_p += p * gammap_pow;
+        gamma_pow *= common_data->gamma;
+        gammap_pow *= common_data->gammap;
+    }
+
+    return {disc_r, disc_p};
+}
+
+
 /**
  * @brief Monte carlo rollout function
  * 
@@ -310,45 +354,16 @@ struct void_fn {
  * Do a Monte Carlo rollout from the given leaf node. Update its rollout reward and penalty.
  */
 template<typename SN>
-void rollout(SN* sn, bool penalty = false) {
-    using state_node_t = SN;
-    using A = SN::A;
-
-    if (sn->is_terminal()) {
-        sn->rollout_reward = 0;
-        sn->rollout_penalty = 0;
-        return;
-    }
-
-    auto common_data = sn->common_data;
-    auto& handler =  common_data->handler;
-    int num_steps = 10;
-    int num_sim = 10;
+void rollout(SN* sn, bool penalty = false, int num_sim = 10) {
     float mean_r = 0;
     float mean_p = 0;
 
-    state_node_t* current_sn = sn;
-    common_data->handler.make_checkpoint(1);
+    auto* common_data = sn->common_data;
+    auto& handler = common_data->handler;
+    handler.make_checkpoint(1);
 
     for (int i = 0; i < num_sim; ++i) {
-        float disc_r = 0;
-        float disc_p = 0;
-        float gamma_pow = 1.0;
-        float gammap_pow = 1.0;
-        bool terminal = current_sn->is_terminal();
-
-        while (!terminal && (num_steps--) > 0) {
-            A action = handler.get_action(
-                rng::unif_int(handler.num_actions())
-            );
-            auto [s, r, p, t] = handler.sim_action(action);
-            terminal = t;
-            disc_r += r * gamma_pow;
-            disc_p += p * gammap_pow;
-            gamma_pow *= common_data->gamma;
-            gammap_pow *= common_data->gammap;
-        }
-
+        auto [disc_r, disc_p] = v_rollout_sample(sn);
         mean_r += disc_r;
         mean_p += disc_p;
         handler.restore_checkpoint(1);
@@ -356,9 +371,10 @@ void rollout(SN* sn, bool penalty = false) {
 
     mean_r /= num_sim;
     mean_p /= num_sim;
-    current_sn->rollout_reward = mean_r;
-    // to disable rollout_pen add if (common_data->gammap > 0)
-    current_sn->rollout_penalty = penalty ? mean_p : 0;
+    sn->rollout_reward = mean_r;
+    sn->rollout_penalty = penalty ? mean_p : 0;
+
+    common_data->predictor.add_future(sn->state, mean_r, mean_p);
 }
 
 /** Propagate by point **/

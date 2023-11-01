@@ -201,6 +201,12 @@ void exact_pareto_propagate(SN* leaf) {
         // probs[s1] = p(s1 | s0, a1)
         auto probs = current_an->common_data->predictor.predict_probs(s0, a1);
         for (auto& [s1, child] : current_an->children) {
+            if (child->v.curve.num_samples == 0) {
+                std::get<0>(child->v.curve.points[0]) = child->rollout_reward;
+                std::get<1>(child->v.curve.points[0]) = child->rollout_penalty;
+                child->v.curve *= {current_sn->common_data->gamma, current_sn->common_data->gammap};
+                child->v.curve += {child->observed_reward, child->observed_penalty};
+            }
             state_curves.push_back(&(child->v.curve));
             weights.push_back(probs[s1]);
             state_refs.push_back(current_an->child_idx[s1]);

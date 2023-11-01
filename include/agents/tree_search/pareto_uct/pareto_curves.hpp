@@ -56,6 +56,15 @@ struct outcome_support {
         support.insert(support.end(), other.support.begin(), other.support.end());
         return *this;
     }
+
+    float thd_by_o(size_t o) const {
+        for (auto& [o_, thd] : support) {
+            if (o_ == o) {
+                return thd;
+            }
+        }
+        return 0;
+    }
 };
 
 struct EPC {
@@ -122,11 +131,22 @@ public:
         for (idx = 0; idx < points.size() && std::get<1>(points[idx]) <= thd; ++idx);
 
         if (idx == 0) {
+            if (debug) {
+                spdlog::debug("select: idx == 0");
+            }
             return {0, 0, 1, 0, true};
         } else if (idx == points.size()) {
+            if (debug) {
+                spdlog::debug("select: idx == points.size()");
+            }
             return {points.size() - 1, points.size() - 1, 0, 1, true};
         } else {
+            auto& [r1, p1, supp1] = points[idx - 1];
+            auto& [r2, p2, supp2] = points[idx];
             float prob2 = (thd - p1) / (p2 - p1);
+            if (debug) {
+                spdlog::debug("select: p1 = {}, p2 = {}, prob2 = {}, idx = {}", p1, p2, prob2, idx);
+            }
             return {idx - 1, idx, 1-prob2, prob2, false};
         }
     }

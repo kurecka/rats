@@ -98,7 +98,7 @@ struct select_action_pareto {
 
         if (a1 == a2 || mix.deterministic) {
             node->common_data->descent_thd = risk_thd;
-            return a1;
+            return mix(a1, a2);
         } else {
             auto [a, descent_thd] = mix(std::make_pair(a1, thd1), std::make_pair(a2, thd2));
             if (explore) {
@@ -145,21 +145,25 @@ struct descend_callback {
         auto& [r2, p2, supp2] = action->q.curve.points[mix.v2];
 
         if (supp1.support.size() > state_idx) {
-            auto& [o1, thd1] = supp1.support[state_idx];
-            auto& [o2, thd2] = supp2.support[state_idx];
+            float thd1 = supp1.thd_by_o(state_idx);
+            float thd2 = supp2.thd_by_o(state_idx);
             if (debug) {
+                spdlog::debug("p1: {}, p2: {}", p1, p2);
                 spdlog::debug("thd1: {}, thd2: {}", thd1, thd2);
-                spdlog::debug("o1: {}, o2: {}", to_string(o1), to_string(o2));
                 spdlog::debug("state_idx: {}", state_idx);
                 spdlog::debug("state: {}", to_string(s));
             }
-            // TODO: underflow
 
-            // if (mix.deterministic) {
-            //     common_data->sample_risk_thd = common_data->descent_thd;
-            // } else {
-            common_data->sample_risk_thd = mix.p1 * thd1 + mix.p2 * thd2;
-            // }            
+            if (!mix.deterministic) {
+                common_data->sample_risk_thd = mix.p1 * thd1 + mix.p2 * thd2;
+            } else if (mix.p1 > mix.p2) {
+                // p1==p2, thd1 == thd2
+                float overflow_ratio = (common_data->descent_thd - p1) / p1;
+                common_data->sample_risk_thd = (overflow_ratio + 1) * thd1;
+            } else {
+                float overflow_ratio = (common_data->descent_thd - p1) / (1 - p1);
+                common_data->sample_risk_thd = thd1 + overflow_ratio * (1 - thd1);
+            }
         }
     }
 };

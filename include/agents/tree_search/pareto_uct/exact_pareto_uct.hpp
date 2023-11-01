@@ -93,7 +93,10 @@ struct select_action_pareto {
         auto& [a2, thd2] = supp2.support[0];
 
         if (!explore) {
-            spdlog::debug("mixing actions: {}({}): {} {}({}): {}", a1, p1, mix.p1, a2, p2, mix.p2);
+            spdlog::debug("mixing actions: A{} A{}", a1, a2);
+            spdlog::debug(" p1: {}, p2: {}", p1, p2);
+            spdlog::debug(" r1: {}, r2: {}", r1, r2);
+            spdlog::debug(" prob1: {}, prob2: {}", mix.p1, mix.p2);
         }
 
         if (a1 == a2 || mix.deterministic) {
@@ -182,52 +185,41 @@ void exact_pareto_propagate(SN* leaf) {
         std::get<0>(current_sn->v.curve.points[0]) = current_sn->rollout_reward;
         std::get<1>(current_sn->v.curve.points[0]) = current_sn->rollout_penalty;
     }
-    
 
-    // if (!current_sn->is_terminal()) {
-    //     for (auto& child : current_sn->children) {
-    //         // spdlog::debug("Rollout: {}", child.rollout_penalty);
-    //         std::get<0>(child.q.curve.points[0]) = current_sn->rollout_reward;
-    //         std::get<1>(child.q.curve.points[0]) = current_sn->rollout_penalty;
-    //     }
-    // }
+    while (!current_sn->is_root()) {
+        current_sn->v.curve *= {current_sn->common_data->gamma, current_sn->common_data->gammap};
+        current_sn->v.curve += {current_sn->observed_reward, current_sn->observed_penalty};
 
-    while (true) {
-        std::vector<EPC*> action_curves;
-        for (auto& child : current_sn->children) {
-            action_curves.push_back(&child.q.curve);
-        }
-        EPC merged_curve = convex_hull_merge(action_curves);
-        ++current_sn->num_visits;
-        merged_curve.num_samples = current_sn->num_visits;
-        merged_curve *= {current_sn->common_data->gamma, current_sn->common_data->gammap};
-        merged_curve += {current_sn->observed_reward, current_sn->observed_penalty};
-        current_sn->v.curve = merged_curve;
-
-        if (current_sn->is_root()) {
-            break;
-        }
-
+        // merge state curves -----------------
         action_node_t* current_an = current_sn->get_parent();
         std::vector<EPC*> state_curves;
         std::vector<float> weights;
         weights.reserve(current_an->children.size());
         S s0 = current_an->parent->state;
         A a1 = current_an->action;
-        std::string weights_str;
         std::vector<size_t> state_refs;
+        // probs[s1] = p(s1 | s0, a1)
         auto probs = current_an->common_data->predictor.predict_probs(s0, a1);
         for (auto& [s1, child] : current_an->children) {
             state_curves.push_back(&(child->v.curve));
             weights.push_back(probs[s1]);
             state_refs.push_back(current_an->child_idx[s1]);
         }
-        merged_curve = weighted_merge(state_curves, weights, state_refs);
+        EPC merged_curve = weighted_merge(state_curves, weights, state_refs);
         ++current_an->num_visits;
         merged_curve.num_samples = current_an->num_visits;
         current_an->q.curve = merged_curve;
 
-        current_sn = current_an->get_parent();
+        // merge action curves -----------------
+        current_sn = current_an->parent;
+        std::vector<EPC*> action_curves;
+        for (auto& child : current_sn->children) {
+            action_curves.push_back(&child.q.curve);
+        }
+        merged_curve = convex_hull_merge(action_curves);
+        ++current_sn->num_visits;
+        merged_curve.num_samples = current_sn->num_visits;
+        current_sn->v.curve = merged_curve;
     }
 }
 
@@ -326,7 +318,7 @@ public:
         if (use_predictor) {
             pareto_predictor_rollout(leaf, common_data.sample_risk_thd);
         } else {
-            rollout(leaf);
+            rollout(leaf , true);
         }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();

@@ -24,66 +24,88 @@ map = """
 #######
 """
 
-set_log_level('info')
+map2 = """
+#######
+#BTTTG#
+#..T..#
+#.....#
+##TT#.#
+#GTTG.#
+#######
+"""
+
+map3 = """
+#############
+GGGG###.....#
+GGGGTB#.###.#
+GGGG#...#..G#
+#############
+"""
+
+map4 = """
+##########
+#TT.....T#
+#T.GTTT..#
+#T.T.TT..#
+#T..GTTT.#
+#T..TB...#
+##########
+"""
+
+map5 = """
+#####
+##.##
+##.##
+#B.T#
+##.##
+##.##
+##.T#
+##G##
+#####
+"""
+
+set_log_level('debug')
+
+# r = 0
+# p = 0
+
+# for i in range(100):
+#     e = envs.Hallway(map5, 1, 0.4)
+#     h = envs.EnvironmentHandler(e, 20)
+#     a = agents.ParetoUCT(
+#         h,
+#         max_depth=20, num_sim=-1, sim_time_limit=50, risk_thd=0.16, gamma=0.99,
+#         exploration_constant=1
+#     )
+
+#     e.reset()
+#     a.reset()
+#     while not a.get_handler().is_over():
+#         a.play()
+#         # print()
+#     h = a.get_handler()
+#     print(h.get_reward())
+#     r += (h.get_reward() - r) / (i+1)
+#     p += (h.get_penalty() - p) / (i+1)
+#     print(f'{i}: r={r} p={p}')
 
 
-e = envs.Hallway(map, 0.2)
-# e = envs.InvestorEnv(2, 20)
-h = envs.EnvironmentHandler(e, 30)
+e = envs.Hallway(map5, 1, 0.4)
+h = envs.EnvironmentHandler(e, 20)
 a = agents.ParetoUCT(
     h,
-    max_depth=100, num_sim=-1, sim_time_limit=200, risk_thd=0.5, gamma=0.995,
-    exploration_constant=5, risk_exploration_ratio=0.05, graphviz_depth=3
+    max_depth=20, num_sim=-1, sim_time_limit=50, risk_thd=0.16, gamma=0.99,
+    exploration_constant=1, graphviz_depth=3
 )
 
-r = 0
-p = 0
-wr = 0
-wp = 0
+e.reset()
+a.reset()
 
-for i in range(10000):
-    print(i);
-    e.reset()
-    a.reset()
-    t=0
-    while not a.get_handler().is_over():
-        print(f'{t}: {a.get_handler().get_current_state()}')
-        a.play()
-        with open(f"../logs/tree_{t}.dot", "w") as f:
-            f.write(a.get_graphviz())
-        t+=1
-    a.train()
-
-    h = a.get_handler()
-    r += h.get_reward()
-    wr += (h.get_reward() - wr) * 0.05
-    p += h.get_penalty()
-    wp += (h.get_penalty() - wp) * 0.05
-    print()
-    print(f'reward: {h.get_reward()}, penalty: {h.get_penalty()}')
-    print(f'mean reward: {r / (i+1)}, mean penalty: {p / (i+1)}')
-    print(f'window reward: {wr}, window penalty: {wp}')
-    print(f"state curve 8: {a.get_state_curve((8, 7))}")
-    print(f"state curve (9, 7): {a.get_state_curve((9, 7))}")
-    print(f"state curve (15, 7): {a.get_state_curve((15, 7))}")
-    print(f"state curve (17, 7): {a.get_state_curve((17, 7))}")
-    print(f"state curve (10, 7): {a.get_state_curve((10, 7))}")
-    print(f"state curve (23, 7): {a.get_state_curve((23, 7))}")
-    print(f"state curve (23, 6): {a.get_state_curve((23, 6))}")
-    print(f"state curve (24, 7): {a.get_state_curve((24, 7))}")
-    print(f"state curve (24, 6): {a.get_state_curve((24, 6))}")
-    print(f"state curve (12,6): {a.get_state_curve((12, 6))}")
-    # input()
-
-
-# e.reset()
-# a.reset()
-
-# i = 0
-# while not a.get_handler().is_over():
-# # for i in range(30):
-#     print(f'{i}: {a.get_handler().get_current_state()}')
-#     a.play()
-#     with open(f"../logs/tree_{i}.dot", "w") as f:
-#         f.write(a.get_graphviz())
-#     i+=1
+i = 0
+while not a.get_handler().is_over():
+# for i in range(5):
+    print(f'{i}: {a.get_handler().get_current_state()}')
+    a.play()
+    with open(f"../logs/tree_{i}.dot", "w") as f:
+        f.write(a.get_graphviz())
+    i+=1

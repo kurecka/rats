@@ -120,12 +120,13 @@ struct map_manager {
         int new_pos = new_y * width + new_x;
         int new_gold_mask = gold_mask;
         bool hit = false;
+        if (data[new_pos] == WALL) {
+            new_pos = pos;
+            hit = true;
+        }
         if (data[new_pos] >= 0) {
             uint64_t all = -1;
             new_gold_mask &= all ^ (1 << data[new_pos]);
-        } else if (data[new_pos] == WALL) {
-            new_pos = pos;
-            hit = true;
         }
         return {new_pos, new_gold_mask, data[new_pos], hit};
     }
@@ -143,8 +144,9 @@ private:
     std::map<size_t, state_t> checkpoints;
     map_manager m;
     float trap_prob;
+    float slide_prob;
 public:
-    hallway(std::string, float trap_prob = 0.2f);
+    hallway(std::string, float trap_prob = 0.2f, float slide_prob=0.f);
 
     std::string name() const override { return "Hallway"; }
 
@@ -164,8 +166,8 @@ public:
     void reset() override;
 };
 
-hallway::hallway(std::string map_str, float trap_prob)
-: m(map_str), trap_prob(trap_prob)
+hallway::hallway(std::string map_str, float trap_prob, float slide_prob)
+: m(map_str), trap_prob(trap_prob), slide_prob(slide_prob)
 {
     reset();
 }
@@ -175,8 +177,14 @@ outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
         throw std::runtime_error("Cannot play action: environment is over");
     }
     auto [new_pos, new_gold_mask, tile, hit] = m.move(action, position, gold_mask);
+    if (rng::unif_float() < slide_prob && new_pos != position) {
+        size_t slide_action = (action + 3 + 2 * rng::unif_int(2)) % 4;
+        std::tie(new_pos, new_gold_mask, tile, hit) = m.move(slide_action, new_pos, gold_mask);
+    }
+    
+
     float reward = new_gold_mask != gold_mask;
-    if (hit) reward -= 0.01f;
+    if (hit) reward -= 0.00001f;
     float penalty = (tile == map_manager::TRAP) && (rng::unif_float() < trap_prob);
     if (penalty > 0) { new_pos = -1; }
     over = (new_gold_mask == 0) || penalty > 0;

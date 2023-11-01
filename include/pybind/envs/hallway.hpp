@@ -10,7 +10,7 @@ namespace rats::py {
 template <typename T>
 void register_hallway(py::module &m, const T& env_type) {
     py::class_<hallway>(m, "Hallway", env_type)
-        .def(py::init<std::string, float>(), py::arg("map"), py::arg("trap_prob"));
+        .def(py::init<std::string, float, float>(), py::arg("map"), py::arg("trap_prob"), py::arg("slide_prob") = 0.0f);
 }
 
 } // end namespace rats::py

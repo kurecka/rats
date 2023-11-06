@@ -1,9 +1,13 @@
 from dash import Dash, html, dcc, callback, Output, Input, dash_table, dcc
 import plotly.express as px
+import plotly.graph_objs as go
 import pandas as pd
 import os
 from pathlib import Path
 import yaml
+from PIL import Image, ImageDraw
+import io
+import subprocess
 
 
 def process_run_results(run_directory):
@@ -65,8 +69,8 @@ class ExperimentLoader:
                 time = p
         return date, time
     
-    def load_experiment_descriptions(self):
-        if self.exp_descs is not None:
+    def load_experiment_descriptions(self, force=False):
+        if self.exp_descs is not None and not force:
             return
         print('Loading experiment descriptions...')
         res = []
@@ -98,6 +102,8 @@ class ExperimentLoader:
                 'gamma': config['gamma'],
                 'agent_spec': agent_spec,
             }
+            if 'map' in config['env']:
+                desc['map'] = config['env']['map']
             res.append(desc)
         self.exp_descs = pd.DataFrame(res)
         self.exp_descs.sort_values(by=['date', 'time', 'tag'], inplace=True, ascending=False)
@@ -161,6 +167,50 @@ def df2table(df, id=''):
     )
 
 
+def get_map(map):
+    grid = []
+    rows = [row.strip() for row in map.split('\n') if row.strip()]
+    rows.reverse()
+    numerical_grid = []
+    for row in rows:
+        numerical_row = []
+        for char in row:
+            if char == '#':
+                numerical_row.append(0)
+            elif char == 'T':
+                numerical_row.append(1)
+            elif char == '.':
+                numerical_row.append(2)
+            elif char == 'G':
+                numerical_row.append(3)
+            elif char == 'B':
+                numerical_row.append(4)
+        numerical_grid.append(numerical_row)
+    
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=numerical_grid,
+            colorscale = [
+                '#000000',  # Black
+                '#0000FF',  # Blue
+                '#808080',  # Gray
+                '#FFFF00',  # Yellow
+                '#008000'   # Green
+            ],
+            showscale=False
+        ),
+        layout=go.Layout(
+            width=len(rows[0]) * 30,
+            height=len(rows) * 30,
+            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            showlegend=False
+        )
+    )
+
+    return fig
+
 class main():
     app = Dash(__name__)
 
@@ -174,11 +224,25 @@ class main():
 
     app.layout = html.Div([
         html.H1(children='RATS Dashboard', style={'textAlign':'center'}),
-        df2table(loader.simplified_exp_desc(), id='datatable-interactivity'),
+        html.Button("Reload", id="reload-btn", n_clicks=0),
+        html.Button("Collect", id="collect-btn", n_clicks=0),
+        html.Div(style={'display': 'hidden'}, id='hidden-div'),
+        html.Div(
+            id='table-container',
+            children=[
+                df2table(loader.simplified_exp_desc(), id='datatable-interactivity'),
+            ]
+        ),
         html.Div(id='datatable-interactivity-container'),
+        html.Div(
+            id='map-container',
+            style={'display': 'flex', 'justify-content': 'center'},  # Center align the figure
+            children=[
+                dcc.Graph(id='map')
+            ]
+        ),
         dcc.Graph(figure={}, id='reward-graph'),
         dcc.Graph(figure={}, id='penalty-graph'),
-        # dcc.Graph(figure={}, id='graph')
     ])
 
     @app.callback(
@@ -191,21 +255,53 @@ class main():
                 'if': { 'row_index': derived_virtual_selected_rows[0] },
                 'background_color': '#D2F3FF'
             }]
-
     
     @app.callback(
+        Output('table-container', 'children'),
+        Input('reload-btn', 'n_clicks'),
+        Input('table-container', 'children')
+    )
+    def reload(n_clicks, children):
+        if n_clicks > 0:
+            loader.load_experiment_descriptions(force=True)
+            subprocess.run(['raylite', 'collect', '../ray_launch.yaml'])
+            return df2table(loader.simplified_exp_desc(), id='datatable-interactivity')
+        else:
+            return children
+    
+
+    @app.callback(
+        Output('hidden-div', 'children'),
+        Input('collect-btn', 'n_clicks')
+    )
+    def collect(n_clicks):
+        if n_clicks > 0:
+            subprocess.run(['raylite', 'collect', '../ray_launch.yaml'])
+
+
+    @app.callback(
         Output('datatable-interactivity-container', "children"),
+        Output('map', "figure"),
+        Output('map-container', 'style'),
         Input('datatable-interactivity', "derived_virtual_data"),
         Input('datatable-interactivity', "derived_virtual_selected_rows")
     )
     def update_exp_table(rows, derived_virtual_selected_rows):
         if not derived_virtual_selected_rows:
-            return None
+            return None, {}, {'display': 'none'}
         selected_row = derived_virtual_selected_rows[0]
         date, time, tag = rows[selected_row]['date'], rows[selected_row]['time'], rows[selected_row]['tag']
         df = loader.get_exp_data(date, time, tag)
         if df is not None:
-            return df2table(df)
+            if 'map' in df.columns:
+                heatmap = df.iloc[0]['map']
+                heatmap = get_map(heatmap), {'display': 'flex', 'justify-content': 'center'}
+            else:
+                heatmap = {}, {'display': 'none'}
+            
+            df = df.drop(columns=['experiment_dir', 'date', 'time', 'tag', 'env', 'map', 'rats_version'])
+
+            return df2table(df), *heatmap
     
     @callback(
         Output(component_id='reward-graph', component_property='figure'),
@@ -224,7 +320,11 @@ class main():
         
         df.sort_values(by='thd', inplace=True)
         g1 = px.line(df, x='thd', y='reward_mean', title='Mean reward', color='agent_spec')
-        g2 = px.line(df, x='thd', y='penalty_mean', title='Mean reward', color='agent_spec')
+        g2 = px.line(df, x='thd', y='penalty_mean', title='Mean penalty', color='agent_spec')
+
+        diagonal_line = pd.DataFrame({'x': df['thd'], 'y': df['thd']})
+        g2.add_scatter(x=diagonal_line['x'], y=diagonal_line['y'], mode='lines', line=dict(color='black', width=1, dash='dash'))
+
         return g1, g2
 
     app.run(debug=True)

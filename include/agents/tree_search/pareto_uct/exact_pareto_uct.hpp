@@ -172,6 +172,30 @@ struct descend_callback {
 };
 
 template<typename SN>
+void build_leaf_curve(SN* leaf) {
+    if (leaf->v.curve.num_samples > 0 || leaf->common_data->use_predictor) {
+        return;
+    }
+    if (leaf->rollout_penalty <= 0) {
+        leaf->v.curve.points[0] = {
+            leaf->rollout_reward,
+            leaf->rollout_penalty,
+            {}
+        };
+    } else if (leaf->rollout_reward > 0) {
+        leaf->v.curve.points.push_back({
+            leaf->rollout_reward,
+            leaf->rollout_penalty,
+            {}
+        });
+    }
+
+    leaf->v.curve *= {leaf->common_data->gamma, leaf->common_data->gammap};
+    leaf->v.curve += {leaf->observed_reward, leaf->observed_penalty};
+    leaf->v.curve.num_samples = 1;
+}
+
+template<typename SN>
 void exact_pareto_propagate(SN* leaf) {
     using state_node_t = SN;
     using S = typename SN::S;
@@ -180,16 +204,9 @@ void exact_pareto_propagate(SN* leaf) {
 
     state_node_t* current_sn = leaf;
 
-    // Already updated in rollout if predictor is used
-    if (!current_sn->common_data->use_predictor) {
-        std::get<0>(current_sn->v.curve.points[0]) = current_sn->rollout_reward;
-        std::get<1>(current_sn->v.curve.points[0]) = current_sn->rollout_penalty;
-    }
+    build_leaf_curve(current_sn);
 
     while (!current_sn->is_root()) {
-        current_sn->v.curve *= {current_sn->common_data->gamma, current_sn->common_data->gammap};
-        current_sn->v.curve += {current_sn->observed_reward, current_sn->observed_penalty};
-
         // merge state curves -----------------
         action_node_t* current_an = current_sn->get_parent();
         std::vector<EPC*> state_curves;
@@ -201,12 +218,7 @@ void exact_pareto_propagate(SN* leaf) {
         // probs[s1] = p(s1 | s0, a1)
         auto probs = current_an->common_data->predictor.predict_probs(s0, a1);
         for (auto& [s1, child] : current_an->children) {
-            if (child->v.curve.num_samples == 0) {
-                std::get<0>(child->v.curve.points[0]) = child->rollout_reward;
-                std::get<1>(child->v.curve.points[0]) = child->rollout_penalty;
-                child->v.curve *= {current_sn->common_data->gamma, current_sn->common_data->gammap};
-                child->v.curve += {child->observed_reward, child->observed_penalty};
-            }
+            build_leaf_curve(child.get());
             state_curves.push_back(&(child->v.curve));
             weights.push_back(probs[s1]);
             state_refs.push_back(current_an->child_idx[s1]);
@@ -226,6 +238,9 @@ void exact_pareto_propagate(SN* leaf) {
         ++current_sn->num_visits;
         merged_curve.num_samples = current_sn->num_visits;
         current_sn->v.curve = merged_curve;
+
+        current_sn->v.curve *= {current_sn->common_data->gamma, current_sn->common_data->gammap};
+        current_sn->v.curve += {current_sn->observed_reward, current_sn->observed_penalty};
     }
 }
 
@@ -324,7 +339,7 @@ public:
         if (use_predictor) {
             pareto_predictor_rollout(leaf, common_data.sample_risk_thd);
         } else {
-            rollout(leaf , true);
+            rollout(leaf, false);
         }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();

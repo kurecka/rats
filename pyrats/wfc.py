@@ -100,9 +100,9 @@ def main(width=8, height=8):
 #.#.T..TTT.#TT##
 #.#G#......#G.G#
 ##TT##.TTT.##T##
-#.T..T..GT.. TG#
+#.T..T..GT...TG#
 #.T..T.TTT...T.#
-#GT....GT... T.#
+#GT....GT....T.#
 ################
 """
 

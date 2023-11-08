@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 #include <map>
-// #include <map>
 
 namespace rats {
 namespace ts {
@@ -217,10 +216,10 @@ public:
         MPConstraint* const risk_cons = solver->MakeRowConstraint(0.0, risk_thd); // risk
         // spdlog::debug("risk_thd: {}", risk_thd);
 
-        MPVariable* const r = solver->MakeIntVar(1, 1, "r"); // (1)
+        // MPVariable* const r = solver->MakeIntVar(1, 1, "r"); // (1)
 
-        MPConstraint* const action_sum = solver->MakeRowConstraint(0, 0); // setting 0 0 for equality could cause rounding problems
-        action_sum->SetCoefficient(r, -1); // sum of action prob == prob of parent (2)
+        MPConstraint* const action_sum = solver->MakeRowConstraint(1, 1); // setting 0 0 for equality could cause rounding problems
+        // action_sum->SetCoefficient(r, -1); // sum of action prob == prob of parent (2)
 
         auto& actions = root->actions;
         auto& children = root->children;
@@ -316,10 +315,10 @@ public:
 
         MPObjective* const objective = solver->MutableObjective();
 
-        MPVariable* const r = solver->MakeIntVar(1, 1, "r"); // (1)
+        // MPVariable* const r = solver->MakeIntVar(1, 1, "r"); // (1)
 
-        MPConstraint* const action_sum = solver->MakeRowConstraint(0, 0); // setting 0 0 for equality could cause rounding problems
-        action_sum->SetCoefficient(r, -1); // sum of action prob == prob of parent (2)
+        MPConstraint* const action_sum = solver->MakeRowConstraint(1, 1); // setting 0 0 for equality could cause rounding problems
+        // action_sum->SetCoefficient(r, -1); // sum of action prob == prob of parent (2)
 
         auto& actions = root->actions;
         auto& children = root->children;

@@ -64,7 +64,16 @@ map5 = """
 #####
 """
 
-set_log_level('debug')
+map6 = """
+#####
+#B..#
+#T..#
+#G..#
+#####
+"""
+
+
+# set_log_level('debug')
 
 # r = 0
 # p = 0
@@ -90,22 +99,23 @@ set_log_level('debug')
 #     print(f'{i}: r={r} p={p}')
 
 
-e = envs.Hallway(map5, 1, 0.4)
-h = envs.EnvironmentHandler(e, 20)
-a = agents.ParetoUCT(
+e = envs.Hallway(map5, 0.2, slide_prob=0.4)
+h = envs.EnvironmentHandler(e, 100)
+a = agents.RAMCP(
     h,
-    max_depth=20, num_sim=-1, sim_time_limit=50, risk_thd=0.16, gamma=0.99,
-    exploration_constant=1, graphviz_depth=3
+    max_depth=70, num_sim=0, sim_time_limit=300, risk_thd=0.16, gamma=0.99,
+    exploration_constant=5, graphviz_depth=2
 )
 
 e.reset()
 a.reset()
 
 i = 0
-while not a.get_handler().is_over():
-# for i in range(5):
+# while not a.get_handler().is_over():
+for i in range(100):
     print(f'{i}: {a.get_handler().get_current_state()}')
     a.play()
-    with open(f"../logs/tree_{i}.dot", "w") as f:
+    with open(f"../logs/tree_0.dot", "w") as f:
         f.write(a.get_graphviz())
+    input()
     i+=1

@@ -60,6 +60,7 @@ public:
     bool is_terminal() const {return terminal;}
     bool is_root() const {return parent == nullptr;}
     bool is_leaf() const {return children.empty();}
+    bool is_leaf_state() const {return leaf; }
 };
 
 template<typename T>

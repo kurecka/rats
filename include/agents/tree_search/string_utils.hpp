@@ -9,6 +9,12 @@ namespace rats {
     template<typename ...Args>
     std::string to_string(const ts::state_node<Args...>& node) {
         std::string str = "State ("+to_string(node.state)+"):\n";
+        if (node.is_leaf()) {
+            str += "leaf\\n";
+        }
+        if (node.is_leaf_state()) {
+            str += "leaf state\\n";
+        }
         str += "N=" + to_string(node.num_visits);
         str += "\\nr=" + to_string(node.observed_reward);
         str += ", p=" + to_string(node.observed_penalty);

@@ -21,57 +21,6 @@ struct dual_uct_data {
     predictor_manager<S, A> predictor;
 };
 
-template<typename SN>
-struct select_action_dual {
-    size_t operator()(SN* node, bool explore) const {
-        float risk_thd = node->common_data->risk_thd;
-        float lambda = node->common_data->lambda;
-        float c = node->common_data->exploration_constant;
-
-        auto& children = node->children;
-        
-        float min_v = children[0].q.first - lambda * children[0].q.second;
-        float max_v = min_v;
-        std::vector<float> uct_values(children.size());
-        for (size_t i = 0; i < children.size(); ++i) {
-            float val = children[i].q.first - lambda * children[i].q.second;
-            min_v = std::min(min_v, val);
-            max_v = std::max(max_v, val);
-            uct_values[i] = val;
-        }
-
-        for (size_t i = 0; i < children.size(); ++i) {
-            uct_values[i] += explore * c * (max_v - min_v) * static_cast<float>(
-                sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-            );
-            spdlog::debug("node: {}, i: {}", node->num_visits, children[i].num_visits);
-        }
-
-        float best_reward = *std::max_element(uct_values.begin(), uct_values.end());
-        float eps = (max_v - min_v) * 0.1f;
-        std::vector<size_t> eps_best_actions;
-        for (size_t i = 0; i < children.size(); ++i) {
-            if (uct_values[i] >= best_reward - eps) {
-                eps_best_actions.push_back(i);
-            }
-        }
-        
-        std::vector<float> rs(eps_best_actions.size());
-        for (size_t idx : eps_best_actions) {
-            rs[idx] = children[idx].q.first;
-        }
-
-        std::vector<float> ps(eps_best_actions.size());
-        for (size_t idx : eps_best_actions) {
-            ps[idx] = children[idx].q.second;
-        }
-
-        auto mix = greedy_mix(rs, ps, risk_thd);
-        size_t sample = mix();
-        node->common_data->descent_risk_thd = mix.deterministic ? risk_thd : ps[sample];
-        return eps_best_actions[sample];
-    }
-};
 
 template<typename SN>
 struct select_action_dual_anal {
@@ -115,40 +64,19 @@ struct select_action_dual_anal {
 
         size_t a1 = 0, a2 = 0;
         float low_p = 1, high_p = 0;
-        float low_r = 0, high_r = 0;
         for (size_t idx : eps_best_actions) {
-            float p = children[idx].q.second;
-            float r = children[idx].q.first;
-
-            // if (not_sim)
-                // spdlog::debug("idx: {}, p: {}", idx, p);
-
-            if (p <= low_p) {
-                low_p = p;
-                a1 = idx;
-                low_r = r;
-            }
-
-            if (p >= high_p) {
-                high_p = p;
-                a2 = idx;
-                high_r = r;
-            }
+            auto& [p, r] = children[idx].q;
+            if (p <= low_p) { low_p = p; a1 = idx; }
+            if (p >= high_p) { high_p = p; a2 = idx; }
         }
 
-        float p2;
-        if (risk_thd <= low_p) {
-            p2 = 0;
-        } else if (risk_thd >= high_p) {
-            p2 = 1;
-        } else {
-            p2 = (risk_thd - low_p) / (high_p - low_p);
+        if (a1 == a2) {
+            node->common_data->descent_risk_thd = risk_thd;
+            return a1;
         }
 
-        // if (not_sim)
-        //     spdlog::debug("a1: {}, low_r: {}, low_p: {}, a2: {}, high_r: {}, high_p: {}, p2: {}", a1, low_r, low_p, a2, high_r, high_p, p2);
-
-        if (rng::unif_float() < p2) {
+        float prob2 = std::clamp((risk_thd - low_p) / (high_p - low_p), 0.f, 1.f);
+        if (rng::unif_float() < prob2) {
             node->common_data->descent_risk_thd = std::max(risk_thd, high_p);
             return a2;
         } else {

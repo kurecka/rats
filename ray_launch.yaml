@@ -12,6 +12,7 @@ docker:
         - -v /var/data/xkurecka/rats/conf:/work/rats/conf
         - -v /var/data/xkurecka/rats/outputs:/work/rats/outputs
         - -v /var/data/xkurecka/rats/pybind:/work/rats/pybind
+        - -v /var/data/xkurecka/rats/tests:/work/rats/tests
         # - -v /var/data/xkurecka/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
         - -u 19281:10100
 

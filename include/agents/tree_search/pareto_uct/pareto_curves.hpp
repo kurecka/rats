@@ -1,5 +1,6 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
 #include <Eigen/Dense>
 #include "utils.hpp"
 #include "../../../string_utils.hpp"

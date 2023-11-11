@@ -7,7 +7,7 @@ option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defi
                                  Set this to OFF if you want to provide your own warning parameters." ON)
 option(ENABLE_LTO "Enable link time optimization" ON)
 option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
-                        Tests in tests/*.cpp will still be enabled." ON)
+                        Tests in tests/*.cpp will still be enabled." OFF)
 option(PEDANTIC "Enable pedantic compiler warnings." ON)
 
 # Include stuff.
@@ -49,9 +49,6 @@ set(SOURCES          # All .cpp files in src/
     src/rand.cpp
     src/utils.cpp
 )
-set(TESTFILES        # All .cpp files in tests/
-    tests/main.cpp
-)
 set(LIBRARY_NAME rat)  # Default name for the library built from src/*.cpp (change if you wish)
 
 # --------------------------------------------------------------------------------
@@ -85,17 +82,19 @@ endif()
 # --------------------------------------------------------------------------------
 
 # Add the executeble
-# set(MAIN_APP_NAME rats_app)
 # add_executable(${MAIN_APP_NAME} app/main.cpp)
+set(MAIN_TESTS_NAME regtests)
+add_executable(${MAIN_TESTS_NAME} tests/main.cpp)
 
 # Add the python binding
 set(MAIN_MODULE_NAME rats)
 pybind11_add_module(${MAIN_MODULE_NAME} pybind/interface.cpp)
 
 # foreach(_target ${MAIN_APP_NAME} ${MAIN_MODULE_NAME})
-foreach(_target ${MAIN_MODULE_NAME})
+foreach(_target ${MAIN_MODULE_NAME} ${MAIN_TESTS_NAME})
 # Link libraries
 target_link_libraries(${_target} PRIVATE ${LIBRARY_NAME})  # Link the executable to library (if it uses it).
+# target_link_libraries(${_target} PUBLIC doctest)
 target_link_libraries(${_target} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 target_link_libraries(${_target} PUBLIC ortools::ortools)
 target_link_libraries(${_target} PRIVATE pybind11::pybind11)
@@ -113,12 +112,14 @@ endforeach()
 
 # Set the properties you require, e.g. what C++ standard to use.
 set_target_properties(
-    ${LIBRARY_NAME} ${MAIN_APP_NAME} ${MAIN_MODULE_NAME}
+    # ${LIBRARY_NAME} ${MAIN_APP_NAME} ${MAIN_MODULE_NAME}
+    ${LIBRARY_NAME} ${MAIN_TESTS_NAME} #${MAIN_MODULE_NAME}
       PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
         COMPILE_OPTIONS "-O2"
+        # COMPILE_OPTIONS "-fmax-errors=1"
 )
 
 # Set up tests (see tests/CMakeLists.txt).

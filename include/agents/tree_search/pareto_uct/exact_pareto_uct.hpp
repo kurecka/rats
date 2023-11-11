@@ -427,6 +427,3 @@ public:
 } // namespace ts
 
 } // namespace rats
-
-
-#include "test.hpp"

@@ -143,7 +143,7 @@ template<typename AN>
 void expand_action(
     AN* an, typename AN::S s, float r, float p, bool t, float future_r, float future_p
 ) {
-    using state_node_t = AN::state_node_t;
+    using state_node_t = typename AN::state_node_t;
 
     an->parent->leaf = false;
     an->child_idx[s] = an->children.size();
@@ -164,7 +164,7 @@ template<typename AN>
 void full_expand_action(
     AN* an, typename AN::S s, float r, float p, bool t
 ) {
-    using state_node_t = AN::state_node_t;
+    using state_node_t = typename AN::state_node_t;
 
     auto& predictor = an->common_data->predictor;
     typename AN::A a1 = an->action;
@@ -186,8 +186,8 @@ void full_expand_action(
 template<typename SN, typename select_t, typename descend_cb_t>
 SN* select_leaf(SN* root, bool explore = true, int max_depth = 10) {
     using state_node_t = SN;
-    using action_node_t = SN::action_node_t;
-    using A = SN::A;
+    using action_node_t = typename SN::action_node_t;
+    using A = typename SN::A;
     constexpr static auto select = select_t();
     constexpr static auto descend_cb = descend_cb_t();
 
@@ -212,7 +212,7 @@ SN* select_leaf(SN* root, bool explore = true, int max_depth = 10) {
 template<typename SN, typename prop_v_t, typename prop_q_t>
 void propagate(SN* leaf) {
     using state_node_t = SN;
-    using action_node_t = SN::action_node_t;
+    using action_node_t = typename SN::action_node_t;
 
     state_node_t* current_sn = leaf;
     auto common_data = current_sn->common_data;
@@ -319,7 +319,7 @@ struct void_fn {
 template<typename SN>
 std::pair<float, float> v_rollout_sample(SN* sn) {
     using state_node_t = SN;
-    using A = SN::A;
+    using A = typename SN::A;
 
     auto common_data = sn->common_data;
     auto& handler =  common_data->handler;

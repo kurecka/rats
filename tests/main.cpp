@@ -1,6 +1,14 @@
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include "doctest/doctest.h"
-#include "agents.hpp"
+#include "unittest.hpp"
+#include "test_example.hpp"
+#include "test_agents.hpp"
 
-// This is all that is needed to compile a test-runner executable.
-// More tests can be added here, or in a new tests/*.cpp file.
+std::list<UnitTest*> UnitTest::testList;
+
+int main(){
+    register_example_tests();
+    register_agents_tests();
+    
+    RunTests()
+	
+    return 0;
+}

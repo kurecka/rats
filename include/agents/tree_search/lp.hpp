@@ -160,9 +160,11 @@ public:
             set_penalty_objective(root);
             solver->Solve();
             double relaxed_thd = objective->Value();
+            spdlog::debug("Relaxed risk threshold: {}", relaxed_thd);
 
             // Solve again with the relaxed threshold
             set_payoff_objective(root, relaxed_thd + 1e-6);
+            solver->Solve();
         }
 
         // Collect the root node's policy probabilities

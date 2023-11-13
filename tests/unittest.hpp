@@ -26,21 +26,24 @@ class UnitTest {
         void runTests();
 
         template<typename T>
-        inline bool expectEQ(const T& arg1, const T& arg2) {
+        inline bool expectEQ(const T& arg1, const T& arg2, std::string file, size_t line) {
             bool isTrue{arg1 == arg2};
             if(!isTrue) {
-                msg = "ExpectEQ: " + std::to_string(arg1) 
+                msg = file + ":" + std::to_string(line) + " ";
+                msg += "ExpectEQ: " + std::to_string(arg1) 
                     + " != " + std::to_string(arg2);
             }
             return isTrue;
         }
 
-        template<typename T1, typename T2>
-        inline bool areClose(const T1& arg1, const T2& arg2, const T2& tol) {
+        template<typename T1, typename T2, typename T3>
+        inline bool areClose(const T1& arg1, const T2& arg2, const T3& tol, std::string file, size_t line) {
             bool isTrue{std::abs(arg1 - arg2) < tol};
             if(!isTrue) {
-                msg = "Close: " + std::to_string(arg1) 
+                msg = file + ":" + std::to_string(line) + " ";
+                msg += "AreClose: " + std::to_string(arg1) 
                     + " !~ " + std::to_string(arg2);
+                msg += " +- " + std::to_string(tol) + ")";
             }
             return isTrue;
         }
@@ -105,7 +108,11 @@ DefineTest(Module, TestName)
     UnitTest::getInstance().runTests();
     
 #define ExpectEQ(arg1, arg2)                              \
-    isTrue &= expectEQ(arg1, arg2);
+    isTrue &= expectEQ(arg1, arg2, __FILE__, __LINE__); if (!isTrue) return;
 
-#define AreClose(arg1, arg2)                      \
-    isTrue &= areClose(arg1, arg2, 1e-6f);
+
+#define AreClose(arg1, arg2)                              \
+    isTrue &= areClose(arg1, arg2, 1e-6f, __FILE__, __LINE__); if (!isTrue) return;
+
+#define AreCloseEps(arg1, arg2, eps)                      \
+    isTrue &= areClose(arg1, arg2, eps, __FILE__, __LINE__); if (!isTrue) return;

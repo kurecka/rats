@@ -29,15 +29,19 @@ def run(agent, env, rats_version, num_episodes=1, sys_path=[]):
 
     for i in range(num_episodes):
         print("Episode {}/{}".format(i+1, num_episodes))
-        env.reset()
-        agent.reset()
-        while not agent.get_handler().is_over():
-            agent.play()
-        if agent.is_trainable():
-            agent.train()
-    
-        h = agent.get_handler()
-        results.append((h.get_reward(), h.get_penalty()))
+        try:
+            env.reset()
+            agent.reset()
+            while not agent.get_handler().is_over():
+                agent.play()
+            if agent.is_trainable():
+                agent.train()
+        
+            h = agent.get_handler()
+            results.append((h.get_reward(), h.get_penalty()))
+        except Exception as e:
+            print("Exception in episode {}: {}".format(i, e))
+            results.append((None, None))
 
     return results
 

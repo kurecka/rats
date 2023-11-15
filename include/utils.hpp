@@ -42,7 +42,7 @@ struct mixture {
     }
 
     size_t sample() {
-        last_sampled_action = rng::unif_int(0, 1) < probs[0] ? 0 : 1;
+        last_sampled_action = rng::unif_float(0, 1) < probs[0] ? 0 : 1;
         return vals[last_sampled_action];
     }
 

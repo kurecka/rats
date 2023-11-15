@@ -77,7 +77,6 @@ struct select_action_pareto {
                     p_uct = 0;
                 } else {
                     r_uct = c * powf(static_cast<float>(node->num_visits), 0.8f) / child.q.curve.num_samples;
-                    p_uct = 0;
                     // p_uct = -c * powf(static_cast<float>(node->num_visits), 0.6f) / child.q.curve.num_samples;
                 }
                 p_ucts.push_back(p_uct);

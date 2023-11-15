@@ -95,10 +95,12 @@ conda env export --no-build --from-history | grep -v prefix > conda_env.yaml
 
 
 ## Run experiment through ray
+If you have your own ray cluster running or want to run it on a local machine, you can run the experiment through ray:
 ```
 python experiment.py -m +task=train_runs +agent=pareto_uct ++agent.exploration_constant=1,5,15 ++risk_thd=0,0.1,0.2,0.3,0.5 ++agent.sim_time_limit=10,50,200 +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01,0.1,1
+```
 
-python experiment.py -m +task=train_runs +agent=pareto_uct ++agent.exploration_constant=1  ++agent.sim_time_limit=10  +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01
-
-python experiment.py -m +task=train_runs +agent=pareto_uct ++agent.exploration_constant=1,5,15 ++risk_thd=0,0.1,0.2,0.3,0.5 ++agent.sim_time_limit=10,50,200 +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01,0.1,1 ++agent.use_predictor=true,false
+If you want to run to the experiment ont erinys cluster, you can log in to erinys02 and run the following command:
+```
+ray job submit --no-wait -- sh -c 'cd /work/rats/pyrats && python experiment.py -m +task=indep_runs +agent=dual_uct ++agent.exploration_constant=0.1,1,5 ++agent.sim_time_limit=10,50,100 +env=slide_hw ++metadata.tag=dual-slide_hw ++task.num_episodes=30 ++gamma=0.99999 ++risk_thd=0,0.16,0.2'
 ```

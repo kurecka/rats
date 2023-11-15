@@ -19,7 +19,7 @@ struct dual_uct_data {
     int num_steps;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
-    action_policy policy;
+    mixture mix;
 };
 
 
@@ -67,9 +67,8 @@ struct select_action_dual {
             if (penalty >= high_penalty) { high_penalty = penalty; high_action = idx; }
         }
 
-        node->common_data->policy = action_policy(low_action, high_action, low_penalty, high_penalty, risk_thd);
-        size_t sample = node->common_data->policy.sample();
-        return sample;
+        node->common_data->mix = mixture(low_action, high_action, low_penalty, high_penalty, risk_thd);
+        return node->common_data->mix.sample();
     }
 };
 
@@ -197,7 +196,7 @@ public:
             immediate_penalty += outcome_prob * observed_penalty;
         }
 
-        common_data.risk_thd = std::max(common_data.policy.update_thd(common_data.risk_thd, immediate_penalty), 0.0f);
+        common_data.risk_thd = std::max(common_data.mix.update_thd(common_data.risk_thd, immediate_penalty), 0.0f);
 
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);

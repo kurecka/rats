@@ -9,7 +9,7 @@ std::pair<float, float> penalties2probs(float penalty1, float penalty2, float th
 }
 
 
-mixture<size_t> greedy_mix(const std::vector<float>& rs, const std::vector<float>& ps, float thd) {
+mixture_legacy<size_t> greedy_mix(const std::vector<float>& rs, const std::vector<float>& ps, float thd) {
     std::vector<std::pair<float, size_t>> action_values(rs.size());
     for (size_t i = 0; i < action_values.size(); ++i) {
         action_values[i] = {ps[i], i};

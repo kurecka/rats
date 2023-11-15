@@ -51,20 +51,28 @@ struct outcome_support {
     std::vector<std::pair<size_t, float>> support;
 
     outcome_support() = default;
-    outcome_support(size_t o, float thd) : support({{o, thd}}) {}
+    outcome_support(size_t o, float penalty) : support({{o, penalty}}) {}
 
     outcome_support& operator+=(const outcome_support& other) {
         support.insert(support.end(), other.support.begin(), other.support.end());
         return *this;
     }
 
-    float thd_by_o(size_t o) const {
-        for (auto& [o_, thd] : support) {
+    float penalty_at_outcome(size_t o) const {
+        for (auto& [o_, penalty] : support) {
             if (o_ == o) {
-                return thd;
+                return penalty;
             }
         }
         return 0;
+    }
+
+    size_t num_outcomes() const {
+        return support.size();
+    }
+
+    size_t get_first_outcome() const {
+        return support.front().first;
     }
 };
 
@@ -113,43 +121,33 @@ public:
         for (auto& [r, prob, supp] : points) {
             r *= fs.first;
             prob *= fs.second;
-            // for (auto& [o, thd] : supp.support) {
-            //     thd *= fs.second;
-            // }
         }
         return *this;
     }
 
-
-    mixture<size_t> select_vertex(float thd, bool debug=false) {
+    template<bool is_state_curve = false>
+    mixture select_vertex(float thd) {
         size_t idx;
-
-        if (debug) {
-            spdlog::debug("select thd: {}", thd);
-        }
-
         // find idx of first point with risk > risk_thd or idx = points.size()
         for (idx = 0; idx < points.size() && std::get<1>(points[idx]) <= thd; ++idx);
 
-        if (idx == 0) {
-            if (debug) {
-                spdlog::debug("select: idx == 0");
-            }
-            return {0, 0, 1, 0, true};
-        } else if (idx == points.size()) {
-            if (debug) {
-                spdlog::debug("select: idx == points.size()");
-            }
-            return {points.size() - 1, points.size() - 1, 0, 1, true};
+        size_t point_idx1 = idx > 0 ? idx-1 : idx, point_idx2 = idx == points.size() ? idx-1 : idx;
+
+        auto& [reward1, penalty1, supp1] = points[point_idx1];
+        auto& [reward2, penalty2, supp2] = points[point_idx2];
+        if (is_state_curve) {
+            return mixture(supp1.get_first_outcome(), supp2.get_first_outcome(), penalty1, penalty2, thd);
         } else {
-            auto& [r1, p1, supp1] = points[idx - 1];
-            auto& [r2, p2, supp2] = points[idx];
-            float prob2 = (thd - p1) / (p2 - p1);
-            if (debug) {
-                spdlog::debug("select: p1 = {}, p2 = {}, prob2 = {}, idx = {}", p1, p2, prob2, idx);
-            }
-            return {idx - 1, idx, 1-prob2, prob2, false};
+            return mixture(point_idx1, point_idx2, penalty1, penalty2, thd);
         }
+    }
+
+    size_t num_outcomes() const {
+        return std::get<2>(points.front()).num_outcomes();
+    }
+
+    size_t get_first_outcome(size_t point_idx) const {
+        return std::get<2>(points[point_idx]).get_first_outcome();
     }
 };
 

@@ -16,7 +16,6 @@ template <typename S, typename A>
 struct pareto_uct_data {
     float risk_thd;
     float sample_risk_thd;
-    float descent_thd;
     float exploration_constant;
     float risk_exploration_ratio;
     float gamma;
@@ -25,6 +24,7 @@ struct pareto_uct_data {
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
     bool use_predictor;
+    mixture mix;
 };
 
 struct pareto_value {
@@ -49,6 +49,14 @@ struct select_action_pareto {
     size_t operator()(SN* node, bool explore) const {
         float risk_thd = node->common_data->sample_risk_thd;
         float c = node->common_data->exploration_constant;
+
+        // if (explore) {
+        //     float dev = std::min(0.1, risk_thd * 0.3);
+
+        //     int tree_depth = node->node_depth() - node->common_data->num_steps;
+        //     dev = exp(-tree_depth) * dev;
+        //     risk_thd = std::clamp(rng::normal(risk_thd, dev), 0.f, 1.f);
+        // }
 
         EPC merged_curve;
         EPC* curve_ptr = &node->v.curve;
@@ -81,46 +89,8 @@ struct select_action_pareto {
             merged_curve = convex_hull_merge(curve_ptrs);
         }
 
-        if (!explore) {
-            spdlog::debug("Select from state curve");
-        }
-        auto mix = curve_ptr->select_vertex(risk_thd, !explore);
-        // auto [idx, descent_thd] = curve_ptr->select_vertex(risk_thd, !explore);
-
-        auto& [r1, p1, supp1] = curve_ptr->points[mix.v1];
-        auto& [a1, thd1] = supp1.support[0];
-        auto& [r2, p2, supp2] = curve_ptr->points[mix.v2];
-        auto& [a2, thd2] = supp2.support[0];
-
-        if (!explore) {
-            spdlog::debug("mixing actions: A{} A{}", a1, a2);
-            spdlog::debug(" p1: {}, p2: {}", p1, p2);
-            spdlog::debug(" r1: {}, r2: {}", r1, r2);
-            spdlog::debug(" prob1: {}, prob2: {}", mix.p1, mix.p2);
-        }
-
-        if (a1 == a2 || mix.deterministic) {
-            node->common_data->descent_thd = risk_thd;
-            return mix(a1, a2);
-        } else {
-            auto [a, descent_thd] = mix(std::make_pair(a1, thd1), std::make_pair(a2, thd2));
-            if (explore) {
-                // descent_thd = std::min(1.f, descent_thd + 2*p_ucts[o]);
-                float dev = 0.1;
-
-                // eps step
-                // float eps = 0.05;
-                // if (rng::unif_float() < eps)
-                //     descent_thd = std::min(1.f, std::max(0.f, descent_thd + rng::normal(0, dev)));
-
-                int tree_depth = node->node_depth() - node->common_data->num_steps;
-                dev = exp(-tree_depth) * dev;
-                descent_thd = std::min(1.f, std::max(0.f, descent_thd + rng::normal(0, dev)));
-            }
-            
-            node->common_data->descent_thd = descent_thd;
-            return a;
-        }
+        node->common_data->mix = curve_ptr->select_vertex<true>(risk_thd);
+        return node->common_data->mix.sample();
     }
 };
 
@@ -139,33 +109,25 @@ struct descend_callback {
     using DATA = typename SN::DATA;
     void operator()(state_node_t* s0, A a, action_node_t* action, S s, state_node_t* new_state) const {
         DATA* common_data = action->common_data;
-        if (debug) {
-            spdlog::debug("Select from action curve");
-        }
-        auto mix = action->q.curve.select_vertex(common_data->descent_thd, debug);
+
+        float action_thd = common_data->mix.update_thd(common_data->sample_risk_thd);
+        auto mix = action->q.curve.select_vertex(action_thd);
         size_t state_idx = action->child_idx[s];
-        auto& [r1, p1, supp1] = action->q.curve.points[mix.v1];
-        auto& [r2, p2, supp2] = action->q.curve.points[mix.v2];
+        auto& [r1, point_penalty1, supp1] = action->q.curve.points[mix.vals[0]];
+        auto& [r2, point_penalty2, supp2] = action->q.curve.points[mix.vals[1]];
 
-        if (supp1.support.size() > state_idx) {
-            float thd1 = supp1.thd_by_o(state_idx);
-            float thd2 = supp2.thd_by_o(state_idx);
-            if (debug) {
-                spdlog::debug("p1: {}, p2: {}", p1, p2);
-                spdlog::debug("thd1: {}, thd2: {}", thd1, thd2);
-                spdlog::debug("state_idx: {}", state_idx);
-                spdlog::debug("state: {}", to_string(s));
-            }
+        if (supp1.num_outcomes() > state_idx) {
+            float state_penalty1 = supp1.penalty_at_outcome(state_idx);
+            float state_penalty2 = supp2.penalty_at_outcome(state_idx);
 
-            if (!mix.deterministic) {
-                common_data->sample_risk_thd = mix.p1 * thd1 + mix.p2 * thd2;
-            } else if (mix.p1 > mix.p2) {
-                // p1==p2, thd1 == thd2
-                float overflow_ratio = (common_data->descent_thd - p1) / p1;
-                common_data->sample_risk_thd = (overflow_ratio + 1) * thd1;
+            if (mix.vals[0] != mix.vals[1]) {
+                common_data->sample_risk_thd = mix.expectation(state_penalty1, state_penalty2);
+            } else if (mix.penalties[0] > action_thd) {
+                float overflow_ratio = (action_thd - point_penalty1) / point_penalty1;
+                common_data->sample_risk_thd = state_penalty1 + overflow_ratio * state_penalty1;
             } else {
-                float overflow_ratio = (common_data->descent_thd - p1) / (1 - p1);
-                common_data->sample_risk_thd = thd1 + overflow_ratio * (1 - thd1);
+                float overflow_ratio = (action_thd - point_penalty1) / (1 - point_penalty1);
+                common_data->sample_risk_thd = state_penalty1 + overflow_ratio * (1 - state_penalty1);
             }
         }
     }
@@ -312,7 +274,7 @@ public:
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , use_predictor(_use_predictor)
-    , common_data({_risk_thd, _risk_thd, 0, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, _use_predictor})
+    , common_data({_risk_thd, _risk_thd, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, _use_predictor})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {

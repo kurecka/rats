@@ -14,53 +14,42 @@
 # Risk-Aware Tree Search
 This repository contains code base for development and testing of risk-aware tree search based methods.
 
-## Usage: help
-Build and run `./rats --help`.
-
-## Rollout method
-Currently only rollout method is constant zeros.
 
 ## Algorithms
 - randomized: Play random action
-- c0: Play action 0 constantly
-- c1: Play action 1 constantly
-- ts: Simple tree search. Tries to achieve the threshold at each state.
-- pts: Pareto tree search. OUT OF ORDER
-- dts: Dual tree search. Implements the dual algorithm CC-POMCP.
-  - Does not match the decribed algorithm perfectyl. In particular, it does not use LP, just thresholding to select best greedy action.
+- primal_uct: Simple tree search. Tries to achieve the threshold at each state.
+- pareto_uct: Pareto tree search. OUT OF ORDER
+- dual_uct: Dual tree search. Implements the dual algorithm CC-POMCP.
 
 ## Todo
 - [x] Pytorch binding
 - [x] Link LP library
-- [ ] Implement insteraction with AI gym with [pybind11](https://pybind11.readthedocs.io/en/stable/advanced/embedding.html#executing-python-code)
-- [ ] Ray distributed computing
-- [ ] Evironment management
-- [ ] Experiment configuration files
-- [ ] Mongo reporting
+- [x] Implement insteraction with AI gym with [pybind11](https://pybind11.readthedocs.io/en/stable/advanced/embedding.html#executing-python-code)
+- [x] Ray distributed computing
+- [x] Evironment management
+- [x] Experiment configuration files
+- [x] CSV reporting
 
 ## Building
 
-Make sure to have `cmake` and [`OR-tools`](https://github.com/google/or-tools) library installed
+Make sure to have `cmake` and the following c++ libraries installed: [`OR-tools`](https://github.com/google/or-tools), spdlog, pybind11, eigen
 
 ``` bash
 > cd build
-> cmake .. -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
+> cmake .. -DCMAKE_BUILD_TYPE=[Debug | Release]
 > make
-> ./rats_app -h
-> make test      # Makes and runs the tests.
-> make coverage  # Generate a coverage report.
+> ./regtest      # Runs the tests.
 > make doc       # Generate html documentation.
 ```
 
-In order to build and install as a python package, run the following commands:
+In order to build and install as a python package, run the following command:
 ```bash
-> cd build
-> pip install ..
+> pip install .
 ```
 The command above will build the code using cmake and install the package in the current environment as `rats` package.
 
 ## Install OR-tools
-We use `OR-tools` to solve the LP problem. Make sure you have it installed.
+We use `OR-tools` as LP solver. Make sure you have it installed.
 Download the latest version from [here](https://github.com/google/or-tools).
 The following commands should work:
 ```bash
@@ -95,12 +84,12 @@ conda env export --no-build --from-history | grep -v prefix > conda_env.yaml
 
 
 ## Run experiment through ray
-If you have your own ray cluster running or want to run it on a local machine, you can run the experiment through ray:
+If you have your own ray cluster running or want to run an experiment on a local machine, you can use the following command:
 ```
 python experiment.py -m +task=train_runs +agent=pareto_uct ++agent.exploration_constant=1,5,15 ++risk_thd=0,0.1,0.2,0.3,0.5 ++agent.sim_time_limit=10,50,200 +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01,0.1,1
 ```
 
-If you want to run to the experiment ont erinys cluster, you can log in to erinys02 and run the following command:
+If you want to run to the experiment on erinys cluster, you can connect to erinys02 and run a command similar to the following:
 ```
 ray job submit --no-wait -- sh -c 'cd /work/rats/pyrats && python experiment.py -m +task=indep_runs +agent=dual_uct ++agent.exploration_constant=0.1,1,5 ++agent.sim_time_limit=10,50,100 +env=slide_hw ++metadata.tag=dual-slide_hw ++task.num_episodes=30 ++gamma=0.99999 ++risk_thd=0,0.16,0.2'
 ```

@@ -18,7 +18,7 @@ This repository contains code base for development and testing of risk-aware tre
 ## Algorithms
 - randomized: Play random action
 - primal_uct: Simple tree search. Tries to achieve the threshold at each state.
-- pareto_uct: Pareto tree search. OUT OF ORDER
+- pareto_uct: Pareto tree search.
 - dual_uct: Dual tree search. Implements the dual algorithm CC-POMCP.
 
 ## Todo

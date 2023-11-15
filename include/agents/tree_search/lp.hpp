@@ -108,6 +108,7 @@ private:
     void set_flow_rec(
         const SN* parent,
         LinearExpr parent_flow = 1.,
+        float value_discount = 1.,
         LinearExpr* subtree_penalty = nullptr
     ) {
         // If subtree_penalty does not exist, this is the root node, so save the action flow as policy
@@ -137,7 +138,7 @@ private:
                 spdlog::trace("LP flow constraint for action-state {}-{}-{}: {}", to_string(parent->state), to_string(action), to_string(state), const2str(state_flow == LinearExpr(action_flow) * states_distr[state]));
 
                 // Add weighted incoming reward to total reward
-                total_reward += LinearExpr(state_flow) * state_node->observed_reward;
+                total_reward += LinearExpr(state_flow) * state_node->observed_reward * value_discount;
 
                 if (is_LP_root) {
                     subtree_penalties[{action, state}] = LinearExpr();
@@ -149,12 +150,13 @@ private:
                 if (!state_node->is_leaf_state()) {
                     set_flow_rec(
                         state_node.get(),
-                        LinearExpr(state_flow) * common_data->gamma,
+                        LinearExpr(state_flow),
+                        value_discount * common_data->gamma,
                         subtree_penalty
                     );
                 } else {
                     total_reward += LinearExpr(state_flow) * common_data->gamma * state_node->rollout_reward;
-                    (*subtree_penalty) += LinearExpr(state_flow) * common_data->gamma * state_node->rollout_penalty;
+                    (*subtree_penalty) += LinearExpr(state_flow) * state_node->rollout_penalty;
                 }
             }
         }
@@ -222,7 +224,7 @@ public:
         spdlog::trace("Policy value: {}", policy[a]->solution_value());
         auto states_distr = common_data->predictor.predict_probs(root_state, a);
         spdlog::trace("State probability: {}", states_distr[s]);
-        return std::clamp(remaining_penalty / (common_data->gamma * policy[a]->solution_value() * states_distr[s]), 0.0, 1.0);
+        return std::clamp(remaining_penalty / (policy[a]->solution_value() * states_distr[s]), 0.0, 1.0);
     }
 };
 

@@ -153,13 +153,10 @@ public:
         common_data.lambda += 1.0 / (i + 1.0) * gradient;
         common_data.lambda = std::max(0.0f, common_data.lambda);
         common_data.lambda = std::min(lambda_max, common_data.lambda);
-
-        // spdlog::debug("lambda: {} i: {}, a: {}, gradient: {}, thd: {}, a_risk: {}", common_data.lambda, i, to_string(a), gradient, common_data.risk_thd, action_node->q.second);
     }
 
     void play() override {
         spdlog::debug("Play: {}", name());
-        spdlog::debug("risk_thd: {}, lambda: {}", common_data.risk_thd, common_data.lambda);
 
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();
@@ -168,14 +165,12 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
-            // spdlog::debug("number of sims: {}", i);
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);
             }
         }
 
-        spdlog::debug("risk_thd: {}, lambda: {}", common_data.risk_thd, common_data.lambda);
 
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);

@@ -3,6 +3,12 @@
 #include <tuple>
 
 
+std::pair<float, float> penalties2probs(float penalty1, float penalty2, float thd) {
+    float prob1 =  (thd - penalty2) / (penalty1 - penalty2);
+    return {prob1, 1 - prob1};
+}
+
+
 mixture<size_t> greedy_mix(const std::vector<float>& rs, const std::vector<float>& ps, float thd) {
     std::vector<std::pair<float, size_t>> action_values(rs.size());
     for (size_t i = 0; i < action_values.size(); ++i) {

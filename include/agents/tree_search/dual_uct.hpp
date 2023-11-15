@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tree_search.hpp"
+#include "string_utils.hpp"
 #include <string>
 #include <vector>
 
@@ -11,7 +12,6 @@ namespace ts {
 template <typename S, typename A>
 struct dual_uct_data {
     float risk_thd;
-    float descent_risk_thd;
     float lambda;
     float exploration_constant;
     float gamma;
@@ -19,12 +19,13 @@ struct dual_uct_data {
     int num_steps;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
+    action_policy policy;
 };
 
 
 template<typename SN>
-struct select_action_dual_anal {
-    size_t operator()(SN* node, bool explore, bool not_sim=false) const {
+struct select_action_dual {
+    size_t operator()(SN* node, bool explore) const {
         float risk_thd = node->common_data->risk_thd;
         float lambda = node->common_data->lambda;
         float c = node->common_data->exploration_constant;
@@ -45,44 +46,30 @@ struct select_action_dual_anal {
         auto best_a = std::max_element(uct_values.begin(), uct_values.end());
         size_t best_action = std::distance(uct_values.begin(), best_a);
         float best_reward = *best_a;
-        // spdlog::debug("best reward: {} best action: {}", best_reward, best_action);
 
         std::vector<size_t> eps_best_actions;
         int tree_depth = node->node_depth() - node->common_data->num_steps;
         const float eps_const = exp(-tree_depth) * 0.1;
-        // spdlog::debug("eps_const: {}, tree_depth: {}", eps_const, tree_depth);
         for (size_t i = 0; i < children.size(); ++i) {
-            // spdlog::debug("{} {}, i: {}", children[i].num_visits, children[best_action].num_visits, i);
             float eps = eps_const * (sqrt( log(children[i].num_visits + 1) / (children[i].num_visits + 1) )
                         + sqrt( log(children[best_action].num_visits + 1) / (children[best_action].num_visits + 1) ));
-            // spdlog::debug("eps: {}, rew: {}", eps, uct_values[i]);
             if (fabs(uct_values[i] - best_reward) <= eps) {
-                // spdlog::debug("epsaction: {}", i);
                 eps_best_actions.push_back(i);
             }
         }
 
-        size_t a1 = 0, a2 = 0;
-        float low_p = 1, high_p = 0;
+
+        size_t low_action = eps_best_actions.front(), high_action = eps_best_actions.front();
+        float low_penalty = 1, high_penalty = 0;
         for (size_t idx : eps_best_actions) {
-            auto& [p, r] = children[idx].q;
-            if (p <= low_p) { low_p = p; a1 = idx; }
-            if (p >= high_p) { high_p = p; a2 = idx; }
+            auto& [reward, penalty] = children[idx].q;
+            if (penalty <= low_penalty) { low_penalty = penalty; low_action = idx; }
+            if (penalty >= high_penalty) { high_penalty = penalty; high_action = idx; }
         }
 
-        if (a1 == a2) {
-            node->common_data->descent_risk_thd = risk_thd;
-            return a1;
-        }
-
-        float prob2 = std::clamp((risk_thd - low_p) / (high_p - low_p), 0.f, 1.f);
-        if (rng::unif_float() < prob2) {
-            node->common_data->descent_risk_thd = std::max(risk_thd, high_p);
-            return a2;
-        } else {
-            node->common_data->descent_risk_thd = std::min(low_p, risk_thd);
-            return a1;
-        }
+        node->common_data->policy = action_policy(low_action, high_action, low_penalty, high_penalty, risk_thd);
+        size_t sample = node->common_data->policy.sample();
+        return sample;
     }
 };
 
@@ -106,7 +93,7 @@ class dual_uct : public agent<S, A> {
     using state_node_t = state_node<S, A, data_t, v_t, q_t>;
     using action_node_t = action_node<S, A, data_t, v_t, q_t>;
     
-    using select_action_t = select_action_dual_anal<state_node_t>;
+    using select_action_t = select_action_dual<state_node_t>;
     using descend_callback_t = void_fn<state_node_t*, A, action_node_t*, S, state_node_t*>;
     constexpr auto static select_action_f = select_action_t();
     constexpr auto static select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
@@ -142,7 +129,7 @@ public:
     , risk_thd(_risk_thd)
     , lr(_lr)
     , initial_lambda(_initial_lambda)
-    , common_data({_risk_thd, _risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, 0, agent<S, A>::handler, {}})
+    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, 0, agent<S, A>::handler})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
@@ -159,9 +146,8 @@ public:
         rollout(leaf, false);
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
-
-        A a = select_action_f(root.get(), false);
-        action_node_t* action_node = root->get_child(a);
+        size_t a_idx = select_action_f(root.get(), false);
+        action_node_t* action_node = root->get_child(a_idx);
 
         double gradient = (action_node->q.second - common_data.risk_thd) < 0 ? -1 : 1;
         common_data.lambda += 1.0 / (i + 1.0) * gradient;
@@ -173,6 +159,7 @@ public:
 
     void play() override {
         spdlog::debug("Play: {}", name());
+        spdlog::debug("risk_thd: {}, lambda: {}", common_data.risk_thd, common_data.lambda);
 
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();
@@ -188,34 +175,34 @@ public:
             }
         }
 
-        A a = select_action_f(root.get(), false, true);
+        spdlog::debug("risk_thd: {}, lambda: {}", common_data.risk_thd, common_data.lambda);
+
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
 
+        size_t a_idx = select_action_f(root.get(), false);
+        A a = root->actions[a_idx];
         auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
         ++common_data.num_steps;
         spdlog::debug("Play action: {}", to_string(a));
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
-        action_node_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a_idx);
         if (an->children.find(s) == an->children.end()) {
             full_expand_action(an, s, r, p, t);
         }
 
         // admissable cost
-        float immediate_cost = 0;
+        float immediate_penalty = 0;
         auto outcomes = common_data.predictor.predict_probs(root->state, a);
-        for (auto& [os, op] : outcomes) {
-            state_node_t* sn = an->get_child(os);
-            if (sn->observed_penalty > 0) {
-                immediate_cost += op;
-            }
+        auto signals = common_data.predictor.predict_signals(root->state, a);
+        for (auto& [outcome_state, outcome_prob] : outcomes) {
+            float observed_penalty = std::get<1>(signals[outcome_state]);
+            immediate_penalty += outcome_prob * observed_penalty;
         }
 
-        common_data.risk_thd = std::max(common_data.descent_risk_thd - immediate_cost, 0.0f);
-        
-        // spdlog::debug("descent risk thd: {}, immediate_cost: {}", common_data.descent_risk_thd, immediate_cost);
+        common_data.risk_thd = std::max(common_data.policy.update_thd(common_data.risk_thd, immediate_penalty), 0.0f);
 
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);

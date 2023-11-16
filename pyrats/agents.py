@@ -34,3 +34,6 @@ class ParetoUCT(Agent):
 
 class RAMCP(Agent):
     pass
+
+class DualRAMCP(Agent):
+    pass

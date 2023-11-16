@@ -2,6 +2,7 @@
 
 #include "tree_search.hpp"
 #include "string_utils.hpp"
+#include "lp.hpp"
 #include <string>
 #include <vector>
 
@@ -84,7 +85,7 @@ struct select_action_dual {
  * lambda = lambda + lr * d_lambda
  *********************************************************************/
 
-template <typename S, typename A>
+template <typename S, typename A, bool use_lp = false>
 class dual_uct : public agent<S, A> {
     using data_t = dual_uct_data<S, A>;
     using v_t = std::pair<float, float>;
@@ -113,6 +114,8 @@ private:
     std::string dot_tree;
 
     std::unique_ptr<state_node_t> root;
+    lp::tree_lp_solver<state_node_t> solver;
+    
 public:
     dual_uct(
         environment_handler<S, A> _handler,
@@ -175,32 +178,50 @@ public:
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
 
-        size_t a_idx = select_action_f(root.get(), false);
-        A a = root->actions[a_idx];
-        auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
-        ++common_data.num_steps;
-        spdlog::debug("Play action: {}", to_string(a));
-        spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
+        if constexpr (use_lp) {
+            A a = solver.get_action(root.get(), common_data.risk_thd);
+            auto [s, r, p, t] = common_data.handler.play_action(a);
+            spdlog::debug("Play action: {}", to_string(a));
+            spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
-        action_node_t* an = root->get_child(a_idx);
-        if (an->children.find(s) == an->children.end()) {
-            full_expand_action(an, s, r, p, t);
+            action_node_t* an = root->get_child(a);
+            if (an->children.find(s) == an->children.end()) {
+                full_expand_action(an, s, r, p, t);
+            }
+
+            common_data.risk_thd = solver.update_threshold(common_data.risk_thd, a, s);
+
+            std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
+            root = std::move(new_root);
+            root->get_parent() = nullptr;
+        } else {
+            size_t a_idx = select_action_f(root.get(), false);
+            A a = root->actions[a_idx];
+            auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
+            ++common_data.num_steps;
+            spdlog::debug("Play action: {}", to_string(a));
+            spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
+
+            action_node_t* an = root->get_child(a_idx);
+            if (an->children.find(s) == an->children.end()) {
+                full_expand_action(an, s, r, p, t);
+            }
+
+            // admissable cost
+            float immediate_penalty = 0;
+            auto outcomes = common_data.predictor.predict_probs(root->state, a);
+            auto signals = common_data.predictor.predict_signals(root->state, a);
+            for (auto& [outcome_state, outcome_prob] : outcomes) {
+                float observed_penalty = std::get<1>(signals[outcome_state]);
+                immediate_penalty += outcome_prob * observed_penalty;
+            }
+
+            common_data.risk_thd = std::max(common_data.mix.update_thd(common_data.risk_thd, immediate_penalty), 0.0f);
+
+            std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
+            root = std::move(new_root);
+            root->get_parent() = nullptr;
         }
-
-        // admissable cost
-        float immediate_penalty = 0;
-        auto outcomes = common_data.predictor.predict_probs(root->state, a);
-        auto signals = common_data.predictor.predict_signals(root->state, a);
-        for (auto& [outcome_state, outcome_prob] : outcomes) {
-            float observed_penalty = std::get<1>(signals[outcome_state]);
-            immediate_penalty += outcome_prob * observed_penalty;
-        }
-
-        common_data.risk_thd = std::max(common_data.mix.update_thd(common_data.risk_thd, immediate_penalty), 0.0f);
-
-        std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
-        root = std::move(new_root);
-        root->get_parent() = nullptr;
     }
 
 

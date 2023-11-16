@@ -1,0 +1,6 @@
+defaults:
+  - ts
+
+class: DualRAMCP
+initial_lambda: 50
+lr: 1

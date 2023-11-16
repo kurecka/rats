@@ -101,7 +101,6 @@ public:
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
-        // Create the linear solvers with the GLOP backend.
         reset();
     }
 

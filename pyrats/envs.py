@@ -1,5 +1,5 @@
 import rats
-from rats import Hallway, InvestorEnv, CCPOMCP_EX1
+from rats import Hallway, InvestorEnv, CCPOMCP_EX1, CCPOMCP_EX2
 
 
 class EnvironmentHandler:

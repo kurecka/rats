@@ -152,13 +152,15 @@ public:
         action_node_t* action_node = root->get_child(a_idx);
 
         double gradient = (action_node->q.second - common_data.risk_thd) < 0 ? -1 : 1;
-        common_data.lambda += 1.0 / (i + 1.0) * gradient;
+        common_data.lambda += 1.0 / sqrt(i + 1.0) * gradient;
         common_data.lambda = std::max(0.0f, common_data.lambda);
         common_data.lambda = std::min(lambda_max, common_data.lambda);
     }
 
     void play() override {
         spdlog::debug("Play: {}", name());
+        spdlog::debug("thd {}", common_data.risk_thd);
+        spdlog::debug("lambda {}", common_data.lambda);
 
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();

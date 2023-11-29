@@ -62,6 +62,10 @@ struct mixture {
     float expectation(T v1, T v2) const {
         return probs[0] * v1 + probs[1] * v2;
     }
+
+    float last_penalty() const {
+        return penalties[last_sampled_action];
+    }
 };
 
 

@@ -37,3 +37,6 @@ class RAMCP(Agent):
 
 class DualRAMCP(Agent):
     pass
+
+class LambdaParetoUCT(Agent):
+    pass

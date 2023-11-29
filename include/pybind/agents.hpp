@@ -4,6 +4,7 @@
 #include "pybind/agents/constant_agent.hpp"
 #include "pybind/agents/randomized_agent.hpp"
 #include "pybind/agents/pareto_uct.hpp"
+#include "pybind/agents/lambda_pareto_uct.hpp"
 #include "pybind/agents/dual_uct.hpp"
 #include "pybind/agents/dual_ramcp.hpp"
 #include "pybind/agents/primal_uct.hpp"
@@ -21,6 +22,7 @@ void register_agents_t(py::module& m, std::string type) {
     register_dual_ramcp<S, A>(m, agent_type, "DualRAMCP" + type);
     register_primal_uct<S, A>(m, agent_type, "PrimalUCT" + type);
     register_pareto_uct<S, A>(m, agent_type, "ParetoUCT" + type);
+    register_lambda_pareto_uct<S, A>(m, agent_type, "LambdaParetoUCT" + type);
     register_ramcp<S, A>(m, agent_type, "RAMCP" + type);
 }
 

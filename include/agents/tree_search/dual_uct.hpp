@@ -145,7 +145,7 @@ public:
     void simulate(int i) {
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
-        rollout(leaf, false);
+        rollout(leaf, true);
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
         size_t a_idx = select_action_f(root.get(), false);
@@ -240,7 +240,11 @@ public:
     }
 
     std::string name() const override {
-        return "dual_uct";
+        if constexpr (use_lp) {
+            return "dual_ramcp";
+        } else {
+            return "dual_uct";
+        }
     }
 };
 

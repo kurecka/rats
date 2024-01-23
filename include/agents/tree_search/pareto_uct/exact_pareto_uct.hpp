@@ -67,6 +67,21 @@ struct select_action_pareto {
             // compute uct bonuses
             std::vector<EPC> action_curves;
             std::vector<EPC*> curve_ptrs;
+            float l_reward = std::numeric_limits<float>::infinity();
+            float h_reward = -std::numeric_limits<float>::infinity();
+            for (auto& child : node->children) {
+                auto [l, h] = child.q.curve.reward_bounds();
+                l_reward = std::min(l_reward, l);
+                h_reward = std::max(h_reward, h);
+            }
+            if (h_reward >= l_reward + 1) {
+                c *= (h_reward - l_reward);
+            }
+
+            if (!explore) {
+                spdlog::debug("c: {}", c);
+            }
+
             for (auto& child : node->children) {
                 action_curves.push_back(child.q.curve);
                 float r_uct;
@@ -120,22 +135,28 @@ struct descend_callback {
         DATA* common_data = action->common_data;
 
         float action_thd = common_data->mix.update_thd(common_data->sample_risk_thd);
+        if constexpr (debug) {
+            spdlog::debug("Action thd: {}", action_thd);
+        }
         auto mix = action->q.curve.select_vertex(action_thd);
         size_t state_idx = action->child_idx[s];
-        auto& [r1, point_penalty1, supp1] = action->q.curve.points[mix.vals[0]];
-        auto& [r2, point_penalty2, supp2] = action->q.curve.points[mix.vals[1]];
+        auto& [r1, point_penalty0, supp0] = action->q.curve.points[mix.vals[0]];
+        auto& [r2, point_penalty1, supp1] = action->q.curve.points[mix.vals[1]];
 
-        if (supp1.num_outcomes() > state_idx) {
+        if (supp0.num_outcomes() > state_idx) {
+            float state_penalty0 = supp0.penalty_at_outcome(state_idx);
             float state_penalty1 = supp1.penalty_at_outcome(state_idx);
-            float state_penalty2 = supp2.penalty_at_outcome(state_idx);
 
             if (mix.vals[0] != mix.vals[1]) {
-                common_data->sample_risk_thd = mix.expectation(state_penalty1, state_penalty2);
+                common_data->sample_risk_thd = mix.expectation(state_penalty0, state_penalty1);
             } else if (mix.penalties[0] > action_thd) {
-                float overflow_ratio = (action_thd - point_penalty1) / point_penalty1;
-                common_data->sample_risk_thd = state_penalty1 + overflow_ratio * state_penalty1;
+                float overflow_ratio = (action_thd - point_penalty0) / point_penalty0;
+                common_data->sample_risk_thd = state_penalty0 + overflow_ratio * state_penalty0;
             } else {
-                float overflow_ratio = (action_thd - point_penalty1) / (1 - point_penalty1);
+                float overflow_ratio = 0;
+                if (mix.penalties[1] < action_thd) {
+                    overflow_ratio = (action_thd - point_penalty1) / (1 - point_penalty1);
+                }
                 common_data->sample_risk_thd = state_penalty1 + overflow_ratio * (1 - state_penalty1);
             }
         }
@@ -328,6 +349,7 @@ public:
             // spdlog::debug("Grad buffer: {}", grad_buffer);
             
             double eps = 1;
+            eps = 1.0 / sqrt(1.0 + i);
             common_data.lambda += grad_buffer * eps;
             // spdlog::debug("Lambda: {}", common_data.lambda);
             common_data.lambda = std::clamp(common_data.lambda, 0.f, lambda_max);

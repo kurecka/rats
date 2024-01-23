@@ -32,6 +32,10 @@ struct select_action_uct {
                         [](auto& l, auto& r){ return l.q.first < r.q.first; })->q.first;
         float min_v = std::min_element(children.begin(), children.end(),
                         [](auto& l, auto& r){ return l.q.first < r.q.first; })->q.first;
+        
+        if (max_v <= min_v) {
+            max_v = min_v + 1;
+        }
 
         size_t idxa = 0;
         float max_uct = 0, uct_value = 0;

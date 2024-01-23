@@ -77,9 +77,11 @@ def cluster_sync(files, exclude_files, head_ip, worker_ips, user):
     with multiprocessing.Pool(processes=max(len(worker_ips), 1)) as pool:
         pool.map(tuple_run_remote_commands, params)
 
-def collect_to_head(files, head_ip, worker_ips, user):
+def collect_to_head(files, head_ip, worker_ips, user, clear = False):
     params = [(worker, [
-        f'rsync -avz --mkpath {file} {user}@{head_ip}:{file}' for file in files
+        f'rsync -avz --remove-source-files --mkpath {file} {user}@{head_ip}:{file}' for file in files
+    ] + [
+        f'find {file} -type d -empty -delete' for file in files if clear
     ], user) for worker in worker_ips]
     with multiprocessing.Pool(processes=max(len(params), 1)) as pool:
         pool.map(tuple_run_remote_commands, params)

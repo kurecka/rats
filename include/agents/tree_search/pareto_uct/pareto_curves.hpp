@@ -181,6 +181,10 @@ public:
         }
     }
 
+    std::pair<float, float> const reward_bounds() const {
+        return {std::get<0>(points.front()), std::get<0>(points.back())};
+    }
+
     size_t num_outcomes() const {
         return std::get<2>(points.front()).num_outcomes();
     }
@@ -199,6 +203,7 @@ EPC convex_hull_merge(std::vector<EPC*> curves) {
         }
     }
 
+    std::random_shuffle(points.begin(), points.end());
     std::vector<std::tuple<float, float, outcome_support>> hull = upper_hull(points);
     EPC curve;
     curve.points = hull;

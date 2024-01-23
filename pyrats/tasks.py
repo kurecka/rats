@@ -38,7 +38,7 @@ def run(agent, env, rats_version, num_episodes=1, sys_path=[]):
                 agent.train()
         
             h = agent.get_handler()
-            results.append((h.get_reward(), h.get_penalty()))
+            results.append((h.get_reward(), h.get_penalty(), h.get_num_steps()))
         except Exception as e:
             print("Exception in episode {}: {}".format(i, e))
             results.append((None, None))
@@ -65,7 +65,7 @@ def launch(agent, env, num_episodes, output_dir, independent_runs=True):
 
 
     results = sum(ray.get(results), [])
-    df = pd.DataFrame(results, columns=['reward', 'penalty'])
+    df = pd.DataFrame(results, columns=['reward', 'penalty', 'steps'])
     df.to_csv(output_dir / 'results.csv', index=False)
 
 

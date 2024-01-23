@@ -8,6 +8,49 @@ import yaml
 from PIL import Image, ImageDraw
 import io
 import subprocess
+import numpy as np
+
+
+def line(error_y_mode=None, **kwargs):
+    """Extension of `plotly.express.line` to use error bands."""
+    ERROR_MODES = {'bar','band','bars','bands',None}
+    if error_y_mode not in ERROR_MODES:
+        raise ValueError(f"'error_y_mode' must be one of {ERROR_MODES}, received {repr(error_y_mode)}.")
+    if error_y_mode in {'bar','bars',None}:
+        fig = px.line(**kwargs)
+    elif error_y_mode in {'band','bands'}:
+        if 'error_y' not in kwargs:
+            raise ValueError(f"If you provide argument 'error_y_mode' you must also provide 'error_y'.")
+        figure_with_error_bars = px.line(**kwargs)
+        fig = px.line(**{arg: val for arg,val in kwargs.items() if arg != 'error_y'})
+        for data in figure_with_error_bars.data:
+            x = list(data['x'])
+            y_upper = list(data['y'] + data['error_y']['array'])
+            y_lower = list(data['y'] - data['error_y']['array'] if data['error_y']['arrayminus'] is None else data['y'] - data['error_y']['arrayminus'])
+            color = f"rgba({tuple(int(data['line']['color'].lstrip('#')[i:i+2], 16) for i in (0, 2, 4))},.3)".replace('((','(').replace('),',',').replace(' ','')
+            fig.add_trace(
+                go.Scatter(
+                    x = x+x[::-1],
+                    y = y_upper+y_lower[::-1],
+                    fill = 'toself',
+                    fillcolor = color,
+                    line = dict(
+                        color = 'rgba(255,255,255,0)'
+                    ),
+                    hoverinfo = "skip",
+                    showlegend = False,
+                    legendgroup = data['legendgroup'],
+                    xaxis = data['xaxis'],
+                    yaxis = data['yaxis'],
+                )
+            )
+        # Reorder data as said here: https://stackoverflow.com/a/66854398/8849755
+        reordered_data = []
+        for i in range(int(len(fig.data)/2)):
+            reordered_data.append(fig.data[i+int(len(fig.data)/2)])
+            reordered_data.append(fig.data[i])
+        fig.data = tuple(reordered_data)
+    return fig
 
 
 def process_run_results(run_directory):
@@ -19,8 +62,14 @@ def process_run_results(run_directory):
 
     risk_thd = config['risk_thd']
 
-    df = pd.read_csv(results_file).agg(['mean', 'std'])
-    df = pd.concat([df.reward, df.penalty], keys=['reward', 'penalty'], axis=0).to_frame().T
+    file = pd.read_csv(results_file)
+    n = len(file)
+
+    df = file.agg(['mean', 'std'])
+    df = pd.concat([df.reward, df.penalty, df.steps], keys=['reward', 'penalty', 'steps'], axis=0).to_frame().T
+    df[('reward', 'std')] /= np.sqrt(n)
+    df[('penalty', 'std')] /= np.sqrt(n)
+    df[('steps', 'std')] /= np.sqrt(n)
     df.index = [risk_thd]
     df.index.name = 'risk_thd'
 
@@ -78,7 +127,15 @@ class ExperimentLoader:
             config = self.get_experiment_config(experiment_dir)
             date, time = self.extract_date(experiment_dir)
 
-            agent_spec = config['agent']['class']
+            names = {
+                'RAMCP': 'RAMCP',
+                'DualRAMCP': 'DualRAMCP',
+                'DualUCT': 'CC-POMCP',
+                'ParetoUCT': 'ParetoUCT',
+                'LambdaParetoUCT': 'LambdaParetoUCT',
+            }
+
+            agent_spec = names[config['agent']['class']]
             if 'exploration_constant' in config['agent']:
                 agent_spec += '_c' + str(config['agent']['exploration_constant'])
             if 'risk_exploration_ratio' in config['agent']:
@@ -242,7 +299,9 @@ class main():
             ]
         ),
         dcc.Graph(figure={}, id='reward-graph'),
+        dcc.Graph(figure={}, id='normalized-reward-graph'),
         dcc.Graph(figure={}, id='penalty-graph'),
+        dcc.Graph(figure={}, id='steps-graph'),
     ])
 
     @app.callback(
@@ -305,27 +364,42 @@ class main():
     
     @callback(
         Output(component_id='reward-graph', component_property='figure'),
+        Output(component_id='normalized-reward-graph', component_property='figure'),
         Output(component_id='penalty-graph', component_property='figure'),
+        Output(component_id='steps-graph', component_property='figure'),
         Input('datatable-interactivity', "derived_virtual_data"),
         Input('datatable-interactivity', "derived_virtual_selected_rows")
     )
     def update_graph(rows, derived_virtual_selected_rows):
         if not derived_virtual_selected_rows:
-            return {}, {}
+            return {}, {}, {}, {}
         selected_row = derived_virtual_selected_rows[0]
         date, time, tag = rows[selected_row]['date'], rows[selected_row]['time'], rows[selected_row]['tag']
         df = loader.get_exp_data(date, time, tag)
         if df is None:
-            return {}, {}
+            return {}, {}, {}, {}
         
         df.sort_values(by='thd', inplace=True)
-        g1 = px.line(df, x='thd', y='reward_mean', title='Mean reward', color='agent_spec')
-        g2 = px.line(df, x='thd', y='penalty_mean', title='Mean penalty', color='agent_spec')
+        g1 = line(data_frame=df, x='thd', y='reward_mean',
+                  error_y='reward_std', error_y_mode='bar',
+                  title='Mean reward', color='agent_spec',
+                  labels={'thd': 'Penalty threshold', 'reward_mean': 'Mean reward'}
+                )
+        ndf = df.copy()
+        ndf['norm_penalty'] = np.maximum(df['penalty_mean'], df['thd'])
+        ndf['norm_reward'] = df['reward_mean'] / ndf['norm_penalty'] * ndf['thd']
+        g2 = line(data_frame=ndf, x='thd', y='norm_reward', title='Normalized reward', color='agent_spec')
+        g3 = line(data_frame=df, x='thd', y='penalty_mean', error_y='penalty_std', error_y_mode='bar', title='Mean penalty', color='agent_spec',
+                  labels={'thd': 'Penalty threshold', 'penalty_mean': 'Mean penalty'})
 
         diagonal_line = pd.DataFrame({'x': df['thd'], 'y': df['thd']})
-        g2.add_scatter(x=diagonal_line['x'], y=diagonal_line['y'], mode='lines', line=dict(color='black', width=1, dash='dash'))
+        g3.add_scatter(x=diagonal_line['x'], y=diagonal_line['y'], mode='lines', line=dict(color='black', width=1, dash='dash'), showlegend=False)
+        
+        # steps
+        g4 = line(data_frame=df, x='thd', y='steps_mean', error_y='steps_std', error_y_mode='bar', title='Mean steps', color='agent_spec',
+                    labels={'thd': 'Penalty threshold', 'steps_mean': 'Mean number of steps'})
 
-        return g1, g2
+        return g1, g2, g3, g4
 
     app.run(debug=True)
 

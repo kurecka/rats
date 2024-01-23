@@ -42,30 +42,33 @@ public:
             if (action == A1) {
                 if (rng::unif_float() < 0.5) {
                     state = S2;
-                    return {S2, 0, 0, false};
+                    return {state, 0, 0, false};
                 } else {
                     state = S3;
-                    return {S3, 0, 0, false};
+                    return {state, 0, 0, false};
                 }
             } else {
-                return {star, 0, 10, true};
+                state = star;
+                return {state, 0, 10, true};
             }
         } else if (state == S2) {
             if (action == A4) {
                 state = S7;
-                return {S7, 1, 1, false};
+                return {state, 1, 1, false};
             } else if (action == A5){
                 state = S8;
-                return {S8, 0, 0, false};
+                return {state, 0, 0, false};
             } else {
-                return {star, 0, 10, true};
+                state = star;
+                return {state, 0, 10, true};
             }
         } else if (state == S3) {
             if (action == A6) {
                 state = S9;
                 return {S9, 0, 1, false};
             } else {
-                return {star, 0, 10, true};
+                state = star;
+                return {state, 0, 10, true};
             }
         } else {
             state = star;

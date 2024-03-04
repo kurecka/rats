@@ -24,6 +24,39 @@ map = """
 #######
 """
 
+map_small = """
+#######
+##GGGG#
+#BTTGG#
+#..TG.#
+#T.#T.#
+#T.#..#
+#T...T#
+#######
+"""
+
+map_final7 = """
+#########
+#GGGTTT##
+#GGGTT.B#
+#..GTT.T#
+#T.TTT..#
+#..TTT.T#
+#T.....T#
+#########
+"""
+
+map_final9 = """
+##########
+#GGGTTBTG#
+#GGGTT.TT#
+#..GTT.TG#
+#T.TTT.T##
+#..TTT.T##
+#T..T..T##
+##########
+"""
+
 map2 = """
 #######
 #BTTTG#
@@ -42,16 +75,6 @@ GGGG#...#..G#
 #############
 """
 
-map4 = """
-##########
-#TT.....T#
-#T.GTTT..#
-#T.T.TT..#
-#T..GTTT.#
-#T..TB...#
-##########
-"""
-
 map5 = """
 #####
 ##.##
@@ -64,58 +87,175 @@ map5 = """
 #####
 """
 
-map6 = """
+map_slide2 = """
 #####
-#B..#
-#T..#
-#G..#
+#TTT#
+#T.T#
+#B.T#
+##.##
+##.##
+##.T#
+##G##
 #####
 """
 
-
-# set_log_level('debug')
-
-# r = 0
-# p = 0
-
-# for i in range(100):
-#     e = envs.Hallway(map5, 1, 0.4)
-#     h = envs.EnvironmentHandler(e, 20)
-#     a = agents.ParetoUCT(
-#         h,
-#         max_depth=20, num_sim=-1, sim_time_limit=50, risk_thd=0.16, gamma=0.99,
-#         exploration_constant=1
-#     )
-
-#     e.reset()
-#     a.reset()
-#     while not a.get_handler().is_over():
-#         a.play()
-#         # print()
-#     h = a.get_handler()
-#     print(h.get_reward())
-#     r += (h.get_reward() - r) / (i+1)
-#     p += (h.get_penalty() - p) / (i+1)
-#     print(f'{i}: r={r} p={p}')
+# ## ## ## ## ##
+# ## ## 07 ## ##
+# ## ## 12 ## ##
+# ## 16 17 18 ##
+# ## ## 22 ## ##
+# ## ## 27 ## ##
+# ## ## 32 33 ##
+# ## ## 37 ## ##
+# ## ## ## ## ##
 
 
-e = envs.Hallway(map5, 0.2, slide_prob=0.4)
-h = envs.EnvironmentHandler(e, 100)
-a = agents.RAMCP(
-    h,
-    max_depth=70, num_sim=0, sim_time_limit=300, risk_thd=0.16, gamma=0.99,
-    exploration_constant=5, graphviz_depth=2
-)
+map6 = """
+#######
+#BTTTG#
+#T.T..#
+#GT...#
+#######
+"""
 
-e.reset()
-a.reset()
 
-i = 0
-# while not a.get_handler().is_over():
-for i in range(100):
-    print(f'{i}: {a.get_handler().get_current_state()}')
-    a.play()
-    with open(f"../logs/tree_0.dot", "w") as f:
-        f.write(a.get_graphviz())
-    input()
-    i+=1
+map7 = """
+########
+#G..TGG#
+#T.BTTT#
+#GT#TGG#
+########
+"""
+
+
+map8 = """
+#############
+#..TTTTTTTTT#
+#..TTGTGTGTG#
+#..TT.......#
+#..TTGTGTGTG#
+#.B...TTTTTT#
+#############
+"""
+
+map10 = """
+#############
+#..T........#
+#..TTGTGTGTG#
+#..TT.......#
+#..TTGTGTGTG#
+#.B...TTTTTT#
+#############
+"""
+
+map9 = """
+#############
+#B.TTGTTTTTT#
+#..T....TT.G#
+#.TT.TT.TT.T#
+#....TT....T#
+#TGTTTTTTGTT#
+#############
+"""
+
+map4 = """
+##########
+#TTT...GT#
+#TGGTTT..#
+#T.T.TG..#
+#TTGGTTT.#
+#T..TB...#
+##########
+"""
+
+map11 = """
+###########
+#.G.#B#.G.#
+#.#.....#.#
+#G#T#T#T#G#
+#G#######G#
+#.#..#..#.#
+#.#..#..#.#
+#.#..#..#.#
+#.#..#..#.#
+#G#..#..#G#
+#.T#.#.#T.#
+#.T#.#.#T.#
+#G#..#..#G#
+###########
+"""
+
+map12 = """
+#########
+#GG#..G.#
+#GG#G#TT#
+#T##.TTT#
+#TT##T..#
+##GTT.#G#
+##.#B.#T#
+##.#TTTG#
+#########
+"""
+
+
+def prep_env():
+    return envs.CCPOMCP_EX1()
+    # return envs.CCPOMCP_EX2(4)
+    # return envs.Hallway(map_final7, 0.1, 0)
+
+def prep_agent(h):
+    # return agents.RAMCP(
+    # return agents.DualRAMCP(
+    return agents.DualUCT(
+    # return agents.LambdaParetoUCT(
+    # return agents.ParetoUCT(
+        h,
+        max_depth=100, num_sim=0, sim_time_limit=1, risk_thd=0.5, gamma=0.99,
+        exploration_constant=5, graphviz_depth=3,
+        # lr=1
+    )
+
+def repeat():
+    r = 0
+    p = 0
+
+    for i in range(1000):
+        e = prep_env()
+        h = envs.EnvironmentHandler(e, 100)
+        a = prep_agent(h)
+        e.reset()
+        a.reset()
+        while not a.get_handler().is_over():
+            a.play()
+        h = a.get_handler()
+        r += (h.get_reward() - r) / (i+1)
+        p += (h.get_penalty() - p) / (i+1)
+        print(f'{i}: r={r} p={p}')
+
+
+def observe_run():
+    set_log_level('debug')
+
+    e = prep_env()
+    h = envs.EnvironmentHandler(e, 100)
+    a = prep_agent(h)
+    e.reset()
+    a.reset() 
+
+    i = 0
+    while not a.get_handler().is_over():
+    # for i in range(6):
+        h = a.get_handler()
+        print(f'{i}: state = {h.get_current_state()}')
+        print("reward:", h.get_reward())
+        print("steps:", h.get_num_steps())
+        print()
+        a.play()
+        # if i < 6:
+        with open(f"../logs/tree.dot", "w") as f:
+            f.write(a.get_graphviz())
+        input()
+        i+=1
+
+repeat()
+# observe_run()

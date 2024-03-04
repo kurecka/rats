@@ -1,0 +1,14 @@
+defaults:
+  - hw
+
+trap_prob: 0.5
+slide_prob: 0.1
+
+map: |
+  #############
+  #......#....#
+  #..T.G.#....#
+  #..TG.....T.#
+  #..TTGTGTGTG#
+  #..B..TTTTTT#
+  #############

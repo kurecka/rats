@@ -1,0 +1,15 @@
+defaults:
+  - hw
+
+trap_prob: 0.05
+
+map: |
+  #########
+  #GG#..G.#
+  #GG#G#TT#
+  #T##.TTT#
+  #TT##T..#
+  ##GTT.#G#
+  ##TTB.#T#
+  ##.#TTTG#
+  #########

@@ -136,10 +136,53 @@ public:
         auto& [reward1, penalty1, supp1] = points[point_idx1];
         auto& [reward2, penalty2, supp2] = points[point_idx2];
         if (is_state_curve) {
+            if (!supp1.num_outcomes()) {
+                return mixture(0, 0, 0, 0, thd);
+            }
             return mixture(supp1.get_first_outcome(), supp2.get_first_outcome(), penalty1, penalty2, thd);
         } else {
             return mixture(point_idx1, point_idx2, penalty1, penalty2, thd);
         }
+    }
+
+    template<bool is_state_curve = false>
+    mixture select_vertex_by_lambda(float thd, float lambda, float epsilon = 0.1) {
+        std::vector<float> lagrangians(points.size());
+        size_t max_idx;
+        float max_lagrangian = -std::numeric_limits<float>::infinity();
+        for (size_t i = 0; i < points.size(); ++i) {
+            auto& [reward, penalty, supp] = points[i];
+            lagrangians[i] = reward - lambda * penalty;
+            if (lagrangians[i] >= max_lagrangian) {
+                max_lagrangian = lagrangians[i];
+                max_idx = i;
+            }
+        }
+        size_t point_idx1;
+        for (point_idx1 = 0; point_idx1 < points.size()-1 && lagrangians[point_idx1] < max_lagrangian - epsilon; ++point_idx1);
+        while (point_idx1 + 1 < points.size() && std::get<1>(points[point_idx1 + 1]) <= thd) {
+            ++point_idx1;
+        }
+        size_t point_idx2;
+        for (point_idx2 = points.size() - 1; point_idx2 > 0 && lagrangians[point_idx2] < max_lagrangian - epsilon; --point_idx2);
+        while (point_idx2 > 0 && std::get<1>(points[point_idx2 - 1]) >= thd) {
+            --point_idx2;
+        }
+
+        auto& [reward1, penalty1, supp1] = points[point_idx1];
+        auto& [reward2, penalty2, supp2] = points[point_idx2];
+        if (is_state_curve) {
+            if (!supp1.num_outcomes()) {
+                return mixture(0, 0, 0, 0, thd);
+            }
+            return mixture(supp1.get_first_outcome(), supp2.get_first_outcome(), penalty1, penalty2, thd);
+        } else {
+            return mixture(point_idx1, point_idx2, penalty1, penalty2, thd);
+        }
+    }
+
+    std::pair<float, float> const reward_bounds() const {
+        return {std::get<0>(points.front()), std::get<0>(points.back())};
     }
 
     size_t num_outcomes() const {
@@ -160,6 +203,7 @@ EPC convex_hull_merge(std::vector<EPC*> curves) {
         }
     }
 
+    std::random_shuffle(points.begin(), points.end());
     std::vector<std::tuple<float, float, outcome_support>> hull = upper_hull(points);
     EPC curve;
     curve.points = hull;

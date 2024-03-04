@@ -38,8 +38,16 @@ struct select_action_dual {
             uct_values[i] = children[i].q.first - lambda * children[i].q.second;
         }
 
+        // get max of uct_values
+        float max_v = *std::max_element(uct_values.begin(), uct_values.end());
+        float min_v = *std::min_element(uct_values.begin(), uct_values.end());
+        
+        if (max_v <= min_v) {
+            max_v = min_v + 1;
+        }
+
         for (size_t i = 0; i < children.size(); ++i) {
-            uct_values[i] += explore * c * static_cast<float>(
+            uct_values[i] += explore * (max_v - min_v) * c * static_cast<float>(
                 sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
             );
         }
@@ -104,6 +112,7 @@ private:
     int sim_time_limit;
     float risk_thd;
     float lr;
+    bool use_rollout;
     float initial_lambda;
     float d_lambda = 0;
     float lambda_max = 100;
@@ -121,7 +130,8 @@ public:
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _initial_lambda = 2, float _lr = 0.0005,
+        float _exploration_constant = 5.0, float _initial_lambda = 2, float _lr = -1,
+        bool _rollout = true,
         int _graphviz_depth = 0
     )
     : agent<S, A>(_handler)
@@ -130,6 +140,7 @@ public:
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , lr(_lr)
+    , use_rollout(_rollout)
     , initial_lambda(_initial_lambda)
     , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, 0, agent<S, A>::handler})
     , graphviz_depth(_graphviz_depth)
@@ -145,20 +156,28 @@ public:
     void simulate(int i) {
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
-        rollout(leaf, false);
+        if (use_rollout) {
+            rollout(leaf, true);
+        }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
         size_t a_idx = select_action_f(root.get(), false);
         action_node_t* action_node = root->get_child(a_idx);
 
         double gradient = (action_node->q.second - common_data.risk_thd) < 0 ? -1 : 1;
-        common_data.lambda += 1.0 / (i + 1.0) * gradient;
+        float alpha = 1.0 / (i + 1.0);
+        if (lr > 0) {
+            alpha = std::min(alpha, lr);
+        }
+        common_data.lambda += alpha * gradient;
         common_data.lambda = std::max(0.0f, common_data.lambda);
         common_data.lambda = std::min(lambda_max, common_data.lambda);
     }
 
     void play() override {
         spdlog::debug("Play: {}", name());
+        spdlog::debug("thd {}", common_data.risk_thd);
+        spdlog::debug("lambda {}", common_data.lambda);
 
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();
@@ -173,11 +192,11 @@ public:
             }
         }
 
-
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
 
+        std::unique_ptr<state_node_t> new_root;
         if constexpr (use_lp) {
             A a = solver.get_action(root.get(), common_data.risk_thd);
             auto [s, r, p, t] = common_data.handler.play_action(a);
@@ -189,16 +208,12 @@ public:
                 full_expand_action(an, s, r, p, t);
             }
 
+            new_root = an->get_child_unique_ptr(s);
             common_data.risk_thd = solver.update_threshold(common_data.risk_thd, a, s);
-
-            std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
-            root = std::move(new_root);
-            root->get_parent() = nullptr;
         } else {
             size_t a_idx = select_action_f(root.get(), false);
             A a = root->actions[a_idx];
             auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
-            ++common_data.num_steps;
             spdlog::debug("Play action: {}", to_string(a));
             spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
@@ -216,12 +231,12 @@ public:
                 immediate_penalty += outcome_prob * observed_penalty;
             }
 
+            new_root = an->get_child_unique_ptr(s);
             common_data.risk_thd = std::max(common_data.mix.update_thd(common_data.risk_thd, immediate_penalty), 0.0f);
-
-            std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
-            root = std::move(new_root);
-            root->get_parent() = nullptr;
         }
+        ++common_data.num_steps;
+        root = std::move(new_root);
+        root->get_parent() = nullptr;
     }
 
 
@@ -240,7 +255,11 @@ public:
     }
 
     std::string name() const override {
-        return "dual_uct";
+        if constexpr (use_lp) {
+            return "dual_ramcp";
+        } else {
+            return "dual_uct";
+        }
     }
 };
 

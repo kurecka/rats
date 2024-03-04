@@ -1,0 +1,10 @@
+defaults:
+  - hw
+
+map: |
+  ########
+  #GTG..B#
+  #.T.TTT#
+  #.T.TTT#
+  #....TG#
+  ########

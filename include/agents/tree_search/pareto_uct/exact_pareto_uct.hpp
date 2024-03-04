@@ -25,6 +25,7 @@ struct pareto_uct_data {
     predictor_manager<S, A> predictor;
     bool use_predictor;
     mixture mix;
+    float lambda;
 };
 
 struct pareto_value {
@@ -44,12 +45,10 @@ std::string to_string(const ts::pareto_value& v) {
 namespace rats {
 namespace ts {
 
-template<typename SN>
+template<typename SN, bool use_lambda = false>
 struct select_action_pareto {
     size_t operator()(SN* node, bool explore) const {
-        float risk_thd = node->common_data->sample_risk_thd;
         float c = node->common_data->exploration_constant;
-
         // if (explore) {
         //     float dev = std::min(0.1, risk_thd * 0.3);
 
@@ -68,16 +67,34 @@ struct select_action_pareto {
             // compute uct bonuses
             std::vector<EPC> action_curves;
             std::vector<EPC*> curve_ptrs;
+            float l_reward = std::numeric_limits<float>::infinity();
+            float h_reward = -std::numeric_limits<float>::infinity();
+            for (auto& child : node->children) {
+                auto [l, h] = child.q.curve.reward_bounds();
+                l_reward = std::min(l_reward, l);
+                h_reward = std::max(h_reward, h);
+            }
+            if (h_reward >= l_reward + 1) {
+                c *= (h_reward - l_reward);
+            }
+
+            if (!explore) {
+                spdlog::debug("c: {}", c);
+            }
+
             for (auto& child : node->children) {
                 action_curves.push_back(child.q.curve);
                 float r_uct;
-                float p_uct;
+                float p_uct = 0;
                 if (child.q.curve.num_samples == 0) {
                     r_uct = std::numeric_limits<float>::infinity();
-                    p_uct = 0;
                 } else {
-                    r_uct = c * powf(static_cast<float>(node->num_visits), 0.8f) / child.q.curve.num_samples;
-                    // p_uct = -c * powf(static_cast<float>(node->num_visits), 0.6f) / child.q.curve.num_samples;
+                    // r_uct = c * powf(static_cast<float>(node->num_visits), 0.8f) / child.q.curve.num_samples;
+                    r_uct = c * sqrt(log(node->num_visits + 1) / (child.num_visits + 0.0001));
+                    if constexpr (use_lambda) {
+                        // p_uct = - c * powf(static_cast<float>(node->num_visits), 0.6f) / child.q.curve.num_samples;
+                        p_uct = - c * sqrt(log(node->num_visits + 1) / (child.num_visits + 0.0001));
+                    }
                 }
                 p_ucts.push_back(p_uct);
                 action_curves.back().add_and_fix(r_uct, p_uct);
@@ -88,7 +105,15 @@ struct select_action_pareto {
             merged_curve = convex_hull_merge(curve_ptrs);
         }
 
-        node->common_data->mix = curve_ptr->select_vertex<true>(risk_thd);
+        if constexpr (use_lambda) {
+            float lambda = node->common_data->lambda;
+            float risk_thd = node->common_data->risk_thd;
+            node->common_data->mix = curve_ptr->select_vertex_by_lambda<true>(risk_thd, lambda);
+        } else {
+            float risk_thd = node->common_data->sample_risk_thd;
+            node->common_data->mix = curve_ptr->select_vertex<true>(risk_thd);
+        }
+        
         return node->common_data->mix.sample();
     }
 };
@@ -110,22 +135,28 @@ struct descend_callback {
         DATA* common_data = action->common_data;
 
         float action_thd = common_data->mix.update_thd(common_data->sample_risk_thd);
+        if constexpr (debug) {
+            spdlog::debug("Action thd: {}", action_thd);
+        }
         auto mix = action->q.curve.select_vertex(action_thd);
         size_t state_idx = action->child_idx[s];
-        auto& [r1, point_penalty1, supp1] = action->q.curve.points[mix.vals[0]];
-        auto& [r2, point_penalty2, supp2] = action->q.curve.points[mix.vals[1]];
+        auto& [r1, point_penalty0, supp0] = action->q.curve.points[mix.vals[0]];
+        auto& [r2, point_penalty1, supp1] = action->q.curve.points[mix.vals[1]];
 
-        if (supp1.num_outcomes() > state_idx) {
+        if (supp0.num_outcomes() > state_idx) {
+            float state_penalty0 = supp0.penalty_at_outcome(state_idx);
             float state_penalty1 = supp1.penalty_at_outcome(state_idx);
-            float state_penalty2 = supp2.penalty_at_outcome(state_idx);
 
             if (mix.vals[0] != mix.vals[1]) {
-                common_data->sample_risk_thd = mix.expectation(state_penalty1, state_penalty2);
+                common_data->sample_risk_thd = mix.expectation(state_penalty0, state_penalty1);
             } else if (mix.penalties[0] > action_thd) {
-                float overflow_ratio = (action_thd - point_penalty1) / point_penalty1;
-                common_data->sample_risk_thd = state_penalty1 + overflow_ratio * state_penalty1;
+                float overflow_ratio = (action_thd - point_penalty0) / point_penalty0;
+                common_data->sample_risk_thd = state_penalty0 + overflow_ratio * state_penalty0;
             } else {
-                float overflow_ratio = (action_thd - point_penalty1) / (1 - point_penalty1);
+                float overflow_ratio = 0;
+                if (mix.penalties[1] < action_thd) {
+                    overflow_ratio = (action_thd - point_penalty1) / (1 - point_penalty1);
+                }
                 common_data->sample_risk_thd = state_penalty1 + overflow_ratio * (1 - state_penalty1);
             }
         }
@@ -228,7 +259,7 @@ void pareto_predictor_rollout(SN* leaf, float thd) {
 //  * @tparam A Action type
 //  *********************************************************************/
 
-template <typename S, typename A>
+template <typename S, typename A, bool use_lambda = false>
 class pareto_uct : public agent<S, A> {
     using data_t = pareto_uct_data<S, A>;
     using v_t = pareto_value;
@@ -236,7 +267,7 @@ class pareto_uct : public agent<S, A> {
     using state_node_t = state_node<S, A, data_t, v_t, q_t>;
     using action_node_t = action_node<S, A, data_t, v_t, q_t>;
     
-    using select_action_t = select_action_pareto<state_node_t>;
+    using select_action_t = select_action_pareto<state_node_t, use_lambda>;
     constexpr static auto select_action_f = select_action_pareto<state_node_t>();
     using descend_callback_t = descend_callback<state_node_t, false>;
     constexpr static auto descend_callback_f = descend_callback<state_node_t, true>();
@@ -249,6 +280,9 @@ private:
     float risk_thd;
     float gamma;
     bool use_predictor;
+    float lambda;
+    float lambda_max = 100;
+    double grad_buffer = 0;
 
     data_t common_data;
 
@@ -264,7 +298,7 @@ public:
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, int _graphviz_depth = -1,
-        bool _use_predictor = false
+        bool _use_predictor = false, float _lambda = -1
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
@@ -273,7 +307,8 @@ public:
     , risk_thd(_risk_thd)
     , gamma(_gamma)
     , use_predictor(_use_predictor)
-    , common_data({_risk_thd, _risk_thd, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, _use_predictor})
+    , lambda(_lambda)
+    , common_data({_risk_thd, _risk_thd, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, _use_predictor, {}, lambda})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
@@ -300,10 +335,25 @@ public:
         if (use_predictor) {
             pareto_predictor_rollout(leaf, common_data.sample_risk_thd);
         } else {
-            rollout(leaf, false);
+            // rollout(leaf, true);
         }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
+        if constexpr (use_lambda) {
+            select_action_t()(root.get(), false);
+            mixture& mix = root->common_data->mix;
+
+            double gradient = mix.last_penalty() - common_data.risk_thd;
+            // spdlog::debug("Gradient: {}", gradient);
+            grad_buffer += (gradient - grad_buffer) * 0.3;
+            // spdlog::debug("Grad buffer: {}", grad_buffer);
+            
+            double eps = 1;
+            eps = 1.0 / sqrt(1.0 + i);
+            common_data.lambda += grad_buffer * eps;
+            // spdlog::debug("Lambda: {}", common_data.lambda);
+            common_data.lambda = std::clamp(common_data.lambda, 0.f, lambda_max);
+        }
     }
 
     void play() override {
@@ -323,7 +373,8 @@ public:
         }
 
         common_data.sample_risk_thd = common_data.risk_thd;
-        A a = select_action_f(root.get(), false);
+        // A a = select_action_f(root.get(), false);
+        A a = select_action_t()(root.get(), false);
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
@@ -332,6 +383,7 @@ public:
         ++common_data.num_steps;
         episode_history.push_back({root->state, a, r, common_data.sample_risk_thd});
 
+        spdlog::debug("Lambda: {}", common_data.lambda);
         spdlog::debug("Play action: {}", to_string(a));
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
@@ -361,10 +413,15 @@ public:
         common_data.handler.gamma = common_data.gamma;
         common_data.handler.gammap = common_data.gammap;
         common_data.num_steps = 0;
+        common_data.lambda = lambda;
     }
 
     std::string name() const override {
-        return "pareto_uct";
+        if constexpr (use_lambda) {
+            return "lambda_pareto_uct";
+        } else {
+            return "pareto_uct";    
+        }
     }
 
     constexpr bool is_trainable() const override {

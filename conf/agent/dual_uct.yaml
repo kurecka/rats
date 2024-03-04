@@ -2,5 +2,4 @@ defaults:
   - ts
 
 class: DualUCT
-initial_lambda: 50
-lr: 1
+

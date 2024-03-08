@@ -42,6 +42,14 @@ public:
     size_t get_action(size_t i) const override { return i; }
     int current_state() const override { return state; }
     bool is_over() const override { return state < -2; }
+
+    // TODO : not supported for now
+    bool is_terminal( int state ) const override { return state == -4; }
+    std::pair< float, float > get_expected_reward( int state , size_t action, int succ ) const override {
+        return {0, 0};
+    }
+    float solve_exactly() override { return 0; }
+
     outcome_t<int> play_action(size_t action) override {
         if (state == 0) {
             if (action == STAY) {

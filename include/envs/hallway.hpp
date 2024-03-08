@@ -157,6 +157,9 @@ public:
     size_t get_action(size_t i) const override { return i; }
     state_t current_state() const override { return {position, gold_mask}; }
     bool is_over() const override { return over; }
+    bool is_terminal( state_t s ) const override;
+    float solve_exactly() override;
+
     outcome_t<state_t> play_action(size_t action) override;
 
     void restore_checkpoint(size_t id) override;
@@ -199,7 +202,7 @@ outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
 }
 
 
-std::pair<float, float> hallway::get_expected_reward( state_t state, action_t action, state_t succ ) const override { 
+std::pair<float, float> hallway::get_expected_reward( state_t state, action_t action, state_t succ ) const { 
     auto [old_pos, old_mask] = state;
     auto [new_pos, new_mask] = succ;
 
@@ -239,6 +242,12 @@ void hallway::reset() {
     over = false;
 }
 
+bool hallway::is_terminal( state_t s ) const {
+    auto [ pos, gold_mask ] = s;
+    // terminal if died or collected all the gold
+    return ( pos == -1 ) || ( gold_mask == 0 );
+}
+
 std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typename hallway::state_t s, size_t a) const {
     auto [pos, gold_mask] = s;
     auto [new_pos, new_gold_mask, tile, hit] = m.move(a, pos, gold_mask);
@@ -275,8 +284,8 @@ std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typena
     return outcomes;
 }
 
-float hallway::solve_exactly() const {
-
+float hallway::solve_exactly() {
+    return 0;
 }
 
 } // namespace rats

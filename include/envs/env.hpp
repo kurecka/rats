@@ -48,7 +48,6 @@ public:
      */
     virtual A get_action(size_t i) const = 0;
 
-
     /**
      * @brief Get expected reward for (s,a,s') triplet
      *
@@ -76,6 +75,14 @@ public:
      * @return bool
      */
     virtual bool is_over() const = 0;
+
+
+    /** 
+     * @brief Returns true if 'state' is terminal.
+     *
+     * return bool
+     */
+    virtual bool is_terminal( S state ) const = 0;
 
     /**
      * @brief Play an action in the environment

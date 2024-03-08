@@ -32,7 +32,14 @@ public:
 
     std::string name() const override { return "InvestorEnv"; }
 
-    std::pair<float, float> get_expected_reward( int, size_t, int ) const override { return {0, 0}; /* TODO: fix, not the right values */ }
+
+    // TODO: not supported for now
+    std::pair<float, float> get_expected_reward( int, size_t, int ) const override { return {0, 0}; }
+    bool is_terminal( int ) const override {
+        return (wealth == target) || (wealth <= 0);
+    }
+    float solve_exactly() override { return 0; }
+
     std::pair<float, float> reward_range() const override { return {-2, 12}; }
     size_t num_actions() const override { return 2; }
     std::vector<size_t> possible_actions(int = {}) const override { return {RISKY, SAFE}; }

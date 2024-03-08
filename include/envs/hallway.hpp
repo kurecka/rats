@@ -150,6 +150,7 @@ public:
 
     std::string name() const override { return "Hallway"; }
 
+    std::pair<float, float> get_expected_reward( state_t, action_t, state_t ) const override;
     std::pair<float, float> reward_range() const override { return {0, 1}; }
     size_t num_actions() const override { return 4; }
     std::vector<action_t> possible_actions(state_t = {}) const override { return {0, 1, 2, 3}; }
@@ -177,19 +178,40 @@ outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
         throw std::runtime_error("Cannot play action: environment is over");
     }
     auto [new_pos, new_gold_mask, tile, hit] = m.move(action, position, gold_mask);
+
+    // roll for slides
     if (rng::unif_float() < slide_prob && new_pos != position) {
         size_t slide_action = (action + 3 + 2 * rng::unif_int(2)) % 4;
         std::tie(new_pos, new_gold_mask, tile, hit) = m.move(slide_action, new_pos, gold_mask);
     }    
 
-    float reward = new_gold_mask != gold_mask;
-    if (hit) reward -= 0.00001f;
-    float penalty = (tile == map_manager::TRAP) && (rng::unif_float() < trap_prob);
-    if (penalty > 0) { new_pos = -1; }
+    // roll for trap hit
+    bool hit_trap = ( tile == map_manager::TRAP ) && ( rng::unif_float() < trap_prob );
+    if ( hit_trap ) { new_pos = -1; }
+
+    auto [ reward, penalty ] = get_expected_reward( {position, gold_mask}, action, {new_pos, new_gold_mask} );
+
     over = (new_gold_mask == 0) || penalty > 0;
     position = new_pos;
     gold_mask = new_gold_mask;
+
     return {{position, gold_mask}, reward, penalty, over};
+}
+
+
+std::pair<float, float> hallway::get_expected_reward( state_t state, action_t action, state_t succ ) const override { 
+    auto [old_pos, old_mask] = state;
+    auto [new_pos, new_mask] = succ;
+
+    // find out if hit a wall using move method
+    auto [ _newpos, _newmask, _tile, hit] = m.move(action, old_pos, old_mask);
+    float reward = new_gold_mask != gold_mask;
+
+    if (hit) reward -= 0.00001f;
+    // hit a trap
+    if (new_pos == -1) penalty = 1;
+
+    return {reward,penalty};
 }
 
 void hallway::make_checkpoint(size_t id) {

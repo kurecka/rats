@@ -48,6 +48,14 @@ public:
      */
     virtual A get_action(size_t i) const = 0;
 
+
+    /**
+     * @brief Get expected reward for (s,a,s') triplet
+     *
+     * @return std::pair<float, float> for expected reward and penalty
+     */
+    virtual std::pair<float, float> get_expected_reward( S state, A action, S succ ) const = 0;
+
     /**
      * @brief Get the bounds on the reward
      * 

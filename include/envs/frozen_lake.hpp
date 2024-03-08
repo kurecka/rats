@@ -30,7 +30,7 @@ public:
 
     std::pair<float, float> reward_range() const override { return {0, 1}; }
     size_t num_actions() const override { return 4; }
-    std::vector<size_t> possible_actions() const override { return {0, 1, 2, 3}; }
+    std::vector<size_t> possible_actions(int = {}) const override { return {0, 1, 2, 3}; }
     size_t get_action(size_t i) const override { return i; }
     int current_state() const override { return state; }
     bool is_over() const override { return over; }

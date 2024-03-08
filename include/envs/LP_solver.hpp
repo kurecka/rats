@@ -15,5 +15,8 @@ namespace rats {
         public:
 
         std::unique_ptr<MPSolver> solver;
+
+        LP_solver() : solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP"))) {}
+        
     };
 }

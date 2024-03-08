@@ -39,7 +39,7 @@ public:
     /**
      * @brief Get the vector of all possible actions
      */
-    virtual std::vector<A> possible_actions() const = 0;
+    virtual std::vector<A> possible_actions(S state = {}) const = 0;
 
     /**
      * @brief Get the ith action

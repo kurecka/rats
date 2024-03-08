@@ -205,13 +205,15 @@ std::pair<float, float> hallway::get_expected_reward( state_t state, action_t ac
 
     // find out if hit a wall using move method
     auto [ _newpos, _newmask, _tile, hit] = m.move(action, old_pos, old_mask);
-    float reward = new_gold_mask != gold_mask;
+
+    float reward = new_mask != gold_mask;
+    float penalty = 0;
 
     if (hit) reward -= 0.00001f;
     // hit a trap
     if (new_pos == -1) penalty = 1;
 
-    return {reward,penalty};
+    return {reward, penalty};
 }
 
 void hallway::make_checkpoint(size_t id) {

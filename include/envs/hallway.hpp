@@ -180,8 +180,7 @@ outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
     if (rng::unif_float() < slide_prob && new_pos != position) {
         size_t slide_action = (action + 3 + 2 * rng::unif_int(2)) % 4;
         std::tie(new_pos, new_gold_mask, tile, hit) = m.move(slide_action, new_pos, gold_mask);
-    }
-    
+    }    
 
     float reward = new_gold_mask != gold_mask;
     if (hit) reward -= 0.00001f;
@@ -219,12 +218,41 @@ void hallway::reset() {
 std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typename hallway::state_t s, size_t a) const {
     auto [pos, gold_mask] = s;
     auto [new_pos, new_gold_mask, tile, hit] = m.move(a, pos, gold_mask);
+    std::map<typename hallway::state_t, float> outcomes;
 
+    size_t slide_action_1 = (a + 3) % 4;
+    size_t slide_action_2 = (a + 5) % 4;
+    auto [new_pos1, new_gold_mask1, tile1, hit1] = m.move(slide_action_1, new_pos, gold_mask);
+    auto [new_pos2, new_gold_mask2, tile2, hit2] = m.move(slide_action_2, new_pos, gold_mask);
+
+    float non_slide_prob = 1 - slide_prob + (slide_prob / 2) * (hit1 + hit2);
     if (tile == map_manager::TRAP) {
-        return {{{-1, new_gold_mask}, trap_prob}, {{new_pos, new_gold_mask}, 1 - trap_prob}};
+        outcomes.insert({{{-1, new_gold_mask}, non_slide_prob * trap_prob}, {{new_pos, new_gold_mask}, non_slide_prob * (1 - trap_prob)}});
     } else {
-        return {{{new_pos, new_gold_mask}, 1}};
+        outcomes.insert({{{new_pos, new_gold_mask}, non_slide_prob}});
     }
+
+    float slided_prob = slide_prob / 2;
+    if (!hit1) {
+        if (tile1 == map_manager::TRAP) {
+            outcomes.insert({{{-1, new_gold_mask1}, slided_prob * trap_prob}, {{new_pos1, new_gold_mask1}, slided_prob * (1 - trap_prob)}});
+        } else {
+            outcomes.insert({{{new_pos1, new_gold_mask1}, slided_prob}});
+        }
+    }
+    if (!hit2) {
+        if (tile2 == map_manager::TRAP) {
+            outcomes.insert({{{-1, new_gold_mask2}, slided_prob * trap_prob}, {{new_pos2, new_gold_mask2}, slided_prob * (1 - trap_prob)}});
+        } else {
+            outcomes.insert({{{new_pos2, new_gold_mask2}, slided_prob}});
+        }
+    }
+
+    return outcomes;
+}
+
+float hallway::solve_exactly() const {
+
 }
 
 } // namespace rats

@@ -184,7 +184,7 @@ void full_expand_action(
  * Depth is the number of steps. If depth is 0, then the root node is returned.
 */
 template<typename SN, typename select_t, typename descend_cb_t>
-SN* select_leaf(SN* root, bool explore = true, int max_depth = 10) {
+SN* select_leaf(SN* root, bool explore = true, [[maybe_unused]] int max_depth = 10) {
     using state_node_t = SN;
     using action_node_t = typename SN::action_node_t;
     using A = typename SN::A;
@@ -192,14 +192,15 @@ SN* select_leaf(SN* root, bool explore = true, int max_depth = 10) {
     constexpr static auto descend_cb = descend_cb_t();
 
     state_node_t* sn = root;
+    auto& handler = sn->common_data->handler;
 
     int depth = 0;
 
-    while (!sn->is_leaf() && depth < max_depth && !sn->is_terminal()) {
+    while (!sn->is_leaf() && !handler.is_over() && !sn->is_terminal()) {
         size_t a_idx = select(sn, explore);
         action_node_t *an = sn->get_child(a_idx);
         A action = an->action;
-        auto [s, r, p, t] = sn->common_data->handler.sim_action(action);
+        auto [s, r, p, t] = handler.sim_action(action);
         full_expand_action(an, s, r, p, t);
         state_node_t* new_sn = an->get_child(s);
         descend_cb(sn, action, an, s, new_sn);

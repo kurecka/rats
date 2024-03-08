@@ -100,6 +100,12 @@ public:
      * 
      */
     virtual void reset() = 0;
+
+    /**
+     * @brief Solve exactly if possible
+     * 
+     */
+    virtual float solve_exactly();
 };
 
 

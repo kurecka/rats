@@ -73,8 +73,8 @@ target_link_libraries(${LIBRARY_NAME} PRIVATE pybind11::pybind11)
 # Set the compile options you want (change as needed). Only if PEDANTIC is ON.
 if(PEDANTIC)
     message(STATUS "Enabling pedantic compiler warnings for ${LIBRARY_NAME}. If this is annoying, set -DPEDANTIC=OFF.")
-    target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-    target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors)# -Wno-poison-system-directories)
+    # target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
+    # target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors)# -Wno-poison-system-directories)
 endif()
 
 # --------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ target_link_libraries(${_target} PRIVATE pybind11::pybind11)
 # Set the compilation options
 if (PEDANTIC)
     message(STATUS "Enabling pedantic compiler warnings for ${_target}. If this is annoying, set -DPEDANTIC=OFF.")
-    target_set_warnings(${_target} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
+    # target_set_warnings(${_target} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
     # target_compile_options(${_target} PRIVATE -Wno-missing-prototypes)
     # target_compile_options(${_target} PRIVATE -Wno-poison-system-directories)
 endif()

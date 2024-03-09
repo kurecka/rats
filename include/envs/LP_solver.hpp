@@ -19,6 +19,7 @@ namespace rats {
 
         environment<S, A>* env;
         std::unique_ptr<MPSolver> solver;
+
         // S -> occupancy measure
         std::map<S, LinearExpr> occ;
         float risk_thd;
@@ -64,7 +65,7 @@ namespace rats {
 
             ctr = 0;
             total_reward = LinearExpr();
-            LinearExpr total_penalty = 0;
+            LinearExpr total_penalty = 0.;
             S start = env->current_state();
             occ[start] = 1.;
 
@@ -76,8 +77,9 @@ namespace rats {
 
             if (env->is_terminal(parent)) { return; }
 
-            spdlog::trace("Setting LP flow for node {}", to_string(parent));
-            for ( auto action : env.possible_actions(parent) ) {
+            // breaks for hallway, no to_string for pairs, turning off for now
+            // spdlog::trace("Setting LP flow for node {}", to_string(parent));
+            for ( auto action : env->possible_actions(parent) ) {
 
                 MPVariable* const action_occ = solver->MakeNumVar(0.0, 1.0, "A"+to_string(ctr++));
                 occ[parent] -= action_occ;

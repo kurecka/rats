@@ -86,7 +86,7 @@ namespace rats {
 
                 auto states_distr = env->outcome_probabilities(parent, action);
                 for (auto& [state, prob] : states_distr) {
-                    if (!occ.contains(state)) {
+                    if (occ.find(state) == occ.end()) {
                         rec_construct(state, total_penalty, gamma * rew_discount, gammap * cost_discount);
                     }
 

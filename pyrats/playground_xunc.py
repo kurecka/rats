@@ -46,7 +46,10 @@ map4 = """
 #####
 """
 
-e = envs.Hallway(map, 1, 0.4)
+e = envs.Hallway(map4, 1, 0.4)
+s = e.current_state()
+print(s)
+print(e.outcome_probabilities(s, 2))
 lp_solver = LP_solver(e, 1.0)
 rew = lp_solver.solve()
 

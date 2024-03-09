@@ -5,7 +5,7 @@
 
 namespace rats::py {
     template <typename S, typename A>
-    void register_lp_solver(py::module& m, std::string type) {
+    void register_lp_solver(py::module& m) {
         py::class_<LP_solver<S, A>>(m, "LP_solver")
             .def(py::init<environment<S, A>&, float>())
             .def("solve", &LP_solver<S, A>::solve)
@@ -16,6 +16,6 @@ namespace rats::py {
 
     // TODO: add solvers for other things except hallway
     void register_lp_solvers(py::module& m) {
-        register_lp_solver<std::pair<int,uint64_t>, size_t>(m,"_hallway");
+        register_lp_solver<std::pair<int,uint64_t>, size_t>(m);
     }
 } // namespace rats

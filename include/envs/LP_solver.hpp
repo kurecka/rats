@@ -12,13 +12,15 @@
 namespace rats {
 
     using namespace operations_research;
+    using std::to_string;
 
     template< typename S, typename A >
     class LP_solver {
 
         environment<S, A>* env;
         std::unique_ptr<MPSolver> solver;
-        std::map<S, std::pair<LinearExpr, LinearExpr>> occs;
+        // S -> occupancy measure
+        std::map<S, LinearExpr> occ;
         float risk_thd;
         float gamma = 0.99;
         float gammap = 1;
@@ -26,10 +28,6 @@ namespace rats {
         MPObjective* objective;
         size_t ctr = 0;
 
-        public:
-
-        LP_solver(environment<S, A>& _env, float _risk_thd)
-         : env(&_env), solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP"))), risk_thd(_risk_thd) {}
 
         std::string expr2str(const LinearExpr& expr) {
             std::string str;
@@ -46,20 +44,14 @@ namespace rats {
             return str;
         }
 
-        void set_payoff_objective(const SN* root, double risk_thd) {
+        void set_payoff_objective(S start, LinearExpr& total_penalty) {
             spdlog::debug("Setting LP payoff objective with risk threshold {}", risk_thd);
-            set_flow(root);
 
             // Payoff objective: maximize total reward
             objective = solver->MutableObjective();
             objective->OptimizeLinearExpr(total_reward, true); // true -> maximize;
 
             // Risk constraint: total penalty <= risk threshold
-            LinearExpr total_penalty = LinearExpr();
-            for (auto& [as, expr] : subtree_penalties) {
-                total_penalty += expr;
-            }
-
             spdlog::trace("Total penalty: {}", expr2str(total_penalty));
             spdlog::trace("Total reward: {}", expr2str(total_reward));
 
@@ -67,36 +59,70 @@ namespace rats {
         }
 
         void construct_LP() {
-            solver.clear();
-            occs.clear();
+            solver->Clear();
+            occ.clear();
 
             ctr = 0;
             total_reward = LinearExpr();
             LinearExpr total_penalty = 0;
-            S begin = env->current_state();
-            occs[begin] = {1., 1.};
+            S start = env->current_state();
+            occ[start] = 1.;
 
-            rec_construct(begin, total_penalty)
+            rec_construct(start, total_penalty);
+            set_payoff_objective(start, total_penalty);
         }
 
-        void rec_construct(S parent, LinearExpr total_penalty) {
+        void rec_construct(S parent, LinearExpr& total_penalty, float rew_discount = 1.f, float cost_discount = 1.f) {
 
             if (env->is_terminal(parent)) { return; }
 
             spdlog::trace("Setting LP flow for node {}", to_string(parent));
-            for ( auto action : end.possible_actions(parent) ) {
+            for ( auto action : env.possible_actions(parent) ) {
 
                 MPVariable* const action_occ = solver->MakeNumVar(0.0, 1.0, "A"+to_string(ctr++));
-                
+                occ[parent] -= action_occ;
+
+                auto states_distr = env->outcome_probabilities(parent, action);
+                for (auto& [state, prob] : states_distr) {
+                    if (!occ.contains(state)) {
+                        rec_construct(state, total_penalty, gamma * rew_discount, gammap * cost_discount);
+                    }
+
+                    occ[state] += LinearExpr(action_occ) * states_distr[state];
+                    auto [rew, cost] = env->get_expected_reward(parent, action, state);
+                    total_reward += LinearExpr(action_occ) * states_distr[state] * rew * rew_discount;
+                    total_penalty += LinearExpr(action_occ) * states_distr[state] * cost * cost_discount;
+                }
             }
+
+            solver->MakeRowConstraint(occ[parent] == 0.f);
         }
 
-        void solve();
+        public:
 
-        // change_thd
+        LP_solver(environment<S, A>& _env, float _risk_thd)
+         : env(&_env), solver(std::unique_ptr<MPSolver>(MPSolver::CreateSolver("GLOP"))), risk_thd(_risk_thd) {}
 
-        // change_gammas
+        float solve() {
+            construct_LP();
+            if (solver->Solve() != MPSolver::OPTIMAL) {
+                throw std::runtime_error("Infeasible environment setup");
+            }
 
-        // change_env
+            return objective->Value();
+        }
+
+        void change_thd(float new_thd) {
+            risk_thd = new_thd;
+        }
+
+        void change_gammas(float _gamma, float _gammap = 1.f) {
+            gamma = _gamma;
+            gammap = _gammap;
+        }
+
+        void change_env(environment<S, A>& _env) {
+            env = &_env;
+        }
     };
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "envs/LP_solver.hpp"
+#include "solvers/LP_solver.hpp"
 #include <iostream>
 #include "pybind/pybind.hpp"
 
@@ -10,7 +10,7 @@ namespace rats::py {
             .def(py::init<environment<S, A>&, float>())
             .def("solve", &LP_solver<S, A>::solve)
             .def("change_thd", &LP_solver<S,A>::change_thd)
-            .def("change_gammas", &LP_solver<S,A>::change_gammas)
+            .def("change_gammas", &LP_solver<S,A>::change_gammas, py::arg("gamma"), py::arg("gammap") = 1.f)
             .def("change_env", &LP_solver<S,A>::change_env);
     }
 

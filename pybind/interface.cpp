@@ -1,7 +1,7 @@
 #include "pybind/agents.hpp"
 #include "pybind/envs.hpp"
 #include "pybind/LP_example.hpp"
-#include "pybind/LP_solver.pybind.hpp"
+#include "pybind/solvers/LP_solver.pybind.hpp"
 #include "pybind/kernell.pybind.hpp"
 #include "pybind/pybind.hpp"
 

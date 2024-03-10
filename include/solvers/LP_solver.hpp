@@ -1,6 +1,6 @@
 #pragma once
 
-#include "env.hpp"
+#include "envs/env.hpp"
 #include "rand.hpp"
 #include "ortools/linear_solver/linear_solver.h"
 #include "ortools/linear_solver/linear_expr.h"
@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <limits>
 
 namespace rats {
 
@@ -23,11 +24,12 @@ namespace rats {
         // S -> occupancy measure
         std::map<S, LinearExpr> occ;
         float risk_thd;
-        float gamma = 0.99;
-        float gammap = 1;
+        float gamma = 0.9999; // has to be < 1
+        float gammap =  1;
         LinearExpr total_reward;
         MPObjective* objective;
         size_t ctr = 0;
+        const double infinity = solver->infinity();
 
         // for debug purposes only (policy)
         std::vector<MPVariable*> vars;
@@ -72,7 +74,7 @@ namespace rats {
             S start = env->current_state();
             occ[start] = 1.;
 
-            rec_construct(start, total_penalty);
+            rec_construct(start, start, total_penalty);
 
             // set state conversation constraints
             for (auto& [s, lexpr] : occ) {
@@ -85,27 +87,28 @@ namespace rats {
             set_payoff_objective(start, total_penalty);
         }
 
-        void rec_construct(S parent, LinearExpr& total_penalty, float rew_discount = 1.f, float cost_discount = 1.f) {
+        void rec_construct(S start, S parent, LinearExpr& total_penalty, float rew_discount = 1.f, float cost_discount = 1.f) {
 
             if (env->is_terminal(parent)) { return; }
 
             // spdlog::trace("Setting LP flow for node {}", to_string(parent));
             for ( auto action : env->possible_actions(parent) ) {
 
-                MPVariable* const action_occ = solver->MakeNumVar(0.0, 1.0, "A"+to_string(ctr++));
+                MPVariable* const action_occ = solver->MakeNumVar(0.0, infinity, "A"+to_string(ctr++));
                 occ[parent] -= action_occ;
+
                 vars.push_back(action_occ);
 
                 auto states_distr = env->outcome_probabilities(parent, action);
                 for (auto& [state, prob] : states_distr) {
                     if (occ.find(state) == occ.end()) {
-                        rec_construct(state, total_penalty, gamma * rew_discount, gammap * cost_discount);
+                        rec_construct(start, state, total_penalty, gamma * rew_discount, gammap * cost_discount);
                     }
 
-                    occ[state] += LinearExpr(action_occ) * states_distr[state];
+                    occ[state] += LinearExpr(action_occ) * states_distr[state] * gamma;
                     auto [rew, cost] = env->get_expected_reward(parent, action, state);
-                    total_reward += LinearExpr(action_occ) * states_distr[state] * rew * rew_discount;
-                    total_penalty += LinearExpr(action_occ) * states_distr[state] * cost * cost_discount;
+                    total_reward += LinearExpr(action_occ) * states_distr[state] * rew;
+                    total_penalty += LinearExpr(action_occ) * states_distr[state] * cost * cost_discount / rew_discount;
 
                     // spdlog::trace("Add at transition {}, {}, {}: prob: {}, rew {}, cost {}",
                     //  to_string(parent), to_string(action), to_string(state), to_string(states_distr[state]), to_string(rew), to_string(cost));

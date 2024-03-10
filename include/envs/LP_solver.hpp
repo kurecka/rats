@@ -29,6 +29,9 @@ namespace rats {
         MPObjective* objective;
         size_t ctr = 0;
 
+        // for debug purposes only (policy)
+        std::vector<MPVariable*> vars;
+
 
         std::string expr2str(const LinearExpr& expr) {
             std::string str;
@@ -53,8 +56,8 @@ namespace rats {
             objective->OptimizeLinearExpr(total_reward, true); // true -> maximize;
 
             // Risk constraint: total penalty <= risk threshold
-            spdlog::trace("Total penalty: {}", expr2str(total_penalty));
-            spdlog::trace("Total reward: {}", expr2str(total_reward));
+            // spdlog::trace("Total penalty: {}", expr2str(total_penalty));
+            // spdlog::trace("Total reward: {}", expr2str(total_reward));
 
             solver->MakeRowConstraint(total_penalty <= risk_thd);
         }
@@ -70,6 +73,15 @@ namespace rats {
             occ[start] = 1.;
 
             rec_construct(start, total_penalty);
+
+            // set state conversation constraints
+            for (auto& [s, lexpr] : occ) {
+                if (!env->is_terminal(s)) {
+                    // spdlog::trace("occ cons {}", expr2str(lexpr));
+                    solver->MakeRowConstraint(lexpr == 0.f);
+                }
+            }
+
             set_payoff_objective(start, total_penalty);
         }
 
@@ -77,12 +89,12 @@ namespace rats {
 
             if (env->is_terminal(parent)) { return; }
 
-            // breaks for hallway, no to_string for pairs, turning off for now
             // spdlog::trace("Setting LP flow for node {}", to_string(parent));
             for ( auto action : env->possible_actions(parent) ) {
 
                 MPVariable* const action_occ = solver->MakeNumVar(0.0, 1.0, "A"+to_string(ctr++));
                 occ[parent] -= action_occ;
+                vars.push_back(action_occ);
 
                 auto states_distr = env->outcome_probabilities(parent, action);
                 for (auto& [state, prob] : states_distr) {
@@ -94,10 +106,11 @@ namespace rats {
                     auto [rew, cost] = env->get_expected_reward(parent, action, state);
                     total_reward += LinearExpr(action_occ) * states_distr[state] * rew * rew_discount;
                     total_penalty += LinearExpr(action_occ) * states_distr[state] * cost * cost_discount;
+
+                    // spdlog::trace("Add at transition {}, {}, {}: prob: {}, rew {}, cost {}",
+                    //  to_string(parent), to_string(action), to_string(state), to_string(states_distr[state]), to_string(rew), to_string(cost));
                 }
             }
-
-            solver->MakeRowConstraint(occ[parent] == 0.f);
         }
 
         public:
@@ -107,9 +120,18 @@ namespace rats {
 
         float solve() {
             construct_LP();
+
+            // for (auto& [s, e] : occ) {
+            //     spdlog::debug("state: {}, occ: {}", to_string(s), expr2str(e));
+            // }
+
             if (solver->Solve() != MPSolver::OPTIMAL) {
                 throw std::runtime_error("Infeasible environment setup");
             }
+
+            // for (auto& var : vars) {
+            //     spdlog::debug("var: {}, sol value: {}", expr2str(LinearExpr(var)), to_string(var->solution_value()));
+            // }
 
             return objective->Value();
         }

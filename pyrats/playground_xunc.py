@@ -4,6 +4,8 @@ from rats import Hallway, LP_solver
 from utils import set_log_level
 import time
 
+set_log_level("trace")
+
 map1 = """
 ########
 #..BT.G#

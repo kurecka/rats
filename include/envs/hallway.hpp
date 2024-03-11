@@ -252,17 +252,13 @@ std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typena
     auto [pos, gold_mask] = s;
     auto [new_pos, new_gold_mask, tile, hit] = m.move(a, pos, gold_mask);
 
-    if (hit) {
-        return {{s, 1.f}}; 
-    }
-
     std::map<typename hallway::state_t, float> outcomes;
     size_t slide_action_1 = (a + 3) % 4;
     size_t slide_action_2 = (a + 5) % 4;
     auto [new_pos1, new_gold_mask1, tile1, hit1] = m.move(slide_action_1, new_pos, gold_mask);
     auto [new_pos2, new_gold_mask2, tile2, hit2] = m.move(slide_action_2, new_pos, gold_mask);
 
-    float non_slide_prob = 1 - slide_prob + (slide_prob / 2) * (hit1 + hit2);
+    float non_slide_prob = hit ? 1 : 1 - slide_prob + (slide_prob / 2) * (hit1 + hit2);
     if (tile == map_manager::TRAP) {
         outcomes.insert({{{-1, new_gold_mask}, non_slide_prob * trap_prob}, {{new_pos, new_gold_mask}, non_slide_prob * (1 - trap_prob)}});
     } else {
@@ -270,14 +266,14 @@ std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typena
     }
 
     float slided_prob = slide_prob / 2;
-    if (!hit1) {
+    if (!hit && !hit1) {
         if (tile1 == map_manager::TRAP) {
             outcomes.insert({{{-1, new_gold_mask1}, slided_prob * trap_prob}, {{new_pos1, new_gold_mask1}, slided_prob * (1 - trap_prob)}});
         } else {
             outcomes.insert({{{new_pos1, new_gold_mask1}, slided_prob}});
         }
     }
-    if (!hit2) {
+    if (!hit && !hit2) {
         if (tile2 == map_manager::TRAP) {
             outcomes.insert({{{-1, new_gold_mask2}, slided_prob * trap_prob}, {{new_pos2, new_gold_mask2}, slided_prob * (1 - trap_prob)}});
         } else {

@@ -30,14 +30,13 @@ filenames = [
 ]
 
 maps2 = [
-"""#########
-#GGGTTT##
-#GGGTT.B#
-#..GTT.T#
-#T.TTT..#
-#..TTT.T#
-#T.....T#
-#########"""
+"""##########
+#TGTGTGTG#
+#BTGTGTG.#
+#GT.##TGT#
+#TG...TG.#
+#GTG.GTG.#
+##########"""
 ]
 
 maps = [
@@ -299,7 +298,12 @@ def eval_lp():
                 for p2 in p_traps:
                     print(f"Solving with params: c={c}, p_slide={p1}, p_trap={p2}")
                     print(env)
-                    results.append( eval_lp_config(env, c, p1, p2) )
+
+                    # ignore infeasible environments
+                    if (env.count('G') > 10):
+                        results.append((0, -1, False))
+                    else:
+                        results.append( eval_lp_config(env, c, p1, p2) )
 
     cr = 0
     max_time = 0
@@ -316,6 +320,9 @@ def eval_lp():
 def eval_solvers(pareto_repetitions=100):
     res_lp, cr, max_time, total_infeasible = eval_lp()
     res_pareto, cr_pareto, total_infeasible_pareto = eval_pareto(pareto_repetitions)
+    print(res_lp)
+    print(len(res_lp), len(res_pareto))
+    print(res_pareto)
 
     c_s = [ 0, 0.1, 0.2, 0.3, 0.4 ]
     p_slides = [ 0, 0.2 ]

@@ -24,7 +24,7 @@ namespace rats {
         // S -> occupancy measure
         std::map<S, LinearExpr> occ;
         float risk_thd;
-        float gamma = 0.9999; // has to be < 1
+        float gamma = 0.99; // has to be < 1
         float gammap =  1;
         LinearExpr total_reward;
         MPObjective* objective;
@@ -110,8 +110,8 @@ namespace rats {
                     total_reward += LinearExpr(action_occ) * states_distr[state] * rew;
                     total_penalty += LinearExpr(action_occ) * states_distr[state] * cost * cost_discount / rew_discount;
 
-                    // spdlog::trace("Add at transition {}, {}, {}: prob: {}, rew {}, cost {}",
-                    //  to_string(parent), to_string(action), to_string(state), to_string(states_distr[state]), to_string(rew), to_string(cost));
+                    // spdlog::trace("Add at transition {}, {}, {}: prob: {}, rew {}, cost {}, action_var: {}",
+                    //  to_string(parent), to_string(action), to_string(state), to_string(states_distr[state]), to_string(rew), to_string(cost), expr2str(LinearExpr(action_occ)));
                 }
             }
         }

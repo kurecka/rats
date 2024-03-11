@@ -48,20 +48,18 @@ map3 = """
 #######
 """
 
-map4 = """
-#####
-#B.##
-##.T#
-##.T#
-##G##
-#####
-"""
+map_hard = """##########
+#TGTGTGTG#
+#BTGTGTG.#
+#GT.##TGT#
+#TG...TG.#
+#GTG.GTG.#
+##########"""
 
-e = envs.Hallway(map1, 0.1, 0)
-s = e.current_state()
+e = envs.Hallway(map_hard, 0.1, 0.2)
 # print(s)
 # print(e.outcome_probabilities(s, 2))
-lp_solver = LP_solver(e, 0.05)
+lp_solver = LP_solver(e, 0.1)
 # lp_solver.change_gammas(0.999999)
 
 start = time.time()

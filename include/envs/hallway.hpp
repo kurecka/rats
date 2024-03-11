@@ -251,8 +251,12 @@ bool hallway::is_terminal( state_t s ) const {
 std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typename hallway::state_t s, size_t a) const {
     auto [pos, gold_mask] = s;
     auto [new_pos, new_gold_mask, tile, hit] = m.move(a, pos, gold_mask);
-    std::map<typename hallway::state_t, float> outcomes;
 
+    if (hit) {
+        return {{s, 1.f}}; 
+    }
+
+    std::map<typename hallway::state_t, float> outcomes;
     size_t slide_action_1 = (a + 3) % 4;
     size_t slide_action_2 = (a + 5) % 4;
     auto [new_pos1, new_gold_mask1, tile1, hit1] = m.move(slide_action_1, new_pos, gold_mask);

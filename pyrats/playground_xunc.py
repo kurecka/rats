@@ -7,9 +7,10 @@ import time
 set_log_level("trace")
 
 map1 = """
-######
-#B.TG#
-######
+#######
+#B...G#
+#..TT.#
+#######
 """
 
 map = """
@@ -56,7 +57,7 @@ map4 = """
 #####
 """
 
-e = envs.Hallway(map, 0.1, 0)
+e = envs.Hallway(map1, 1, 0.1)
 s = e.current_state()
 # print(s)
 # print(e.outcome_probabilities(s, 2))

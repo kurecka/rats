@@ -38,7 +38,6 @@ public:
     bool is_terminal( int ) const override {
         return (wealth == target) || (wealth <= 0);
     }
-    float solve_exactly() override { return 0; }
 
     std::pair<float, float> reward_range() const override { return {-2, 12}; }
     size_t num_actions() const override { return 2; }

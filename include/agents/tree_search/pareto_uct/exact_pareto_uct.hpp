@@ -383,7 +383,7 @@ public:
         ++common_data.num_steps;
         episode_history.push_back({root->state, a, r, common_data.sample_risk_thd});
 
-        spdlog::debug("Lambda: {}", common_data.lambda);
+        // spdlog::debug("Lambda: {}", common_data.lambda);
         spdlog::debug("Play action: {}", to_string(a));
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 

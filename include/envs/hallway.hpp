@@ -118,7 +118,7 @@ struct map_manager {
                 break;
         }
         int new_pos = new_y * width + new_x;
-        int new_gold_mask = gold_mask;
+        uint64_t new_gold_mask = gold_mask;
         bool hit = false;
         if (data[new_pos] == WALL) {
             new_pos = pos;
@@ -149,6 +149,7 @@ public:
     hallway(std::string, float trap_prob = 0.2f, float slide_prob=0.f);
 
     std::string name() const override { return "Hallway"; }
+    std::string to_string(state_t s) const { return fmt::format("({}, {}; {})", s.first % m.width, s.first / m.width, s.second); }
 
     std::pair<float, float> get_expected_reward( state_t, action_t, state_t ) const override;
     std::pair<float, float> reward_range() const override { return {0, 1}; }
@@ -158,7 +159,6 @@ public:
     state_t current_state() const override { return {position, gold_mask}; }
     bool is_over() const override { return over; }
     bool is_terminal( state_t s ) const override;
-    float solve_exactly() override;
 
     outcome_t<state_t> play_action(size_t action) override;
 
@@ -282,10 +282,6 @@ std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typena
     }
 
     return outcomes;
-}
-
-float hallway::solve_exactly() {
-    return 0;
 }
 
 } // namespace rats

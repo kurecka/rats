@@ -2,6 +2,7 @@ import envs
 import agents
 
 from rats import Hallway, LP_solver
+from math import sqrt
 from utils import set_log_level
 import time
 
@@ -30,13 +31,14 @@ filenames = [
 ]
 
 maps2 = [
-"""##########
-#TGTGTGTG#
-#BTGTGTG.#
-#GT.##TGT#
-#TG...TG.#
-#GTG.GTG.#
-##########"""
+'''##########
+#GGGTTBTG#
+#GGGTT.TT#
+#..GTT.TG#
+#T.TTT.T##
+#..TTT.T##
+#T..T..T##
+##########''',
 ]
 
 maps = [
@@ -207,14 +209,23 @@ settings:
     p_slide ∈ S = { 0, 0.2 } , and
     p_trap ∈ R = { 0.1, 0.7 } . """
 
+# setting global config
+c_s = [ 0, 0.1, 0.2, 0.3, 0.4 ]
+p_slides = [ 0, 0.2 ]
+p_traps = [ 0.1, 0.7 ]
 
-def eval_pareto_config( env, c, slide, trap ):
+# debug settings
+# c_s = [0]
+# p_slides = [ 0, ]
+# p_traps = [ 0.1 ]
+
+def eval_pareto_config( env, c, slide, trap, time_limit ):
     e = envs.Hallway( env, trap, slide )
     h = envs.EnvironmentHandler(e, 100)
 
     a = agents.ParetoUCT(
         h,
-        max_depth=100, num_sim=1000, sim_time_limit=5, risk_thd=c, gamma=0.99,
+        max_depth=100, num_sim=1000, sim_time_limit=time_limit, risk_thd=c, gamma=0.99,
         exploration_constant=5
     )
 
@@ -247,10 +258,42 @@ def eval_lp_config( env, c, slide, trap ):
     return (rew, end_time, feasible)
 
 
-def eval_pareto(repetitions=100):
-    c_s = [ 0, 0.1, 0.2, 0.3, 0.4 ]
-    p_slides = [ 0, 0.2 ]
-    p_traps = [ 0.1, 0.7 ]
+# modifies the results table, adds average of _repetitions_ repetitions of each pareto
+# config ( each time limit in time_limits )
+def process_pareto_runs( env, c, p1, p2, results, time_limits, repetitions=100):
+
+    result_row = []
+    for time_limit in time_limits:
+
+        rep_results = []
+
+        for i in range(repetitions):
+            rep_results.append(eval_pareto_config(env, c, p1, p2, time_limit))
+
+        mean_p = 0
+        mean_r = 0
+        for r, p in rep_results:
+            mean_p += p
+            mean_r += r
+
+        mean_p /= repetitions
+        mean_r /= repetitions
+
+        std_p = 0
+        for r, p in rep_results:
+            std_p += (p - mean_p) ** 2
+        std_p /= ( repetitions - 1 )
+        std_p = sqrt(std_p)
+
+        feasible = ( mean_p - std_p * 1.65 <= c )
+        result_row.append( (mean_r, mean_p, feasible) )
+
+
+    # add row of results
+    results.append( result_row )
+
+
+def eval_pareto(time_limits, repetitions=100):
 
     results = []
 
@@ -262,33 +305,11 @@ def eval_pareto(repetitions=100):
                     print(f"Solving with params: c={c}, p_slide={p1}, p_trap={p2}")
                     print(env)
 
-                    rew, p = 0, 0
-
-                    for i in range(repetitions):
-                        print(f"rep {i}")
-                        r2, penalty = eval_pareto_config(env, c, p1, p2)
-                        rew += r2
-                        p += penalty
-
-                    rew /= repetitions
-                    p /= repetitions
-                    feasible = ( p <= c )
-                    results.append((rew, p, feasible))
-    cr = 0
-    total_infeasible = 0
-    for (rew, c, f) in results:
-
-        if f:
-            cr += 1/400 * rew
-        else:
-            total_infeasible += 1
-
-    return results, cr, total_infeasible
+                    process_pareto_runs( env, c, p1, p2, results, time_limits,
+                                         repetitions)
+    return results
 
 def eval_lp():
-    c_s = [ 0, 0.1, 0.2, 0.3, 0.4 ]
-    p_slides = [ 0, 0.2 ]
-    p_traps = [ 0.1, 0.7 ]
 
     results = []
 
@@ -305,43 +326,124 @@ def eval_lp():
                     else:
                         results.append( eval_lp_config(env, c, p1, p2) )
 
-    cr = 0
-    max_time = 0
-    total_infeasible = 0
-    for (rew, t, f) in results:
-        cr += 1/400 * rew
-        max_time = max(max_time, t)
+    return results
 
-        if not f:
-            total_infeasible += 1
 
-    return results, cr, max_time, total_infeasible
+"""
+    calculates cr, max_time, total infeasible, (later ncr?) for lp and all
+    pareto configs.
 
-def eval_solvers(pareto_repetitions=100):
-    res_lp, cr, max_time, total_infeasible = eval_lp()
-    res_pareto, cr_pareto, total_infeasible_pareto = eval_pareto(pareto_repetitions)
-    print(res_lp)
-    print(len(res_lp), len(res_pareto))
-    print(res_pareto)
+    lp results is an array of triplets ( reward, time, feasible )
+    pareto results is an array of arrays of triplets, each row of the array
+    corresponds to results of each configuration.
 
-    c_s = [ 0, 0.1, 0.2, 0.3, 0.4 ]
-    p_slides = [ 0, 0.2 ]
-    p_traps = [ 0.1, 0.7 ]
+    if time_limits = { 5, 10, 100 } then each row is [ (rew, time, feasible) x3
+    for each config (sim_time_limit = t) for t in time_limits]
+
+    env_count to override avg in cr calculation
+        ( if some envs should be ignored )
+
+    return array of triplets ( cr, max_time, total_infeasible )
+
+"""
+def get_aggregated_statistics( lp_results, pareto_results, env_count=0 ):
+
+    pareto_config_count = len( pareto_results[0] )
+    if env_count == 0:
+        env_count = len( lp_results )
+
+    lp_cr = 0
+    lp_max_time = 0
+    lp_infeasible = 0
+
+    pareto_cr = [ 0 for _ in range( pareto_config_count ) ]
+    pareto_infeasible = [ 0 for _ in range( pareto_config_count ) ]
+
+    for i in range( len( lp_results ) ):
+        rew, time, infeasible = lp_results[i]
+
+        lp_cr += rew / env_count
+        lp_max_time = max( lp_max_time, time )
+        lp_infeasible += infeasible
+
+        for j in range( pareto_config_count ):
+            rew, penalty, infeasible = pareto_results[i][j]
+
+            pareto_cr[j] += rew / env_count
+            pareto_infeasible[j] += infeasible
+
+
+    result = [ (lp_cr, lp_max_time, lp_infeasible) ]
+    for i in range( pareto_config_count ):
+        # 0 for max time pareto
+        result.append( ( pareto_cr[i], 0, pareto_infeasible[i] ) )
+
+    return result
+
+# process line of pareto results into csv format
+def process_pareto_line( time_limits, pareto_line ):
+    line = ""
+
+    for i in range( len(pareto_line) - 1 ):
+        rew, penalty, feasible = pareto_line[i]
+        line += f"{feasible:.2f};{rew:.2f};{penalty:.2f};"
+
+    rew, penalty, feasible = pareto_line[-1]
+    line += f"{feasible:.2f};{rew:.2f};{penalty:.2f}\n"
+
+    return line
+
+
+def eval_solvers(time_limits = [ 5 ], pareto_repetitions=100):
+    res_lp = eval_lp()
+    res_pareto = eval_pareto(time_limits, pareto_repetitions)
+
+    # count feasible environments (for LP)
+    feasible_count = 0
 
     with open("results.csv", 'w') as file:
-        file.write("Benchmark;feasible;lp_reward; lp_time;pareto_feasible;pareto_rew;pareto_penalty\n")
+
+        legend_str = "Benchmark;feasible;lp_reward; lp_time;"
+        for i in range( len(time_limits) - 1 ):
+            t = time_limits[i]
+            legend_str += f"pareto_{t}_feasible;pareto_{t}_rew;pareto_{t}_penalty;"
+
+        t = time_limits[-1]
+        legend_str += f"pareto_{t}_feasible;pareto_{t}_rew;pareto_{t}_penalty\n"
+
+        file.write(legend_str)
         index = 0
+
         for name in filenames:
             for c in c_s:
                 for p1 in p_slides:
                     for p2 in p_traps:
+                        # env legend
                         line = f"{name}_c{c}_slide{p1}_trap{p2};"
+
+                        # lp legend
                         line += f"{res_lp[index][2]};{res_lp[index][0]:.2f};{res_lp[index][1]:.2f};"
-                        line += f"{res_pareto[index][2]};{res_pareto[index][0]:.2f};{res_pareto[index][1]}\n"
+                        line += process_pareto_line( time_limits, res_pareto[index] )
                         file.write(line)
+
+                        if res_lp[index][2]:
+                            feasible_count += 1
+
                         index += 1
 
-        file.write(f"Infeasible: LP - {total_infeasible}, P - {total_infeasible_pareto}\n")
-        file.write(f"CR: LP - {cr:.2f}, P - {cr_pareto:.2f}\n")
+        # get cr and stuff
+        stats = get_aggregated_statistics( res_lp, res_pareto, feasible_count )
 
-eval_solvers(100)
+        lp_cr, lp_time, lp_feas = stats[0]
+
+        line = f"LP CR - {lp_cr:.2f}, max time - {lp_time:.2f}, total feasible - {lp_feas}\n"
+
+        for i in range( 1, len(stats) ) :
+            cr, _, feas = stats[i]
+            line += f"Pareto_t={time_limits[i-1]} CR - {cr:.2f}, total feasible - {feas}\n"
+
+        # write stats
+        file.write(line)
+
+# solve and output csv for simulation times 5,10 and 100 repetitions each trial
+eval_solvers( [5, 10], 100 )

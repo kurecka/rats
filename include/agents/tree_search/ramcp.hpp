@@ -146,6 +146,8 @@ public:
         spdlog::debug("Play action: {}", to_string(a));
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
+        // spdlog::info("Steps: {}, Action: {}, State: {}, Reward: {}", common_data.handler.get_num_steps(), to_string(a), to_string(s), r);
+
         action_node_t* an = root->get_child(a);
         if (an->children.find(s) == an->children.end()) {
             full_expand_action(an, s, r, p, t);

@@ -150,6 +150,7 @@ public:
 
     std::string name() const override { return "Hallway"; }
     std::string to_string(state_t s) const { return fmt::format("({}, {}; {})", s.first % m.width, s.first / m.width, s.second); }
+    int get_width() const { return m.width; }
 
     std::pair<float, float> get_expected_reward( state_t, action_t, state_t ) const override;
     std::pair<float, float> reward_range() const override { return {0, 1}; }

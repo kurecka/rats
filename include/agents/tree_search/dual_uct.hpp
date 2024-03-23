@@ -203,6 +203,8 @@ public:
             spdlog::debug("Play action: {}", to_string(a));
             spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
+            // spdlog::info("Steps: {}, Action: {}, State: {}, Reward: {}", common_data.num_steps, to_string(a), to_string(s), r);
+
             action_node_t* an = root->get_child(a);
             if (an->children.find(s) == an->children.end()) {
                 full_expand_action(an, s, r, p, t);
@@ -216,6 +218,8 @@ public:
             auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
             spdlog::debug("Play action: {}", to_string(a));
             spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
+
+            // spdlog::info("Steps: {}, Action: {}, State: {}, Reward: {}", common_data.num_steps, to_string(a), to_string(s), r);
 
             action_node_t* an = root->get_child(a_idx);
             if (an->children.find(s) == an->children.end()) {

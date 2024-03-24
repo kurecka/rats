@@ -1,61 +1,9 @@
-import numpy as np
-
 import envs
 import agents
-from utils import set_log_level
 
-# 08 09 10 11 12
-# 15 16 17 18 19
-# 22 23 24 25 26
-# 29 30 31 32 33
-# 36 37 38 39 40
-# 43 44 45 46 47
+import numpy as np
+from multiprocessing import Pool
 
-
-
-map = """
-#######
-#BTTTG#
-#..T..#
-#.....#
-##TT#.#
-#GTTG.#
-#..T..#
-#######
-"""
-
-map2 = """
-#######
-#BTTTG#
-#..TT.#
-#....T#
-##TT#T#
-#TTTTT#
-#.TT..#
-#GG..G#
-#######
-"""
-
-map3 = """
-#######
-#BTTTG#
-#..TT.#
-#....T#
-##TT#T#
-#TTT.T#
-#.TT..#
-#GG..G#
-#######
-"""
-
-map4 = """
-#####
-#B.##
-##.T#
-##.T#
-##G##
-#####
-"""
 
 # big configs:
 # time: 250ms, 500ms, 750ms, 1000ms, 1500ms, 2000ms, 3000ms, 5000ms - RAMCP only upto 500ms, after that LP is too slow
@@ -202,63 +150,84 @@ map_big5 = """
 ##########################################################
 """
 
+maps = [
+    map_big1,
+    map_big2,
+    map_big3,
+    map_big4,
+    map_big5
+]
 
-# set_log_level('trace')
+# settings:
+time_limits = [250, 500, 750, 1000, 2000, 3000]
+d = [1, 5, 10]
+num_steps = 500
+gamma = 0.95
+thd = [0, 0.3, 0.5]
+runs = 100
+agent_list = [agents.ParetoUCT, agents.DualUCT, agents.RAMCP]
 
-r = 0
-p = 0
-sr = 0
-sp = 0
+# map confs:
+conf1 = [(0.6, 0.4), (1, 0.1)]
+conf2 = [(0.1, 0.4), (0.1, 0.1), (0.1, 0)]
+conf3 = [(0.1, 0.3), (0.1, 0.1), (0.1, 0)]
+conf4 = [(0.2, 0.1), (0.7, 0.4)]
+conf5 = [(0.2, 0.1), (0.7, 0.4)]
 
-for i in range(1):
-    e = envs.Hallway(map_big1, 0.1, 0.1)
-    # e = envs.InvestorEnv(2, 20)
-    h = envs.EnvironmentHandler(e, 500)
-    a = agents.RAMCP(
+confs = [conf1, conf2, conf3, conf4, conf5]
+
+def eval_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
+    e = envs.Hallway( map, trap, slide )
+    h = envs.EnvironmentHandler(e, num_steps)
+
+    a = agent_type(
         h,
-        max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=0.3, gamma=0.95,
-        exploration_constant=5
+        max_depth=num_steps, num_sim=1000, sim_time_limit=time_limit, risk_thd=c, gamma=gamma,
+        exploration_constant=exp_const
     )
 
-    e.reset()
     a.reset()
+
     while not a.get_handler().is_over():
         a.play()
-        s = a.get_handler().get_current_state()
-        print("Step:", a.get_handler().get_num_steps(), "State: (", s[0] % e.get_width(), ",", s[0] // e.get_width(), ")", "Reward:", a.get_handler().get_reward(), "Penalty:", a.get_handler().get_penalty())
-        # print()
+
     h = a.get_handler()
-    print(h.get_reward())
-    r += (h.get_reward() - r) / (i+1)
-    sr += h.get_reward()
-    p += (h.get_penalty() - p) / (i+1)
-    sp += h.get_penalty()
-    print(f'{i}: {r} {p}')
+    rew = h.get_reward()
+    p = h.get_penalty()
+    return (rew, p)
 
-print(sr/10, sp/10)
-# r /= 300
-# p /= 300
-# print(f"Average reward: {r}")
-# print(f"Average penalty: {p}")
+def eval_config_parallel(args):
+    map, agent_type, c, slide, trap, time_limit, exp_const = args
+    return eval_config(map, agent_type, c, slide, trap, time_limit, exp_const)
 
+def process_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
+    
+    pool = Pool()
+    results = pool.map(eval_config_parallel, [(map, agent_type, c, slide, trap, time_limit, exp_const) for _ in range(runs)])
+    pool.close()
+    pool.join()
 
-# e = envs.Hallway(map, 0.1)
-# h = envs.EnvironmentHandler(e, 100)
-# a = agents.ParetoUCT(
-#     h,
-#     max_depth=100, num_sim=1000, sim_time_limit=250, risk_thd=0.1, gamma=0.9999,
-#     exploration_constant=0.1, graphviz_depth=3
-# )
+    rews, pens = zip(*results)
 
+    return (np.mean(rews), np.mean(pens), np.std(rews, ddof=1), np.std(pens, ddof=1))
 
-# e.reset()
-# a.reset()
+def run_eval():
 
-# i = 0
-# # while not a.get_handler().is_over():
-# for i in range(10):
-#     print(f'{i}: {a.get_handler().get_current_state()}')
-#     a.play()
-#     with open(f"../logs/tree_{i}.dot", "w") as f:
-#         f.write(a.get_graphviz())
-#     # i+=1
+    for i, m in enumerate(maps):
+        for trap, slide in confs[i]:
+            for c in thd:
+                # new file for each map
+                with open(f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv", "w") as f:
+                    f.write("agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible\n")
+                    for time_limit in time_limits:
+                        for agent_type in agent_list:
+                            if agent_type == agents.RAMCP and time_limit > 500:
+                                continue
+                            for exp_const in d:
+                                mean_r, mean_p, std_r, std_p = process_config( m, agent_type, c, slide, trap, time_limit, exp_const )
+                                emp_feasible = mean_p <= c
+                                feasible = mean_p - std_p * 1.65 <= c
+                                f.write(f"{agent_type.__name__};{time_limit};{exp_const};{mean_r};{mean_p};{std_r};{std_p};{feasible};{emp_feasible}\n")
+
+if __name__ == "__main__":
+    run_eval()

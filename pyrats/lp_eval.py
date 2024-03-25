@@ -5,6 +5,8 @@ from rats import Hallway, LP_solver
 from math import sqrt
 from utils import set_log_level
 import time
+import numpy as np
+from multiprocessing import Pool
 
 
 filenames = [
@@ -190,7 +192,6 @@ maps = [
 #T.TTT..#
 #..TTT.T#
 #T.....T#
-#########""",
 
 """##########
 #GGGTTT###
@@ -213,17 +214,19 @@ settings:
 c_s = [ 0, 0.1, 0.2, 0.3, 0.4 ]
 p_slides = [ 0, 0.2 ]
 p_traps = [ 0.1, 0.7 ]
+time_limits = [5, 10, 15, 25, 50, 100, 250, 500]
 
 # debug settings
 # c_s = [0]
-# p_slides = [ 0, ]
+# p_slides = [ 0 ]
 # p_traps = [ 0.1 ]
+# time_limits = [5, 10, 15, 25]
 
-def eval_pareto_config( env, c, slide, trap, time_limit ):
+def eval_config( env, agent, c, slide, trap, time_limit ):
     e = envs.Hallway( env, trap, slide )
     h = envs.EnvironmentHandler(e, 100)
 
-    a = agents.ParetoUCT(
+    a = agent(
         h,
         max_depth=100, num_sim=1000, sim_time_limit=time_limit, risk_thd=c, gamma=0.99,
         exploration_constant=5
@@ -241,6 +244,10 @@ def eval_pareto_config( env, c, slide, trap, time_limit ):
 
 
 def eval_lp_config( env, c, slide, trap ):
+    # ignore infeasible environments
+    if (env.count('G') > 10):
+        return (0, -1, False)
+
     e = envs.Hallway(env, trap, slide)
     start = time.time()
     lp_solver = LP_solver(e, c)
@@ -257,75 +264,67 @@ def eval_lp_config( env, c, slide, trap ):
     end_time = ( time.time() - start ) * 1000
     return (rew, end_time, feasible)
 
+def eval_lp_config_parallel(args):
+    env, c, slide, trap = args
+    return eval_lp_config(env, c, slide, trap)
+
+def eval_config_parallel(args):
+    env, agent_type, c, slide, trap, time_limit = args
+    return eval_config(env, agent_type, c, slide, trap, time_limit)
+
 
 # modifies the results table, adds average of _repetitions_ repetitions of each pareto
 # config ( each time limit in time_limits )
-def process_pareto_runs( env, c, p1, p2, results, time_limits, repetitions=100):
+def process_agent_runs( env, agent, c, p1, p2, results, time_limits, repetitions=100):
+
 
     result_row = []
     for time_limit in time_limits:
+        print( "limit:", time_limit )
 
-        rep_results = []
+        pool = Pool()
+        temp_results = pool.map(eval_config_parallel, [(env, agent,  c, p1, p2,
+                                                   time_limit) for _
+                                                  in range(repetitions)])
+        pool.close()
+        pool.join()
+        rews, pens = zip(*temp_results)
 
-        for i in range(repetitions):
-            rep_results.append(eval_pareto_config(env, c, p1, p2, time_limit))
-
-        mean_p = 0
-        mean_r = 0
-        for r, p in rep_results:
-            mean_p += p
-            mean_r += r
-
-        mean_p /= repetitions
-        mean_r /= repetitions
-
-        std_p = 0
-        for r, p in rep_results:
-            std_p += (p - mean_p) ** 2
-        std_p /= ( repetitions - 1 )
-        std_p = sqrt(std_p)
+        mean_r, mean_p, std_p = np.mean(rews), np.mean(pens), np.std(pens, ddof=1)
 
         feasible = ( mean_p - std_p * 1.65 <= c )
         result_row.append( (mean_r, mean_p, feasible) )
-
 
     # add row of results
     results.append( result_row )
 
 
-def eval_pareto(time_limits, repetitions=100):
+def eval_agents(agents_list, time_limits, repetitions=100):
 
     results = []
 
-    for env in maps:
-        for c in c_s:
-            for p1 in p_slides:
-                for p2 in p_traps:
-                    print("\n\nPARETO")
-                    print(f"Solving with params: c={c}, p_slide={p1}, p_trap={p2}")
-                    print(env)
+    for agent in agents_list:
+        for env in maps:
+            for c in c_s:
+                for p1 in p_slides:
+                    for p2 in p_traps:
+                        print(f"Solving with params: c={c}, p_slide={p1}, p_trap={p2}")
+                        print(env)
 
-                    process_pareto_runs( env, c, p1, p2, results, time_limits,
-                                         repetitions)
-    return results
+                        process_agent_runs( env, agent, c, p1, p2, results, time_limits, repetitions)
+        return results
 
 def eval_lp():
 
     results = []
 
-    for env in maps:
-        for c in c_s:
-            for p1 in p_slides:
-                for p2 in p_traps:
-                    print(f"Solving with params: c={c}, p_slide={p1}, p_trap={p2}")
-                    print(env)
-
-                    # ignore infeasible environments
-                    if (env.count('G') > 10):
-                        results.append((0, -1, False))
-                    else:
-                        results.append( eval_lp_config(env, c, p1, p2) )
-
+    pool = Pool()
+    results = pool.map(eval_lp_config_parallel, [args
+                                              for args
+                                              in zip(maps, c_s, p_slides,
+                                                     p_traps)])
+    pool.close()
+    pool.join()
     return results
 
 
@@ -344,8 +343,8 @@ def eval_lp():
         ( if some envs should be ignored )
 
     return array of triplets ( cr, max_time, total_infeasible )
-
 """
+
 def get_aggregated_statistics( lp_results, pareto_results, env_count=0 ):
 
     pareto_config_count = len( pareto_results[0] )
@@ -386,17 +385,17 @@ def process_pareto_line( time_limits, pareto_line ):
 
     for i in range( len(pareto_line) - 1 ):
         rew, penalty, feasible = pareto_line[i]
-        line += f"{feasible:.2f};{rew:.2f};{penalty:.2f};"
+        line += f"{feasible};{rew:.2f};{penalty:.2f};"
 
     rew, penalty, feasible = pareto_line[-1]
-    line += f"{feasible:.2f};{rew:.2f};{penalty:.2f}\n"
+    line += f"{feasible};{rew:.2f};{penalty:.2f}\n"
 
     return line
 
 
-def eval_solvers(time_limits = [ 5 ], pareto_repetitions=100):
+def eval_solvers(agent_list, time_limits = [ 5 ], pareto_repetitions=100):
     res_lp = eval_lp()
-    res_pareto = eval_pareto(time_limits, pareto_repetitions)
+    res_pareto = eval_agents(agent_list, time_limits, pareto_repetitions)
 
     # count feasible environments (for LP)
     feasible_count = 0
@@ -445,5 +444,5 @@ def eval_solvers(time_limits = [ 5 ], pareto_repetitions=100):
         # write stats
         file.write(line)
 
-# solve and output csv for simulation times 5,10 and 100 repetitions each trial
-eval_solvers( [5, 10], 100 )
+
+eval_solvers([agents.ParetoUCT], time_limits, 100)

@@ -26,6 +26,7 @@ def visualize_small_hg( filename , time_limits ):
 
         pareto_rewards = [row[f'pareto_{limit}_rew'] for limit in time_limits ]
         pareto_feasible = [row[f'pareto_{limit}_feasible'] for limit in time_limits]
+        pareto_penalty = [row[f'pareto_{limit}_penalty'] for limit in time_limits ]
 
 
         plt.plot( time_limits , pareto_rewards, label='Pareto rew',
@@ -43,9 +44,26 @@ def visualize_small_hg( filename , time_limits ):
         plt.ylabel('Reward')
         plt.title(f"Reward - {row['Benchmark']}")
         plt.legend()
-        plt.savefig(f'plots/{row["Benchmark"]}.png')
         plt.grid(True, linewidth='0.4', linestyle='--')
-        plt.show()
+        plt.savefig(f'plots/{row["Benchmark"]}_reward.png')
+        plt.close()
+
+        plt.plot( time_limits , pareto_penalty, label='Pareto penalty',
+                 marker='none', color = 'k')
+
+        plt.plot ( [ time_limits[0], time_limits[-1] ],
+                   [ lp_reward for _ in range(2) ],
+                   label = "constraint", marker ='none', linestyle='--',
+                  color='c')
+
+        plt.xlabel('Pareto time limit (ms)')
+        plt.ylabel('Penalty')
+        plt.title(f"Penalty - {row['Benchmark']}")
+        plt.legend()
+        plt.grid(True, linewidth='0.4', linestyle='--')
+        plt.savefig(f'plots/{row["Benchmark"]}_penalty.png')
+        plt.close()
+
 
 
 # time_limits = [5, 10, 15, 25, 50, 100, 250, 500]

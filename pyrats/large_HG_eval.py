@@ -182,7 +182,7 @@ def eval_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
 
     a = agent_type(
         h,
-        max_depth=num_steps, num_sim=1000, sim_time_limit=time_limit, risk_thd=c, gamma=gamma,
+        max_depth=100, num_sim=1000, sim_time_limit=time_limit, risk_thd=c, gamma=gamma,
         exploration_constant=exp_const
     )
 

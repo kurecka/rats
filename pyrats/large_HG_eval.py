@@ -182,7 +182,7 @@ def eval_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
 
     a = agent_type(
         h,
-        max_depth=num_steps, num_sim=1000, sim_time_limit=time_limit, risk_thd=c, gamma=gamma,
+        max_depth=100, num_sim=1000, sim_time_limit=time_limit, risk_thd=c, gamma=gamma,
         exploration_constant=exp_const
     )
 
@@ -218,6 +218,7 @@ def run_eval():
             for c in thd:
                 # new file for each map
                 with open(f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv", "w") as f:
+                    print("Working on conf: ", f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv")
                     f.write("agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible\n")
                     for time_limit in time_limits:
                         for agent_type in agent_list:

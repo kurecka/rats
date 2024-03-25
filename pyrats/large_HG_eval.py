@@ -218,6 +218,7 @@ def run_eval():
             for c in thd:
                 # new file for each map
                 with open(f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv", "w") as f:
+                    print("Working on conf: ", f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv")
                     f.write("agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible\n")
                     for time_limit in time_limits:
                         for agent_type in agent_list:

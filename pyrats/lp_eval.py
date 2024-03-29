@@ -192,6 +192,7 @@ maps = [
 #T.TTT..#
 #..TTT.T#
 #T.....T#
+#########""",
 
 """##########
 #GGGTTT###
@@ -217,10 +218,10 @@ p_traps = [ 0.1, 0.7 ]
 time_limits = [5, 10, 15, 25, 50, 100, 250, 500]
 
 # debug settings
-# c_s = [0]
-# p_slides = [ 0 ]
-# p_traps = [ 0.1 ]
-# time_limits = [5, 10, 15, 25]
+#c_s = [0]
+#p_slides = [ 0 ]
+#p_traps = [ 0.1 ]
+#time_limits = [5, 10, 15, 25]
 
 def eval_config( env, agent, c, slide, trap, time_limit ):
     e = envs.Hallway( env, trap, slide )
@@ -277,8 +278,8 @@ def eval_config_parallel(args):
 # config ( each time limit in time_limits )
 def process_agent_runs( env, agent, c, p1, p2, results, time_limits, repetitions=100):
 
-
     result_row = []
+
     for time_limit in time_limits:
         print( "limit:", time_limit )
 
@@ -295,8 +296,11 @@ def process_agent_runs( env, agent, c, p1, p2, results, time_limits, repetitions
         feasible = ( mean_p - std_p * 1.65 <= c )
         result_row.append( (mean_r, mean_p, feasible) )
 
-    # add row of results
+    line = process_pareto_line( result_row )
     results.append( result_row )
+
+    with open("results_pareto.csv", 'a') as file:
+        file.write(line)
 
 
 def eval_agents(agents_list, time_limits, repetitions=100):
@@ -316,16 +320,16 @@ def eval_agents(agents_list, time_limits, repetitions=100):
 
 def eval_lp():
 
-    results = []
-
     pool = Pool()
-    results = pool.map(eval_lp_config_parallel, [args
-                                              for args
-                                              in zip(maps, c_s, p_slides,
-                                                     p_traps)])
+    res = pool.map(eval_lp_config_parallel, [(env, c, p1, p2)
+                                             for env in maps
+                                             for c in c_s
+                                             for p1 in p_slides
+                                             for p2 in p_traps ] )
+
     pool.close()
     pool.join()
-    return results
+    return res
 
 
 """
@@ -394,25 +398,28 @@ def process_pareto_line( time_limits, pareto_line ):
 
 
 def eval_solvers(agent_list, time_limits = [ 5 ], pareto_repetitions=100):
-    res_lp = eval_lp()
-    res_pareto = eval_agents(agent_list, time_limits, pareto_repetitions)
 
-    # count feasible environments (for LP)
-    feasible_count = 0
-
-    with open("results.csv", 'w') as file:
-
-        legend_str = "Benchmark;feasible;lp_reward; lp_time;"
+    with open("results_pareto.csv", 'w') as pfile:
+        legend_str = "Benchmark;"
         for i in range( len(time_limits) - 1 ):
             t = time_limits[i]
             legend_str += f"pareto_{t}_feasible;pareto_{t}_rew;pareto_{t}_penalty;"
 
         t = time_limits[-1]
         legend_str += f"pareto_{t}_feasible;pareto_{t}_rew;pareto_{t}_penalty\n"
+        pfile.write(legend_str)
 
+    with open("results.csv", 'w') as file:
+        legend_str = "Benchmark;feasible;lp_reward; lp_time\n"
         file.write(legend_str)
-        index = 0
 
+        index = 0
+        res_lp = eval_lp()
+
+        # count feasible environments (for LP)
+        feasible_count = 0
+
+        # write out results for LP
         for name in filenames:
             for c in c_s:
                 for p1 in p_slides:
@@ -421,14 +428,17 @@ def eval_solvers(agent_list, time_limits = [ 5 ], pareto_repetitions=100):
                         line = f"{name}_c{c}_slide{p1}_trap{p2};"
 
                         # lp legend
-                        line += f"{res_lp[index][2]};{res_lp[index][0]:.2f};{res_lp[index][1]:.2f};"
-                        line += process_pareto_line( time_limits, res_pareto[index] )
+                        line += f"{res_lp[index][2]};{res_lp[index][0]:.2f};{res_lp[index][1]:.2f}\n"
                         file.write(line)
 
                         if res_lp[index][2]:
                             feasible_count += 1
 
                         index += 1
+        file.flush()
+
+        # run benchmarks for pareto, write out results in eval_agents function
+        res_pareto = eval_agents(agent_list, time_limits, pareto_repetitions)
 
         # get cr and stuff
         stats = get_aggregated_statistics( res_lp, res_pareto, feasible_count )

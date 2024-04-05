@@ -1,20 +1,20 @@
 docker:
-    image: "kurecka/rats"
-    container_name: "ray_container"
+    image: "risk-aware-decision-making/rats"
+    container_name: "rats-app"
 #     # If true, pulls latest version of image. Otherwise, `docker run` will only pull the image
 #     # if no cached version is present.
     pull_before_run: True
     run_options:   # Extra options to pass into "docker run"
-        - -v /var/data/xkurecka/rats/pyrats:/work/rats/pyrats
-        - -v /var/data/xkurecka/rats/include:/work/rats/include
-        - -v /var/data/xkurecka/rats/src:/work/rats/src
-        - -v /var/data/xkurecka/rats/logs:/work/rats/logs
-        - -v /var/data/xkurecka/rats/conf:/work/rats/conf
-        - -v /var/data/xkurecka/rats/outputs:/work/rats/outputs
-        - -v /var/data/xkurecka/rats/pybind:/work/rats/pybind
-        - -v /var/data/xkurecka/rats/tests:/work/rats/tests
-        # - -v /var/data/xkurecka/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
-        - -u 19281:10100
+        - -v /var/data/xnevyhos/rats/pyrats:/work/rats/pyrats
+        - -v /var/data/xnevyhos/rats/include:/work/rats/include
+        - -v /var/data/xnevyhos/rats/src:/work/rats/src
+        - -v /var/data/xnevyhos/rats/logs:/work/rats/logs
+        - -v /var/data/xnevyhos/rats/conf:/work/rats/conf
+        - -v /var/data/xnevyhos/rats/outputs:/work/rats/outputs
+        - -v /var/data/xnevyhos/rats/pybind:/work/rats/pybind
+        - -v /var/data/xnevyhos/rats/tests:/work/rats/tests
+        # - -v /var/data/xnevyhos/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
+        - -u 21009:10100
 
 provider:
     type: local
@@ -28,14 +28,14 @@ provider:
 
 
 auth:
-    ssh_user: xkurecka
+    ssh_user: xnevyhos
 
 # Files or directories to copy to the head node. The format is a
 # dictionary from REMOTE_PATH: LOCAL_PATH. E.g. you could save your conda env to an environment.yaml file, mount
 # that directory to all nodes and call `conda -n my_env -f /path1/on/remote/machine/environment.yaml`. In this
 # example paths on all nodes must be the same (so that conda can be called always with the same argument)
 file_mounts: {
-    # "/var/data/xkurecka/volume/cluster_test.py":"./pyrats/ray_cluster_test.py"
+    # "/var/data/xnevyhos/volume/cluster_test.py":"./pyrats/ray_cluster_test.py"
 #    "/path1/on/remote/machine": "/path1/on/local/machine",
 #    "/path2/on/remote/machine": "/path2/on/local/machine",
 }
@@ -45,11 +45,11 @@ file_mounts: {
 # This behavior is a subset of the file_mounts behavior. In the vast majority of cases
 # you should just use file_mounts. Only use this if you know what you're doing!
 cluster_synced_files: 
-    - /var/data/xkurecka/rats/build/rats.so
-    - /var/data/xkurecka/rats/pyrats/
+    - /var/data/xnevyhos/rats/build/rats.so
+    - /var/data/xnevyhos/rats/pyrats/
 
 collect_to_head:
-    - /var/data/xkurecka/rats/outputs/
+    - /var/data/xnevyhos/rats/outputs/
 
 rsync_exclude:
-    - /var/data/xkurecka/rats/pyrats/outputs
+    - /var/data/xnevyhos/rats/pyrats/outputs

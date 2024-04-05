@@ -234,7 +234,7 @@ def run_eval():
 
                             # adjust time limit for RAMCP
                             if agent_type == agents.RAMCP:
-                                time_limit_adj = time_limit // 2
+                                time_limit_adj = 3 * int(time_limit ** (1/2))
                             else:
                                 time_limit_adj = time_limit
                             for exp_const in d:

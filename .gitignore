@@ -27,7 +27,7 @@ logs
 pyrats/outputs
 outputs
 outputs_bu
-# pyrats/large_HG_eval/results
+pyrats/large_HG_eval/results
 
 *.egg-info
 

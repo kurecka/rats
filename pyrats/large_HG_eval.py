@@ -3,6 +3,7 @@ import agents
 
 import numpy as np
 from multiprocessing import Pool
+import time
 
 
 # big configs:
@@ -10,7 +11,7 @@ from multiprocessing import Pool
 # d: 1, 5, 10
 # num_steps: 500
 # gamma: 0.95
-# thd: 0, 0.1, 0.2, 0.3, 0.4, 0.5
+# thd: 0, 0.1, 0.2, 0.3, 0.5
 # 100 runs
 
 # 58x20
@@ -188,13 +189,19 @@ def eval_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
 
     a.reset()
 
+    total_time = 0
+    steps = 0
     while not a.get_handler().is_over():
+        start_time = time.time()
         a.play()
+        end_time = time.time()
+        total_time += end_time - start_time
+        steps += 1
 
     h = a.get_handler()
     rew = h.get_reward()
     p = h.get_penalty()
-    return (rew, p)
+    return (rew, p, total_time, steps)
 
 def eval_config_parallel(args):
     map, agent_type, c, slide, trap, time_limit, exp_const = args
@@ -207,9 +214,11 @@ def process_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
     pool.close()
     pool.join()
 
-    rews, pens = zip(*results)
+    rews, pens, times, steps = zip(*results)
 
-    return (np.mean(rews), np.mean(pens), np.std(rews, ddof=1), np.std(pens, ddof=1))
+    mean_time_per_step = np.sum(np.array(times)) / np.sum(np.array(steps))
+
+    return (np.mean(rews), np.mean(pens), np.std(rews, ddof=1), np.std(pens, ddof=1), mean_time_per_step)
 
 def run_eval():
 
@@ -217,18 +226,22 @@ def run_eval():
         for trap, slide in confs[i]:
             for c in thd:
                 # new file for each map
-                with open(f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv", "w") as f:
+                with open(f"large_HG_eval/results/_results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv", "w") as f:
                     print("Working on conf: ", f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv")
                     f.write("agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible\n")
                     for time_limit in time_limits:
                         for agent_type in agent_list:
-                            if agent_type == agents.RAMCP and time_limit > 500:
-                                continue
+
+                            # adjust time limit for RAMCP
+                            if agent_type == agents.RAMCP:
+                                time_limit_adj = 3 * int(time_limit ** (1/2))
+                            else:
+                                time_limit_adj = time_limit
                             for exp_const in d:
-                                mean_r, mean_p, std_r, std_p = process_config( m, agent_type, c, slide, trap, time_limit, exp_const )
+                                mean_r, mean_p, std_r, std_p, mean_time = process_config( m, agent_type, c, slide, trap, time_limit_adj, exp_const )
                                 emp_feasible = mean_p <= c
                                 feasible = mean_p - std_p * 1.65 <= c
-                                f.write(f"{agent_type.__name__};{time_limit};{exp_const};{mean_r};{mean_p};{std_r};{std_p};{feasible};{emp_feasible}\n")
+                                f.write(f"{agent_type.__name__};{mean_time};{exp_const};{mean_r};{mean_p};{std_r};{std_p};{feasible};{emp_feasible}\n")
 
 if __name__ == "__main__":
     run_eval()

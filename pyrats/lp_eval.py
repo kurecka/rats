@@ -276,7 +276,7 @@ def eval_config_parallel(args):
 
 # modifies the results table, adds average of _repetitions_ repetitions of each pareto
 # config ( each time limit in time_limits )
-def process_agent_runs( env, agent, c, p1, p2, results, time_limits, repetitions=100):
+def process_agent_runs( env, filename, agent, c, p1, p2, results, time_limits, repetitions=100):
 
     result_row = []
 
@@ -295,8 +295,9 @@ def process_agent_runs( env, agent, c, p1, p2, results, time_limits, repetitions
 
         feasible = ( mean_p - std_p * 1.65 <= c )
         result_row.append( (mean_r, mean_p, feasible) )
-
-    line = process_pareto_line( result_row )
+    
+    line = f"{filename}_c{c}_slide{p1}_trap{p2};"
+    line += process_pareto_line( time_limits, result_row )
     results.append( result_row )
 
     with open("results_pareto.csv", 'a') as file:
@@ -308,14 +309,15 @@ def eval_agents(agents_list, time_limits, repetitions=100):
     results = []
 
     for agent in agents_list:
-        for env in maps:
+        for i in range(len(maps)):
             for c in c_s:
                 for p1 in p_slides:
                     for p2 in p_traps:
+                        env = maps[i]
                         print(f"Solving with params: c={c}, p_slide={p1}, p_trap={p2}")
                         print(env)
 
-                        process_agent_runs( env, agent, c, p1, p2, results, time_limits, repetitions)
+                        process_agent_runs( env, filenames[i], agent, c, p1, p2, results, time_limits, repetitions)
         return results
 
 def eval_lp():

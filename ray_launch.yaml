@@ -1,0 +1,72 @@
+docker:
+    image: "gitlab.fi.muni.cz:5050/risk-aware-decision-making/rats"
+    container_name: "ray_container"
+#     # If true, pulls latest version of image. Otherwise, `docker run` will only pull the image
+#     # if no cached version is present.
+    pull_before_run: True
+    run_options:   # Extra options to pass into "docker run"
+        - -v /var/data/xuncovsk/rats/pyrats:/work/rats/pyrats
+        - -v /var/data/xuncovsk/rats/include:/work/rats/include
+        - -v /var/data/xuncovsk/rats/src:/work/rats/src
+        - -v /var/data/xuncovsk/rats/logs:/work/rats/logs
+        - -v /var/data/xuncovsk/rats/conf:/work/rats/conf
+        - -v /var/data/xuncovsk/rats/outputs:/work/rats/outputs
+        - -v /var/data/xuncovsk/rats/pybind:/work/rats/pybind
+        - -v /var/data/xuncovsk/rats/tests:/work/rats/tests
+        # - -v /var/data/xuncovsk/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
+        - -u 21286:10100
+
+provider:
+    type: local
+    head_ip: erinys02.fi.muni.cz
+    worker_ips:
+        # - erinys01.fi.muni.cz
+        - erinys03.fi.muni.cz
+        # - erinys04.fi.muni.cz
+        # - erinys05.fi.muni.cz
+        # - erinys06.fi.muni.cz
+
+
+auth:
+    ssh_user: xuncovsk
+
+# Files or directories to copy to the head node. The format is a
+# dictionary from REMOTE_PATH: LOCAL_PATH. E.g. you could save your conda env to an environment.yaml file, mount
+# that directory to all nodes and call `conda -n my_env -f /path1/on/remote/machine/environment.yaml`. In this
+# example paths on all nodes must be the same (so that conda can be called always with the same argument)
+file_mounts: {
+    # "/var/data/xuncovsk/volume/cluster_test.py":"./pyrats/ray_cluster_test.py"
+#    "/path1/on/remote/machine": "/path1/on/local/machine",
+#    "/path2/on/remote/machine": "/path2/on/local/machine",
+}
+
+# Files or directories to copy from the head node to the worker nodes. The format is a
+# list of paths. The same path on the head node will be copied to the worker node.
+# This behavior is a subset of the file_mounts behavior. In the vast majority of cases
+# you should just use file_mounts. Only use this if you know what you're doing!
+cluster_synced_files: 
+    - /var/data/xuncovsk/rats/build/rats.so
+    - /var/data/xuncovsk/rats/pyrats/
+
+collect_to_head:
+    - /var/data/xuncovsk/rats/outputs/
+
+rsync_exclude:
+    - /var/data/xuncovsk/rats/pyrats/outputs
+
+head_start_ray_commands:
+    - ray stop
+    - export RAY_DASHBOARD_PORT=${dashboard_port} && ray start --head --port=6379
+
+worker_start_ray_commands:
+    - ray start --address=${provider.head_ip}:6379
+
+head_stop_ray_commands:
+    - docker stop ${docker.container_name}
+
+worker_stop_ray_commands:
+    - docker stop ${docker.container_name}
+
+dashboard_port: 8267
+
+dashboard_command: ssh -f -N -L ${dashboard_port}:localhost:${dashboard_port} ${auth.ssh_user}@${provider.head_ip}

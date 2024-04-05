@@ -1,4 +1,4 @@
-FROM debian
+FROM rayproject/ray:latest
 
 ENV TZ=Europe/Prague \
     DEBIAN_FRONTEND=noninteractive 
@@ -24,8 +24,8 @@ RUN apt-get install -y cmake
 WORKDIR /work
 
 RUN git clone https://github.com/google/or-tools.git -b stable
-RUN cd or-tools && cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON
-RUN cd or-tools && cmake --build build --target install -j 100
+RUN cd or-tools && cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2"
+RUN cd or-tools && cmake --build build --target install -j 10
 
 RUN mkdir -p ~/miniconda3
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
@@ -38,7 +38,7 @@ RUN conda install -c conda-forge gcc=12.2.0
 RUN conda install -n base pybind11
 RUN conda install -n base -c rapidsai-nightly cmake_setuptools
 RUN conda install -n base -c conda-forge gymnasium
-# RUN conda install -n base -c conda-forge hydra-core
+RUN conda install -n base -c conda-forge hydra-core
 RUN conda install -n base -c anaconda pandas
 RUN conda install -n base -c anaconda numpy
 RUN conda install -n base -c anaconda matplotlib

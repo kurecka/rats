@@ -1,4 +1,5 @@
 import envs
+import ray
 import agents
 
 from rats import Hallway, LP_solver
@@ -9,7 +10,9 @@ import numpy as np
 from multiprocessing import Pool
 
 
-filenames = [
+ray.init(address="auto")
+
+filenames2 = [
     "final_10",
     "final_11",
     "final_12",
@@ -32,18 +35,27 @@ filenames = [
     "final_9",
 ]
 
-maps2 = [
-'''##########
-#GGGTTBTG#
-#GGGTT.TT#
-#..GTT.TG#
-#T.TTT.T##
-#..TTT.T##
-#T..T..T##
-##########''',
+filenames = [
+    "final_13",
+    "final_14",
+    "final_15",
+    "final_16",
+    "final_17",
+    "final_18",
+    "final_19",
+    "final_1",
+    "final_20",
+    "final_2",
+    "final_3",
+    "final_4",
+    "final_5",
+    "final_6",
+    "final_7",
+    "final_8",
+    "final_9",
 ]
 
-maps = [
+maps2 = [
 '''##########
 #GGGTTBTG#
 #GGGTT.TT#
@@ -205,6 +217,144 @@ maps = [
 
 ]
 
+maps = [
+
+'''##########
+#..GT...G#
+#TB.TTGTT#
+#..GT.TGT#
+#TG......#
+#..GTGT.T#
+##########''',
+
+"""##########
+#TGTGTGTG#
+#BTGTGTG.#
+#GT.##TGT#
+#TG...TG.#
+#GTG.GTG.#
+##########""",
+
+"""##########
+#GTGTGTGT#
+#B....G..#
+#GTGT.TGT#
+#TGTG...T#
+#.G.GT.GT#
+##########""",
+
+"""#############
+#......#....#
+#..T.G.#....#
+#..TG.....T.#
+#..TTGTGTGTG#
+#..B..TTTTTT#
+#############""",
+
+"""########
+#G..TGG#
+#T.B..T#
+#GT#TGG#
+########""",
+
+"""########
+#GTG..B#
+#.T.TTT#
+#.T.TTT#
+#....TG#
+########""",
+
+"""#########
+#TT.G..T#
+#..##.#G#
+#...GTTG#
+#B..TTTG#
+#########""",
+
+ """#######
+##GGGG#
+#BTTGG#
+#..TG.#
+#T.#T.#
+#T.#..#
+#T...T#
+#######""",
+
+"""
+##########
+#GTGT.TGT#
+#..TG#...#
+#T.#.#BTT#
+#.#TG#.TG#
+#GT..TG..#
+##########""",
+
+"""#######
+#BTTTG#
+#T.T..#
+#GT...#
+#######""",
+
+"""########
+#GT.TTT#
+#.TBTT.#
+#TT.TTG#
+########
+""",
+
+"""########
+#G..TGG#
+#T.BTTT#
+#GT#TGG#
+########""",
+
+"""#########
+#TT.G..##
+#..TTTTG#
+#...G.TG#
+#B..T.TG#
+#########""",
+
+"""######
+#..G.#
+#G#TT#
+#.TTT#
+##T..#
+#.B#G#
+#..#T#
+#TTTG#
+######""",
+
+
+"""#########
+#GGGTTT##
+#GGGTT.B#
+#..GTT.T#
+#T.TTT.G#
+#G.TTT.T#
+#T.....T#
+#########""",
+
+"""#########
+#GGGTTT##
+#GGGTT.B#
+#..GTT.T#
+#T.TTT..#
+#..TTT.T#
+#T.....T#
+#########""",
+
+"""##########
+#GGGTTT###
+#GGGTT.B##
+#..GTT.T##
+#T.TTT.TG#
+#..TTT.T##
+#T..T..TG#
+##########""",
+
+]
+
 """
 settings:
     c_0 ∈ C = { 0, 0.1, 0.2, 0.3, 0.4 } ,
@@ -215,13 +365,15 @@ settings:
 c_s = [ 0, 0.1, 0.2, 0.3, 0.4 ]
 p_slides = [ 0, 0.2 ]
 p_traps = [ 0.1, 0.7 ]
-time_limits = [5, 10, 15, 25, 50, 100, 250, 500]
+time_limits = [5, 10, 25, 50, 100, 250, 500]
 
 # debug settings
 #c_s = [0]
 #p_slides = [ 0 ]
 #p_traps = [ 0.1 ]
-#time_limits = [5, 10, 15, 25]
+# time_limits = [5, 10, 15, 25]
+agent_list = [agents.ParetoUCT, agents.DualUCT, agents.RAMCP]
+
 
 def eval_config( env, agent, c, slide, trap, time_limit ):
     e = envs.Hallway( env, trap, slide )
@@ -235,13 +387,19 @@ def eval_config( env, agent, c, slide, trap, time_limit ):
 
     a.reset()
 
+    total_time = 0
+    steps = 0
     while not a.get_handler().is_over():
+        start_time = time.time()
         a.play()
+        end_time = time.time()
+        total_time += end_time - start_time
+        steps += 1
 
     h = a.get_handler()
     rew = h.get_reward()
     p = h.get_penalty()
-    return (rew, p)
+    return (rew, p, total_time, steps)
 
 
 def eval_lp_config( env, c, slide, trap ):
@@ -269,6 +427,7 @@ def eval_lp_config_parallel(args):
     env, c, slide, trap = args
     return eval_lp_config(env, c, slide, trap)
 
+@ray.remote
 def eval_config_parallel(args):
     env, agent_type, c, slide, trap, time_limit = args
     return eval_config(env, agent_type, c, slide, trap, time_limit)
@@ -283,42 +442,40 @@ def process_agent_runs( env, filename, agent, c, p1, p2, results, time_limits, r
     for time_limit in time_limits:
         print( "limit:", time_limit )
 
-        pool = Pool()
-        temp_results = pool.map(eval_config_parallel, [(env, agent,  c, p1, p2,
-                                                   time_limit) for _
-                                                  in range(repetitions)])
-        pool.close()
-        pool.join()
-        rews, pens = zip(*temp_results)
+        temp_results = ray.get([eval_config_parallel.remote((env, agent,  c, p1, p2, time_limit)) for _ in range(repetitions)])
 
-        mean_r, mean_p, std_p = np.mean(rews), np.mean(pens), np.std(pens, ddof=1)
+        rews, pens, times, steps = zip(*temp_results)
+        mean_time_per_step = np.sum(np.array(times)) / np.sum(np.array(steps))
+
+        mean_r, mean_p, std_p, std_r = np.mean(rews), np.mean(pens), np.std(pens, ddof=1), np.std(rews, ddof=1)
 
         feasible = ( mean_p - std_p * 1.65 <= c )
-        result_row.append( (mean_r, mean_p, feasible) )
-    
-    line = f"{filename}_c{c}_slide{p1}_trap{p2};"
-    line += process_pareto_line( time_limits, result_row )
+        result_row.append( (mean_r, std_r, mean_p, std_p, feasible, mean_time_per_step ) )
+
+    line = process_pareto_line( time_limits, result_row )
     results.append( result_row )
 
-    with open("results_pareto.csv", 'a') as file:
-        file.write(line)
+    return line
 
 
 def eval_agents(agents_list, time_limits, repetitions=100):
 
     results = []
 
-    for agent in agents_list:
-        for i in range(len(maps)):
-            for c in c_s:
-                for p1 in p_slides:
-                    for p2 in p_traps:
-                        env = maps[i]
-                        print(f"Solving with params: c={c}, p_slide={p1}, p_trap={p2}")
+    for i in range(len(maps)):
+        env = maps[i]
+        for c in c_s:
+            for p1 in p_slides:
+                for p2 in p_traps:
+                    for agent in agents_list:
+                        print(f"Solving with params: c={c}, p_slide={p1}, p_trap={p2}, agent={agent.__name__}")
                         print(env)
+                        line = f"{filenames[i]}_c{c}_slide{p1}_trap{p2};{c}"
+                        line += process_agent_runs( env, filenames[i], agent, c, p1, p2, results, time_limits, repetitions)
+                        with open(f"/work/rats/pyrats/results_{agent.__name__}.csv", 'a') as file:
+                            file.write( line[:-1] + "\n")
 
-                        process_agent_runs( env, filenames[i], agent, c, p1, p2, results, time_limits, repetitions)
-        return results
+    return results
 
 def eval_lp():
 
@@ -389,33 +546,31 @@ def get_aggregated_statistics( lp_results, pareto_results, env_count=0 ):
 def process_pareto_line( time_limits, pareto_line ):
     line = ""
 
-    for i in range( len(pareto_line) - 1 ):
-        rew, penalty, feasible = pareto_line[i]
-        line += f"{feasible};{rew:.2f};{penalty:.2f};"
-
-    rew, penalty, feasible = pareto_line[-1]
-    line += f"{feasible};{rew:.2f};{penalty:.2f}\n"
+    for i in range( len(pareto_line) ):
+        rew, rew_std, penalty, pen_std, feasible, steptime = pareto_line[i]
+        line += f"{feasible};{rew:.2f};{rew_std:.2f};{penalty:.2f};{pen_std:.2f};{steptime:.2f};"
 
     return line
 
 
 def eval_solvers(agent_list, time_limits = [ 5 ], pareto_repetitions=100):
 
-    with open("results_pareto.csv", 'w') as pfile:
-        legend_str = "Benchmark;"
-        for i in range( len(time_limits) - 1 ):
-            t = time_limits[i]
-            legend_str += f"pareto_{t}_feasible;pareto_{t}_rew;pareto_{t}_penalty;"
+    for agent in agent_list:
+        with open(f"/work/rats/pyrats/results_{agent.__name__}.csv", 'w') as pfile:
+            legend_str = "Benchmark;c;"
+            for i in range( len(time_limits)):
+                t = time_limits[i]
+                legend_str += f"limit_{t}_feasible;timestep_{t}_rew;timestep_{t}_rew_std;timestep_{t}_penalty;timestep_{t}_penalty_std;timestep_{t}_steptime;"
 
-        t = time_limits[-1]
-        legend_str += f"pareto_{t}_feasible;pareto_{t}_rew;pareto_{t}_penalty\n"
-        pfile.write(legend_str)
+            legend_str = legend_str[:-1] + "\n"
+            pfile.write(legend_str)
 
-    with open("results.csv", 'w') as file:
-        legend_str = "Benchmark;feasible;lp_reward; lp_time\n"
+    with open("/work/rats/pyrats/results.csv", 'w') as file:
+        legend_str = "Benchmark;c;feasible;lp_reward; lp_time\n"
         file.write(legend_str)
 
         index = 0
+        
         res_lp = eval_lp()
 
         # count feasible environments (for LP)
@@ -430,7 +585,7 @@ def eval_solvers(agent_list, time_limits = [ 5 ], pareto_repetitions=100):
                         line = f"{name}_c{c}_slide{p1}_trap{p2};"
 
                         # lp legend
-                        line += f"{res_lp[index][2]};{res_lp[index][0]:.2f};{res_lp[index][1]:.2f}\n"
+                        line += f"{c};{res_lp[index][2]};{res_lp[index][0]:.2f};{res_lp[index][1]:.2f}\n"
                         file.write(line)
 
                         if res_lp[index][2]:
@@ -457,4 +612,6 @@ def eval_solvers(agent_list, time_limits = [ 5 ], pareto_repetitions=100):
         file.write(line)
 
 
-eval_solvers([agents.ParetoUCT], time_limits, 100)
+eval_solvers(agent_list, time_limits, 100)
+
+ray.shutdown()

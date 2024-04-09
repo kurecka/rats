@@ -14,7 +14,7 @@ docker:
         - -v /var/data/xuncovsk/rats/pybind:/work/rats/pybind
         - -v /var/data/xuncovsk/rats/tests:/work/rats/tests
         # - -v /var/data/xuncovsk/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
-        - -u 21286:10100
+        - -u ${auth.uid}:${auth.gid}
 
 provider:
     type: local
@@ -22,13 +22,15 @@ provider:
     worker_ips:
         # - erinys01.fi.muni.cz
         - erinys03.fi.muni.cz
-        # - erinys04.fi.muni.cz
-        # - erinys05.fi.muni.cz
-        # - erinys06.fi.muni.cz
+        - erinys04.fi.muni.cz
+        - erinys05.fi.muni.cz
+        - erinys06.fi.muni.cz
 
 
 auth:
     ssh_user: xuncovsk
+    uid: 21286
+    gid: 10100 #student group
 
 # Files or directories to copy to the head node. The format is a
 # dictionary from REMOTE_PATH: LOCAL_PATH. E.g. you could save your conda env to an environment.yaml file, mount
@@ -60,6 +62,16 @@ head_start_ray_commands:
 
 worker_start_ray_commands:
     - ray start --address=${provider.head_ip}:6379
+
+worker_start_privileged_commands:
+    - chown ${auth.uid}:${auth.gid} /work/rats/pyrats
+    - chown ${auth.uid}:${auth.gid} /work/rats/include
+    - chown ${auth.uid}:${auth.gid} /work/rats/src
+    - chown ${auth.uid}:${auth.gid} /work/rats/logs
+    - chown ${auth.uid}:${auth.gid} /work/rats/conf
+    - chown ${auth.uid}:${auth.gid} /work/rats/outputs
+    - chown ${auth.uid}:${auth.gid} /work/rats/pybind
+    - chown ${auth.uid}:${auth.gid} /work/rats/tests
 
 head_stop_ray_commands:
     - docker stop ${docker.container_name}

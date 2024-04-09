@@ -12,6 +12,7 @@ def run_command(cmd, dry_run):
         os.system(cmd)
 
 
+
 def run_remote_command(host, user, cmd, container_name, dry_run):
     if container_name is None:
         command = f'ssh {user}@{host} "{cmd}"'
@@ -19,6 +20,12 @@ def run_remote_command(host, user, cmd, container_name, dry_run):
         command = f'ssh {user}@{host} "docker exec {container_name} {cmd}"'
 
     run_command(cmd=command, dry_run=dry_run)
+
+def run_remote_root(host, user, cmd, container_name, dry_run):
+    assert( container_name )
+    command = f'ssh {user}@{host} "docker exec --user root {container_name} {cmd}"'
+    run_command(cmd=command, dry_run=dry_run)
+
 
 
 def run_remote_commands(host, user, cmds, container_name, dry_run):
@@ -70,6 +77,7 @@ def ray_up(cfg: DictConfig, dry_run: bool) -> None:
         worker_cmd = docker_cmd + f" sh -c '{' && '.join(worker_cmds)}; bash'"
         worker_cmds = cmds + [worker_cmd]
 
+
     ray_cluster(
         provider=cfg.provider,
         user=cfg.auth.ssh_user,
@@ -80,6 +88,11 @@ def ray_up(cfg: DictConfig, dry_run: bool) -> None:
         dry_run=dry_run
     )
 
+def chown_rats(cfg, dry_run):
+    for worker in cfg.provider.worker_ips:
+        for cmd in cfg.worker_start_privileged_commands:
+            print("Running " + cmd + " privileged on worker " + worker)
+            run_remote_root(worker, cfg.auth.ssh_user, cmd, cfg.docker.container_name, dry_run)
 
 def ray_down(cfg: DictConfig, dry_run: bool) -> None:
     head_cmds = cfg.head_stop_ray_commands

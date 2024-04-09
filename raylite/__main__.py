@@ -1,11 +1,11 @@
 import click
 from omegaconf import OmegaConf
-from raylite.commands import ray_up, ray_down, ray_dashboard, ray_attach, git_pull
+from raylite.commands import ray_up, ray_down, ray_dashboard, ray_attach, git_pull, chown_rats
 from raylite.utils import set_user
 
 
 @click.command()
-@click.argument('action', type=click.Choice(['up', 'down', 'dashboard', 'attach', 'git-pull']))
+@click.argument('action', type=click.Choice(['up', 'down', 'dashboard', 'attach', 'git-pull', 'chown']))
 @click.argument('config', type=click.Path(exists=True))
 @click.option('--user', '-u', type=str, default=None,
               help='SSH user name. Overwrite `auth.ssh_user` in the config file.')
@@ -26,6 +26,9 @@ def main(action, config, user, dry_run, print_config):
 
     if action == 'up':
         ray_up(cfg=cfg, dry_run=dry_run)
+
+    if action == 'chown':
+        chown_rats(cfg=cfg, dry_run=dry_run)
 
     elif action == 'down':
         ray_down(cfg=cfg, dry_run=dry_run)

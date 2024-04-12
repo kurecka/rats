@@ -4,7 +4,9 @@ import agents
 import numpy as np
 from multiprocessing import Pool
 import time
+import ray
 
+ray.init(address="auto")
 
 # big configs:
 # time: 250ms, 500ms, 750ms, 1000ms, 1500ms, 2000ms, 3000ms, 5000ms - RAMCP only upto 500ms, after that LP is too slow
@@ -161,7 +163,7 @@ maps = [
 
 # settings:
 time_limits = [250, 500, 750, 1000, 2000, 3000]
-d = [1, 5, 10]
+d = [1, 5, 20]
 num_steps = 500
 gamma = 0.95
 thd = [0, 0.3, 0.5]
@@ -203,16 +205,14 @@ def eval_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
     p = h.get_penalty()
     return (rew, p, total_time, steps)
 
+@ray.remote
 def eval_config_parallel(args):
     map, agent_type, c, slide, trap, time_limit, exp_const = args
     return eval_config(map, agent_type, c, slide, trap, time_limit, exp_const)
 
 def process_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
     
-    pool = Pool()
-    results = pool.map(eval_config_parallel, [(map, agent_type, c, slide, trap, time_limit, exp_const) for _ in range(runs)])
-    pool.close()
-    pool.join()
+    results = ray.get([eval_config_parallel.remote((map, agent_type, c, slide, trap, time_limit, exp_const)) for _ in range(runs)])
 
     rews, pens, times, steps = zip(*results)
 
@@ -226,7 +226,7 @@ def run_eval():
         for trap, slide in confs[i]:
             for c in thd:
                 # new file for each map
-                with open(f"large_HG_eval/results/_results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv", "w") as f:
+                with open(f"/work/rats/pyrats/large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv", "w") as f:
                     print("Working on conf: ", f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv")
                     f.write("agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible\n")
                     for time_limit in time_limits:
@@ -243,5 +243,7 @@ def run_eval():
                                 feasible = mean_p - std_p * 1.65 <= c
                                 f.write(f"{agent_type.__name__};{mean_time};{exp_const};{mean_r};{mean_p};{std_r};{std_p};{feasible};{emp_feasible}\n")
 
-if __name__ == "__main__":
-    run_eval()
+# if __name__ == "__main__":
+    
+run_eval()
+ray.shutdown()

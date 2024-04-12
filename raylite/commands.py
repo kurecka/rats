@@ -70,7 +70,7 @@ def ray_up(cfg: DictConfig, dry_run: bool) -> None:
             cmds.append(f'docker pull {cfg.docker.image}')
         docker_cmd = (f'docker run --network host -d -it --rm --name {cfg.docker.container_name}'
                       f' {" ".join(cfg.docker.run_options)} {cfg.docker.image}')
-
+        
         head_cmd = docker_cmd + f" sh -c '{' && '.join(head_cmds)}; bash'"
         head_cmds = cmds + [head_cmd]
 
@@ -87,6 +87,8 @@ def ray_up(cfg: DictConfig, dry_run: bool) -> None:
         container_name=None,
         dry_run=dry_run
     )
+
+    chown_rats(cfg=cfg, dry_run=dry_run)
 
 def chown_rats(cfg, dry_run):
     for worker in cfg.provider.worker_ips:

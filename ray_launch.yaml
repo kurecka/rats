@@ -1,19 +1,20 @@
 docker:
     image: "gitlab.fi.muni.cz:5050/risk-aware-decision-making/rats"
-    container_name: "ray_container"
+    container_name: "rats-app"
 #     # If true, pulls latest version of image. Otherwise, `docker run` will only pull the image
 #     # if no cached version is present.
     pull_before_run: True
     run_options:   # Extra options to pass into "docker run"
-        - -v /var/data/xuncovsk/rats/pyrats:/work/rats/pyrats
-        - -v /var/data/xuncovsk/rats/include:/work/rats/include
-        - -v /var/data/xuncovsk/rats/src:/work/rats/src
-        - -v /var/data/xuncovsk/rats/logs:/work/rats/logs
-        - -v /var/data/xuncovsk/rats/conf:/work/rats/conf
-        - -v /var/data/xuncovsk/rats/outputs:/work/rats/outputs
-        - -v /var/data/xuncovsk/rats/pybind:/work/rats/pybind
-        - -v /var/data/xuncovsk/rats/tests:/work/rats/tests
-        # - -v /var/data/xuncovsk/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
+        - -v /var/data/xnevyhos/rats/build:/work/rats/build
+        - -v /var/data/xnevyhos/rats/pyrats:/work/rats/pyrats
+        - -v /var/data/xnevyhos/rats/include:/work/rats/include
+        - -v /var/data/xnevyhos/rats/src:/work/rats/src
+        - -v /var/data/xnevyhos/rats/logs:/work/rats/logs
+        - -v /var/data/xnevyhos/rats/conf:/work/rats/conf
+        - -v /var/data/xnevyhos/rats/outputs:/work/rats/outputs
+        - -v /var/data/xnevyhos/rats/pybind:/work/rats/pybind
+        - -v /var/data/xnevyhos/rats/tests:/work/rats/tests
+        # - -v /var/data/xnevyhos/rats/CMakeLists.txt:/work/rats/CMakeLists.txt
         - -u ${auth.uid}:${auth.gid}
 
 provider:
@@ -25,11 +26,14 @@ provider:
         - erinys04.fi.muni.cz
         - erinys05.fi.muni.cz
         - erinys06.fi.muni.cz
+        - erinys04.fi.muni.cz
+        - erinys05.fi.muni.cz
+        - erinys06.fi.muni.cz
 
 
 auth:
-    ssh_user: xuncovsk
-    uid: 21286
+    ssh_user: xnevyhos
+    uid: 21009
     gid: 10100 #student group
 
 # Files or directories to copy to the head node. The format is a
@@ -37,7 +41,7 @@ auth:
 # that directory to all nodes and call `conda -n my_env -f /path1/on/remote/machine/environment.yaml`. In this
 # example paths on all nodes must be the same (so that conda can be called always with the same argument)
 file_mounts: {
-    # "/var/data/xuncovsk/volume/cluster_test.py":"./pyrats/ray_cluster_test.py"
+#    "/var/data/xnevyhos/volume/cluster_test.py":"./pyrats/ray_cluster_test.py"
 #    "/path1/on/remote/machine": "/path1/on/local/machine",
 #    "/path2/on/remote/machine": "/path2/on/local/machine",
 }
@@ -47,14 +51,14 @@ file_mounts: {
 # This behavior is a subset of the file_mounts behavior. In the vast majority of cases
 # you should just use file_mounts. Only use this if you know what you're doing!
 cluster_synced_files: 
-    - /var/data/xuncovsk/rats/build/rats.so
-    - /var/data/xuncovsk/rats/pyrats/
+    - /var/data/xnevyhos/rats/build/rats.so
+    - /var/data/xnevyhos/rats/pyrats/   
 
 collect_to_head:
-    - /var/data/xuncovsk/rats/outputs/
+    - /var/data/xnevyhos/rats/outputs/
 
 rsync_exclude:
-    - /var/data/xuncovsk/rats/pyrats/outputs
+    - /var/data/xnevyhos/rats/pyrats/outputs
 
 head_start_ray_commands:
     - ray stop
@@ -72,6 +76,7 @@ worker_start_privileged_commands:
     - chown ${auth.uid}:${auth.gid} /work/rats/outputs
     - chown ${auth.uid}:${auth.gid} /work/rats/pybind
     - chown ${auth.uid}:${auth.gid} /work/rats/tests
+    - chown ${auth.uid}:${auth.gid} /work/rats/build
 
 head_stop_ray_commands:
     - docker stop ${docker.container_name}

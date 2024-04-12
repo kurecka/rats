@@ -10,7 +10,7 @@ RUN sudo apt-get install -y lsb-release
 RUN sudo apt-get install -y libspdlog-dev
 RUN sudo apt-get install -y libeigen3-dev
 RUN sudo apt-get install -y software-properties-common
-RUN sudo apt-get install -y wget
+RUN sudo apt-get install -y wget    
 RUN sudo apt-get install -y vim
 
 

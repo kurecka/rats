@@ -1,3 +1,0 @@
-Benchmark;feasible;lp_reward; lp_time;pareto_5_feasible;pareto_5_rew;pareto_5_penalty;pareto_10_feasible;pareto_10_rew;pareto_10_penalty;pareto_25_feasible;pareto_25_rew;pareto_25_penalty;pareto_50_feasible;pareto_50_rew;pareto_50_penalty;pareto_100_feasible;pareto_100_rew;pareto_100_penalty;pareto_250_feasible;pareto_250_rew;pareto_250_penalty;pareto_500_feasible;pareto_500_rew;pareto_500_penalty
-final_10_c0_slide0_trap0.1;True;0.00;456.68;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00
-final_10_c0_slide0_trap0.7;True;0.51;47918.99;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00;True;0.00;0.00

@@ -26,9 +26,6 @@ provider:
         - erinys04.fi.muni.cz
         - erinys05.fi.muni.cz
         - erinys06.fi.muni.cz
-        - erinys04.fi.muni.cz
-        - erinys05.fi.muni.cz
-        - erinys06.fi.muni.cz
 
 
 auth:
@@ -52,7 +49,7 @@ file_mounts: {
 # you should just use file_mounts. Only use this if you know what you're doing!
 cluster_synced_files: 
     - /var/data/xnevyhos/rats/build/rats.so
-    - /var/data/xnevyhos/rats/pyrats/   
+    - /var/data/xnevyhos/rats/pyrats/
 
 collect_to_head:
     - /var/data/xnevyhos/rats/outputs/
@@ -84,6 +81,6 @@ head_stop_ray_commands:
 worker_stop_ray_commands:
     - docker stop ${docker.container_name}
 
-dashboard_port: 8267
+dashboard_port: 8265
 
 dashboard_command: ssh -f -N -L ${dashboard_port}:localhost:${dashboard_port} ${auth.ssh_user}@${provider.head_ip}

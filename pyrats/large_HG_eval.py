@@ -5,8 +5,9 @@ import numpy as np
 from multiprocessing import Pool
 import time
 import ray
+import os
 
-ray.init(address="auto")
+
 
 # big configs:
 # time: 250ms, 500ms, 750ms, 1000ms, 1500ms, 2000ms, 3000ms, 5000ms - RAMCP only upto 500ms, after that LP is too slow
@@ -218,23 +219,27 @@ def process_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
 
     mean_time_per_step = np.sum(np.array(times)) / np.sum(np.array(steps))
 
-    return (np.mean(rews), np.mean(pens), np.std(rews, ddof=1), np.std(pens, ddof=1), mean_time_per_step)
+    return (np.mean(rews), np.mean(pens), np.std(rews, ddof=1) / np.sqrt(runs), np.std(pens, ddof=1) / np.sqrt(runs), mean_time_per_step)
 
 def run_eval():
+
+    results_dir = "/work/rats/pyrats/large_HG_eval/results/"
+    os.makedirs(results_dir, exist_ok=True)
 
     for i, m in enumerate(maps):
         for trap, slide in confs[i]:
             for c in thd:
                 # new file for each map
-                with open(f"/work/rats/pyrats/large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv", "w") as f:
-                    print("Working on conf: ", f"large_HG_eval/results/results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv")
+                output_file = f"{results_dir}results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv"
+                with open(output_file, "w") as f:
+                    print("Working on conf: ", output_file)
                     f.write("agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible\n")
                     for time_limit in time_limits:
                         for agent_type in agent_list:
 
                             # adjust time limit for RAMCP
                             if agent_type == agents.RAMCP:
-                                time_limit_adj = 3 * int(time_limit ** (1/2))
+                                time_limit_adj = int(time_limit ** (32/40))
                             else:
                                 time_limit_adj = time_limit
                             for exp_const in d:
@@ -242,8 +247,9 @@ def run_eval():
                                 emp_feasible = mean_p <= c
                                 feasible = mean_p - std_p * 1.65 <= c
                                 f.write(f"{agent_type.__name__};{mean_time};{exp_const};{mean_r};{mean_p};{std_r};{std_p};{feasible};{emp_feasible}\n")
+                                f.flush()
 
-# if __name__ == "__main__":
-    
-run_eval()
-ray.shutdown()
+if __name__ == "__main__":
+    ray.init(address="auto")
+    run_eval()
+    ray.shutdown()

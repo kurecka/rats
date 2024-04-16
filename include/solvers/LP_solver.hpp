@@ -107,7 +107,7 @@ namespace rats {
 
                     occ[state] += LinearExpr(action_occ) * states_distr[state] * gamma;
                     auto [rew, cost] = env->get_expected_reward(parent, action, state);
-                    total_reward += LinearExpr(action_occ) * states_distr[state] * rew / rew_discount; // undiscounted rew
+                    total_reward += LinearExpr(action_occ) * states_distr[state] * rew; // discounted rew
                     total_penalty += LinearExpr(action_occ) * states_distr[state] * cost * cost_discount / rew_discount;
 
                     // spdlog::trace("Add at transition {}, {}, {}: prob: {}, rew {}, cost {}, action_var: {}",

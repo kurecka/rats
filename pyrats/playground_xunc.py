@@ -56,11 +56,21 @@ map_hard = """##########
 #GTG.GTG.#
 ##########"""
 
-e = envs.Hallway(map_hard, 0.1, 0.2)
+final_13 = """
+##########
+#..GT...G#
+#TB.TTGTT#
+#..GT.TGT#
+#TG......#
+#..GTGT.T#
+##########
+"""
+
+e = envs.Hallway(final_13, 0.1, 0)
 # print(s)
 # print(e.outcome_probabilities(s, 2))
-lp_solver = LP_solver(e, 0.1)
-# lp_solver.change_gammas(0.999999)
+lp_solver = LP_solver(e, 0)
+lp_solver.change_gammas(0.9999999)
 
 start = time.time()
 rew = lp_solver.solve()

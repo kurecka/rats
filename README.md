@@ -46,6 +46,7 @@ In order to build and install as a python package, run the following command:
 ```bash
 > pip install .
 ```
+
 The command above will build the code using cmake and install the package in the current environment as `rats` package.
 
 ## Install OR-tools
@@ -70,6 +71,12 @@ conda env create -f conda_env.yaml
 To activate the environment use:
 ```bash
 conda activate rats
+```
+
+After activating the environment, install the following dependencies for the
+Manhattan benchmark:
+```bash
+pip install fimdp fimdpenv
 ```
 
 To update your environment according to the env file use:

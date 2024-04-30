@@ -1,6 +1,6 @@
 import envs
 
-from rats import Hallway, LP_solver
+from rats import Hallway, LP_solver, Manhattan
 from utils import set_log_level
 import time
 
@@ -66,14 +66,17 @@ final_13 = """
 ##########
 """
 
-e = envs.Hallway(final_13, 0.1, 0)
-# print(s)
-# print(e.outcome_probabilities(s, 2))
-lp_solver = LP_solver(e, 0)
-lp_solver.change_gammas(0.9999999)
+# default manhattan data
+reloads = ['42431659','42430367','1061531810','42443056','1061531448','42448735','596775930','42435275','42429690','42446036','42442528','42440966','42431186','42438503','42442977',
+ '42440966','1061531802','42455666']
 
-start = time.time()
-rew = lp_solver.solve()
-print("Execution time: ", (time.time() - start) * 1000, "ms")
+targets = ['42440465','42445916']
 
-print(rew)
+# last arg randomizes starting state 
+e = envs.Manhattan(30, targets, reloads, "")
+
+for i in range(100):
+    print(e.current_state())
+    a = e.get_action(0)
+    print(a)
+    print(e.play_action(a), end="\n\n")

@@ -11,6 +11,7 @@ py::class_<environment<S, A>, std::shared_ptr<environment<S, A>>> register_envir
     env_type
         .def("name", &environment<S, A>::name)
         .def("num_actions", &environment<S, A>::num_actions)
+        .def("get_action", &environment<S, A>::get_action)
         .def("possible_actions", &environment<S, A>::possible_actions)
         .def("play_action", &environment<S, A>::play_action)
         .def("is_over", &environment<S, A>::is_over)

@@ -1,8 +1,0 @@
-reloads = ['42431659','42430367','1061531810','42443056','1061531448','42448735','596775930','42435275','42429690','42446036','42442528','42440966','42431186','42438503','42442977',
- '42440966','1061531802','42455666']
-targets = ['42440465','42445916']
-
-
-
-^ states in fmdp have associated labels, these correspond to the reload station
-states and target (customer) states they used for eval

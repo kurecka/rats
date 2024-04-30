@@ -1,120 +1,131 @@
 #pragma once
 
+#include <iostream>
 #include <map>
+#include <string>
 #include "envs/env.hpp"
 #include "pybind/pybind.hpp"
+
+
 namespace rats { 
 
 /*
- * states are represented with names & indices in manhattan python
- * actions are represented with some weird object ActionData 
+ *  manhattan environment class, largely just forwards calls to
+ *  manhattan/manhattan.py 
  *
+ *  currently implemented - just a simulator, i.e. states are positions on the
+ *  map, can use play_action, possible_actions, etc. to interact
  *
+ *  not implemented - methods used for LP, i.e. getting reward, terminal
+ *  state and reward_range()
+ *
+ *  TODO: should prob adjust states to pos + energy + positions of orders for learning
+ *  later, is_terminal() will then simply return whether a given state has <= 0 energy
+ *
+ *  to adjust implementation, see manhattan/manhattan.py
  */
-class ManhattanEnv : public environment<size_t, size_t> {
+class manhattan : public environment<std::string, size_t> {
+
 private:
-    py::module_ fimdpenv;
     py::object python_env;
+    using state_t = std::string;
 
-    int state;
-    int over;
-    int checkpoint;
-    int env_size;
-    std::map<size_t, int> checkpoints;
 public:
-    frozen_lake();
-    ~frozen_lake() override = default;
+    ~manhattan() override = default;
 
-    std::string name() const override { return "FrozenLake 4x4"; }
+    manhattan( float capacity, 
+               const std::vector<std::string> &targets,
+               const std::vector<std::string> &reloads,
+               std::string init_state);
 
-    std::pair<float, float> reward_range() const override { return {0, 1}; }
-    size_t num_actions() const override { return 4; }
-    std::vector<size_t> possible_actions(int = {}) const override { return {0, 1, 2, 3}; }
-    size_t get_action(size_t i) const override { return i; }
-    int current_state() const override { return state; }
-    bool is_over() const override { return over; }
-    bool is_terminal( int ) const override;
+    std::string name() const override;
 
-    // TODO: not supported for now, perhaps a way of getting it from gym somehow
-    std::pair<float, float> get_expected_reward( int state, size_t, int succ ) const override { 
-        return {0, 0};
-    }
+    std::pair<float, float> reward_range() const override;
+    size_t num_actions() const override;
+    std::vector<size_t> possible_actions(state_t state) const override; 
+    size_t get_action(size_t i) const override;
+    state_t current_state() const override;
+    bool is_over() const override;
+    bool is_terminal( state_t ) const override;
 
-    outcome_t<int> play_action(size_t action) override;
+    std::pair<float, float> get_expected_reward( state_t state, size_t, state_t succ ) const override;
+    outcome_t<state_t> play_action(size_t action) override;
 
     void restore_checkpoint(size_t id) override;
     void make_checkpoint(size_t id) override;
-
-    std::map<int, float> outcome_probabilities(int state, size_t action) const override;
+    std::map<std::string, float> outcome_probabilities(state_t state, size_t action) const override;
 
     void reset() override;
 };
 
-frozen_lake::frozen_lake()
-: gym(py::module_::import("gymnasium"))
+manhattan::manhattan( float capacity, 
+                      const std::vector<std::string> &targets,
+                      const std::vector<std::string> &reloads,
+                      std::string init_state="")
 {
     using namespace py::literals;
-    python_env = gym.attr("make")("FrozenLake-v1", "map_name"_a="4x4", "is_slippery"_a=true);
-    env_size = python_env.attr("observation_space").cast<int>();
+    python_env = py::module_::import("manhattan.manhattan").attr("ManhattanEnv")(capacity, targets, reloads, init_state);
 }
 
-outcome_t<int> frozen_lake::play_action(size_t action) {
-    auto [s, r, o, tranctuated, info] = python_env.attr("step")(action).cast<std::tuple<int, float, bool, bool, py::dict>>();
-    this->state = s;
-    this->over = o;
-    float reward = -1;
-    float penalty = o && r < 1;
-    return {state, reward, penalty, o};
+outcome_t<std::string> manhattan::play_action(size_t action) {
+    auto [ state, r, p, over ] = python_env.attr("play_action")(action).cast< std::tuple< std::string, float, float, bool > >();
+
+
+    return { state, r, p, over };
 }
 
-bool frozen_lake::is_terminal( int state ) const {
-    // terminal state is only the last square
-    return state == env_size - 1;
+std::string manhattan::name() const {
+    return python_env.attr("name")().cast<std::string>();
 }
 
-
-void frozen_lake::make_checkpoint(size_t id) {
-    if (id == 0) {
-        checkpoint = state;
-    } else {
-        checkpoints[id] = state;
-    }
+// TODO: not supported 
+std::pair< float, float > manhattan::reward_range() const {
+    return {0, 0};
 }
 
-void frozen_lake::restore_checkpoint(size_t id) {
-    if (id == 0) {
-        state = checkpoint;
-    } else {
-        state = checkpoints[id];
-    }
-    python_env.attr("s") = state;
+size_t manhattan::num_actions() const{
+    return python_env.attr("num_actions")().cast<size_t>();
 }
 
-void frozen_lake::reset() {
-    auto [s, info] = python_env.attr("reset")().cast<std::tuple<int, py::dict>>();
-    this->state = s;
-    this->over = false;
+size_t manhattan::get_action(size_t id) const {
+    return python_env.attr("get_action")(id).cast<size_t>();
 }
 
-std::map<int, float> frozen_lake::outcome_probabilities(int s, size_t action) const {
-    std::map<int, float> probs;
-    if (action == LEFT) {
-        int dest = s % 4 != 3 ? s + 1 : s;
-        probs[dest] += 1/3.0f;
-    }
-    if (action == RIGHT) {
-        int dest = s % 4 != 0 ? s - 1 : s;
-        probs[dest] += 1/3.0f;
-    }
-    if (action == DOWN) {
-        int dest = s > 3 ? s - 4 : s;
-        probs[dest] += 1/3.0f;
-    }
-    if (action == UP) {
-        int dest = s < 12 ? s + 4 : s;
-        probs[dest] += 1/3.0f;
-    }
-    return probs;
+// TODO: arg not supported, just returns from current state
+std::vector< size_t > manhattan::possible_actions( std::string s ) const {
+    return python_env.attr("possible_actions")().cast<std::vector< size_t > >();
+}
+
+// TODO: not supported 
+std::pair< float, float > manhattan::get_expected_reward( std::string s, size_t a, std::string s2 ) const {
+    return {0, 0};
+}
+
+bool manhattan::is_terminal( std::string ) const {
+    return false;
+}
+void manhattan::make_checkpoint(size_t id) {
+    python_env.attr("make_checkpoint")(id);
+}
+
+void manhattan::restore_checkpoint(size_t id) {
+    python_env.attr("restore_checkpoint")(id);
+}
+
+void manhattan::reset() {
+    python_env.attr("reset")();
+}
+
+manhattan::state_t manhattan::current_state() const {
+    return python_env.attr("current_state").cast<manhattan::state_t>();
+}
+
+bool manhattan::is_over() const {
+    return python_env.attr("is_over")().cast<bool>();
+}
+
+std::map<std::string, float> manhattan::outcome_probabilities(std::string s, size_t action) const {
+    return python_env.attr("outcome_possibilities")(action).cast<std::map<std::string, float>>();
 }
 
 } // namespace rats

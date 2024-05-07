@@ -1,4 +1,3 @@
-# this needs to be nested like this 
 from fimdpenv import AEVEnv
 from itertools import islice
 import numpy as np
@@ -12,6 +11,9 @@ targets = ['42440465','42445916']
 
 # states - labels (json), see above 
 # actions - integers, (see variable aid in fimdp/core.py)
+
+# S - labely
+# A - index size_t od
 class ManhattanEnv:
 
     """
@@ -27,7 +29,7 @@ class ManhattanEnv:
             i.e. state, energy, current target states, used for plotting the manhattan
             map
     """
-    def __init__(self, capacity, targets, reloads=None, init_state=""):
+    def __init__(self, capacity, targets, reloads, init_state=""):
         self.env = AEVEnv.AEVEnv(capacity, targets, reloads, init_state,
                 datafile="manhattan_res/NYC.json",
                 mapfile ="manhattan_res/NYC.graphml")
@@ -65,7 +67,6 @@ class ManhattanEnv:
     def random_state(self):
         return self.state_to_name(np.random.choice(self.env.consmdp.num_states))
 
-
     """
         env interface methods
     """
@@ -91,13 +92,19 @@ class ManhattanEnv:
         return idx
 
     def outcome_probabilities(self, name, action):
-        dist = []
+
+        dist = dict()
 
         state_id = self.name_to_state(name)
-        action_data = self.env.consmdp.actions_for_state(state_id)
 
-        for x in action_data.distr:
-            dist.append( ( x, float(action_data.distr[x] ) ))
+        # ActionData... source target, consumption, distr
+        action_iterator = self.env.consmdp.actions_for_state(state_id)
+
+        # the iterator does not have random access, pull out the action like this
+        action_data = next(islice(action_iterator, action, None))
+
+        for x in action_data.distr.keys():
+            dist[self.state_to_name(x)] = float(action_data.distr[x])
 
         return dist
 
@@ -118,7 +125,6 @@ class ManhattanEnv:
         # the iterator does not have random access, pull out the action like this
         action_data = next(islice(action_iterator, action, None))
 
-
         # get successor
         next_state = np.random.choice(list(action_data.distr.keys()),
                                       p=list(action_data.distr.values()))
@@ -131,9 +137,10 @@ class ManhattanEnv:
         self.current_state = self.state_to_name(next_state)
         self.energy -= action_data.cons
 
-
         return self.current_state, float(reward), float(penalty), self.is_over()
 
+
+    # TODO: adjust for other constraint
     def is_over(self):
         return self.energy <= 0
 
@@ -299,6 +306,7 @@ class ManhattanEnv:
 
 if __name__ == "__main__":
     x = ManhattanEnv(3000, targets, reloads)
-    for i in range(100):
-        print(x.play_action(np.random.choice(x.possible_actions())))
+    for i in range(10):
+        print(x.outcome_probabilities(x.current_state, 0))
+        x.play_action(np.random.choice(x.possible_actions()))
 

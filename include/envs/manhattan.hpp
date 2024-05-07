@@ -125,7 +125,7 @@ bool manhattan::is_over() const {
 }
 
 std::map<std::string, float> manhattan::outcome_probabilities(std::string s, size_t action) const {
-    return python_env.attr("outcome_possibilities")(action).cast<std::map<std::string, float>>();
+    return python_env.attr("outcome_probabilities")(s, action).cast<std::map<std::string, float>>();
 }
 
 } // namespace rats

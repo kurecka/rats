@@ -1,6 +1,7 @@
 from fimdpenv import AEVEnv
 from itertools import islice
 import numpy as np
+import networkx as nx
 
 # defaults from their implementation
 reloads = ['42431659','42430367','1061531810','42443056','1061531448','42448735','596775930','42435275','42429690','42446036','42442528','42440966','42431186','42438503','42442977',
@@ -12,25 +13,26 @@ targets = ['42440465','42445916']
 # states - labels (json), see above 
 # actions - integers, (see variable aid in fimdp/core.py)
 
-# S - labely
-# A - index size_t od
+# TODO: add energy to S ? probably not, it is not relevant for the agent, only determines when the environment is over
+# S - state_label, state_of_targets, decision_node
+# A - index size_t
 class ManhattanEnv:
 
     """
         capacity - starting capacity of the agent
         targets - the reachability targets, currently receive unit reward for
             hitting a state in targets
-        reloads - states (json labels) where energy is recharged
         init_state - initial state  (json label), randomize if none
 
         self.energy / self.capacity -> curr/max energy
 
         self.history -> tracks data that is recorded before calling step()
-            i.e. state, energy, current target states, used for plotting the manhattan
-            map
+            i.e. S = (state, state_of_targets, decision_node, energy)
+
+        MDP state consists of the current state, the counters for each target, and decision node indicator
     """
-    def __init__(self, capacity, targets, reloads, init_state=""):
-        self.env = AEVEnv.AEVEnv(capacity, targets, reloads, init_state,
+    def __init__(self, capacity, targets, periods, init_state="", cons_thd=10):
+        self.env = AEVEnv.AEVEnv(capacity, targets, [], init_state,
                 datafile="manhattan_res/NYC.json",
                 mapfile ="manhattan_res/NYC.graphml")
 
@@ -46,8 +48,13 @@ class ManhattanEnv:
         self.current_state = self.init_state
         self.capacity = capacity
         self.energy = capacity
-        self.init_targets = targets
         self.targets = targets
+        self.periods = periods
+        self.cons_thd = cons_thd
+        self.decision_node = False
+
+        # ctr for each target, -1 is active target
+        self.state_of_targets = { t : self.periods[t] for t in self.targets }
 
         self.history = []
 
@@ -75,9 +82,16 @@ class ManhattanEnv:
         return "ManhattanEnv"
 
     def num_of_actions(self):
-        return len( possible_actions() )
+        return len( self.possible_actions() )
 
+    """
+        get the number of actions for the current state
+        if in decision node, return indices to active targets
+    """
     def get_actions_for_state(self, name):
+        if ( self.decision_node ):
+            return [ -1 ] + [ i for i, t in enumerate(self.targets) if self.state_of_targets[t] == -1 ]
+
         state_id = self.name_to_state(name)
         action_count = len(self.env.consmdp.actions_for_state(state_id))
         return list(range(action_count))
@@ -85,8 +99,10 @@ class ManhattanEnv:
     def current_state(self):
         return self.current_state
 
-    def possible_actions(self):
-        return self.get_actions_for_state(self.current_state)
+    # c++ state is a tuple of (state_name, state_of_targets, decision_node)
+    def possible_actions(self, state = None):
+        state_name = self.current_state if state == None else state[0]
+        return self.get_actions_for_state(state_name)
 
     def get_action(self, idx):
         return idx
@@ -107,16 +123,61 @@ class ManhattanEnv:
             dist[self.state_to_name(x)] = float(action_data.distr[x])
 
         return dist
+    
+    def decrease_ctrs(self, cons):
+        nearby = self.find_nearby_targets(self.current_state)
+        for t in self.targets:
+            if self.state_of_targets[t] != -1:
+                self.state_of_targets[t] -= min(cons, self.state_of_targets[t])
+
+                # if target is 0 and not nearby, reset his ctr
+                if self.state_of_targets[t] == 0 and t not in nearby:
+                    self.state_of_targets[t] = self.periods[t]
+
+    def reload_ctrs(self):
+        for t in self.targets:
+            if self.state_of_targets[t] == 0:
+                self.state_of_targets[t] = self.periods[t]
+
+    """
+        find nearby targets by their GPS coordinates,
+        they should be closer than a certain threshold
+    """
+    def find_nearby_targets(self, state_name, radius=0.01):
+        G = nx.MultiDiGraph(nx.read_graphml(self.env.mapfile))
+        targets = self.targets
+        data = G.nodes(data=True)[state_name]
+        state_lat = float(data['lat'])
+        state_lon = float(data['lon'])
+        nearby = []
+
+        for target in targets:
+            target_data = G.nodes(data=True)[target]
+            target_lat = float(target_data['lat'])
+            target_lon = float(target_data['lon'])
+            if ( (state_lat - target_lat)**2 + (state_lon - target_lon)**2 ) < radius:
+                nearby.append(target)
+
+        return nearby
+        
 
     def play_action(self, action):
 
         # record relevant information (used for animating trajectory)
-        self.history.append( (self.current_state, self.energy, self.targets) )
+        self.history.append( (self.current_state, self.state_of_targets, self.decision_node) )
 
-        # TODO: can adjust this, but reloading is done when leaving the reload
-        # state in the original manhattan bench
-        if self.current_state in reloads:
-            self.energy = self.capacity
+        # if in decision node, choose if to accept any of the ready targets (at most one)
+        if self.decision_node:
+            self.decision_node = False
+            self.reload_ctrs()
+
+            # action is an index to targets
+            if action != -1:
+                # accept target
+                self.state_of_targets[self.targets[action]] = -1
+            
+            return (self.current_state, self.state_of_targets, self.decision_node), 0, 0, self.is_over()
+        
 
         # get linked list of actions from cmdp
         state_id = self.name_to_state(self.current_state)
@@ -128,16 +189,36 @@ class ManhattanEnv:
         # get successor
         next_state = np.random.choice(list(action_data.distr.keys()),
                                       p=list(action_data.distr.values()))
-
-        # TODO: adjust reward values here as needed, potentially remove
-        # successor from targets ( order finished )
-        reward = 1 if next_state in self.targets else 0
-        penalty = action_data.cons
+        
+        # skip dummy state, record penalty
+        action_iterator = self.env.consmdp.actions_for_state(next_state)
+        action_data = next(islice(action_iterator, 0, None))
+        next_state = action_data.target # or have get from distribution ??
 
         self.current_state = self.state_to_name(next_state)
+
+        # termination condition ??
         self.energy -= action_data.cons
 
-        return self.current_state, float(reward), float(penalty), self.is_over()
+        # decrease counters for targets
+        self.decrease_ctrs(action_data.cons)
+
+        # penalize if consumption is too high and some target is active
+        penalty = (action_data.cons > self.cons_thd) * len([1 for t in self.targets if self.state_of_targets[t] == -1]) > 0
+
+        # reward if target is reached
+        reward = 0
+        if (self.current_state in self.targets) and (self.state_of_targets[self.current_state] == -1):
+            reward = 1
+            self.state_of_targets[self.current_state] = self.periods[self.current_state]
+
+        # move to dummy node if target ctr hits 0
+        for t in self.targets:
+            if self.state_of_targets[t] == 0:
+                self.decision_node = True
+                break
+
+        return (self.current_state, self.state_of_targets, self.decision_node), float(reward), float(penalty), self.is_over()
 
 
     # TODO: adjust for other constraint
@@ -145,15 +226,17 @@ class ManhattanEnv:
         return self.energy <= 0
 
     def make_checkpoint(self, checkpoint_id):
-        self.checkpoints[checkpoint_id] = (self.current_state, self.targets, self.energy)
+        self.checkpoints[checkpoint_id] = (self.current_state, self.energy, self.state_of_targets, self.decision_node)
 
     def restore_checkpoint(self, checkpoint_id):
-        self.current_state, self.targets, self.energy = self.checkpoints[checkpoint_id]
+        self.current_state, self.energy, self.state_of_targets, self.decision_node = self.checkpoints[checkpoint_id]
 
     def reset(self):
-        self.targets = self.init_targets
         self.energy = self.capacity
         self.current_state = self.init_state
+        self.state_of_targets = { t : self.periods[t] for t in self.targets }
+        self.decision_node = False
+
         self.history = []
 
     """

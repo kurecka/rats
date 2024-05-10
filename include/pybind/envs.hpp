@@ -14,7 +14,7 @@ namespace rats::py {
 void register_environments(py::module& m) {
     auto env_type = register_environment<int, size_t>(m, "__<int, size_t>");
 
-    auto manhattan_type = register_environment<std::string, size_t>(m, "__<std::string, size_t>");
+    auto manhattan_type = register_environment< std::tuple<std::string, std::map< std::string, float >, bool>, size_t>(m, "__<std::tuple<std::string, std::map< std::string, float >, bool>, size_t>");
 
     register_investor_env(m, env_type);
     register_manhattan(m, manhattan_type);

@@ -1,0 +1,20 @@
+prechody:
+    kazdej stav , po zahrati akce tri stochasticky consumption levely,
+    deterministicky prejdi na dalsi krizovatku
+
+    po volbe akce budu trackovat zda jsem presel nejaky drahy transition
+    ( >15 consumption, nejaky velky cislo proste ) potom dostanes cost
+
+volba akci:
+    kdyz dropne perioda na 0 nebo proste se da vzti objednavka
+    tak se presnues do dummy node kde akce budou ber/neber mozne objednavky
+    
+filtrovani objednavek na zaklade blizkosti:
+    v NYC.graphml jsou zahrnuty i souradnice, na zaklade nichz potencialne
+    muzeme vyfiltrovat 
+
+stav - countery ( active objednavky + pending periody ) + pozice agenta v prostredi
+
+periody urcuji cas kdy je k dispozici objednavka
+ 
+# targets ~ unit rew 

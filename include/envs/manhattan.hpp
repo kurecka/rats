@@ -35,7 +35,7 @@ public:
 
     manhattan(  float capacity, 
                 const std::vector<std::string> &targets,
-                const std::vector<float> &periods,
+                const std::map<std::string, float> &periods,
                 std::string init_state,
                 float cons_thd);
 
@@ -56,17 +56,18 @@ public:
     void make_checkpoint(size_t id) override;
     std::map<state_t, float> outcome_probabilities(state_t state, size_t action) const override;
 
+    void animate_simulation(int interval=100, const std::string &filename = "map.html");
     void reset() override;
 };
 
 manhattan::manhattan( float capacity, 
                       const std::vector<std::string> &targets,
-                      const std::vector<float> &periods,
+                      const std::map<std::string, float> &periods,
                       std::string init_state="",
                       float cons_thd=10.0f)
 {
     using namespace py::literals;
-    python_env = py::module_::import("manhattan.manhattan").attr("ManhattanEnv")(capacity, targets, targets, init_state, cons_thd);
+    python_env = py::module_::import("manhattan.manhattan").attr("ManhattanEnv")(capacity, targets, periods, init_state, cons_thd);
 }
 
 outcome_t<manhattan::state_t> manhattan::play_action(size_t action) {
@@ -119,7 +120,7 @@ void manhattan::reset() {
 }
 
 manhattan::state_t manhattan::current_state() const {
-    return python_env.attr("current_state").cast<manhattan::state_t>();
+    return python_env.attr("current_state")().cast<manhattan::state_t>();
 }
 
 bool manhattan::is_over() const {
@@ -128,6 +129,10 @@ bool manhattan::is_over() const {
 
 std::map<manhattan::state_t, float> manhattan::outcome_probabilities(manhattan::state_t s, size_t action) const {
     return python_env.attr("outcome_probabilities")(s, action).cast<std::map<manhattan::state_t, float>>();
+}
+
+void manhattan::animate_simulation( int interval, const std::string& filename) {
+    python_env.attr("animate_simulation")(interval, filename)();
 }
 
 } // namespace rats

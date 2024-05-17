@@ -29,6 +29,6 @@ void register_agents_t(py::module& m, std::string type) {
 void register_agents(py::module& m) {
     register_agents_t<int, size_t>(m, "__<int, size_t>");
     register_agents_t<std::pair<int,uint64_t>, size_t>(m, "__<<int,uint64_t>, size_t>");
+    register_agents_t<std::tuple<std::string, std::map< std::string, float >, bool>, int>(m, "__<<std::string, std::map<std::string, float>, bool>, int>");
 }
-
 }  // namespace rats

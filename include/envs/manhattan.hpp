@@ -24,7 +24,7 @@ namespace rats {
  *
  *  to adjust implementation, see manhattan/manhattan.py
  */
-class manhattan : public environment<std::tuple<std::string, std::map< std::string, float >, bool>, size_t> {
+class manhattan : public environment<std::tuple<std::string, std::map< std::string, float >, bool>, int> {
 
 private:
     py::object python_env;
@@ -43,18 +43,18 @@ public:
 
     std::pair<float, float> reward_range() const override;
     size_t num_actions() const override;
-    std::vector<size_t> possible_actions(state_t state) const override; 
-    size_t get_action(size_t i) const override;
+    std::vector<int> possible_actions(state_t state) const override; 
+    int get_action(size_t i) const override;
     state_t current_state() const override;
     bool is_over() const override;
     bool is_terminal( state_t ) const override;
 
-    std::pair<float, float> get_expected_reward( state_t state, size_t, state_t succ ) const override;
-    outcome_t<state_t> play_action(size_t action) override;
+    std::pair<float, float> get_expected_reward( state_t state, int, state_t succ ) const override;
+    outcome_t<state_t> play_action(int action) override;
 
     void restore_checkpoint(size_t id) override;
     void make_checkpoint(size_t id) override;
-    std::map<state_t, float> outcome_probabilities(state_t state, size_t action) const override;
+    std::map<state_t, float> outcome_probabilities(state_t state, int action) const override;
 
     void animate_simulation(int interval=100, const std::string &filename = "map.html");
     void reset() override;
@@ -70,7 +70,7 @@ manhattan::manhattan( float capacity,
     python_env = py::module_::import("manhattan.manhattan").attr("ManhattanEnv")(capacity, targets, periods, init_state, cons_thd);
 }
 
-outcome_t<manhattan::state_t> manhattan::play_action(size_t action) {
+outcome_t<manhattan::state_t> manhattan::play_action(int action) {
     auto [ state, r, p, over ] = python_env.attr("play_action")(action).cast< std::tuple< state_t, float, float, bool > >();
 
 
@@ -90,16 +90,16 @@ size_t manhattan::num_actions() const{
     return python_env.attr("num_actions")().cast<size_t>();
 }
 
-size_t manhattan::get_action(size_t id) const {
-    return python_env.attr("get_action")(id).cast<size_t>();
+int manhattan::get_action(size_t id) const {
+    return python_env.attr("get_action")(id).cast<int>();
 }
 
-std::vector< size_t > manhattan::possible_actions( manhattan::state_t s ) const {
-    return python_env.attr("possible_actions")().cast<std::vector< size_t > >();
+std::vector< int > manhattan::possible_actions( manhattan::state_t s ) const {
+    return python_env.attr("possible_actions")(s).cast<std::vector< int > >();
 }
 
 // TODO: not supported 
-std::pair< float, float > manhattan::get_expected_reward( manhattan::state_t s, size_t a, manhattan::state_t s2 ) const {
+std::pair< float, float > manhattan::get_expected_reward( manhattan::state_t s, int a, manhattan::state_t s2 ) const {
     return {0, 0};
 }
 
@@ -127,12 +127,12 @@ bool manhattan::is_over() const {
     return python_env.attr("is_over")().cast<bool>();
 }
 
-std::map<manhattan::state_t, float> manhattan::outcome_probabilities(manhattan::state_t s, size_t action) const {
+std::map<manhattan::state_t, float> manhattan::outcome_probabilities(manhattan::state_t s, int action) const {
     return python_env.attr("outcome_probabilities")(s, action).cast<std::map<manhattan::state_t, float>>();
 }
 
 void manhattan::animate_simulation( int interval, const std::string& filename) {
-    python_env.attr("animate_simulation")(interval, filename)();
+    python_env.attr("animate_simulation")(interval, filename);
 }
 
 } // namespace rats

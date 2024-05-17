@@ -67,7 +67,7 @@ class ManhattanEnv:
 
         self.history = []
 
-        # graph with latitude and longitude information
+        # graph with latitude and longitude information 
         G = nx.MultiDiGraph(nx.read_graphml(self.env.mapfile))
         self.geo_data = G.nodes(data=True)
 
@@ -109,7 +109,7 @@ class ManhattanEnv:
 
         # able to accept orders
         if ( self.decision_node ):
-            return [ -1 ] + [ i for i, t in enumerate(self.targets) if self.state_of_targets[t] == -1 ]
+            return [ -1 ] + [ i for i, t in enumerate(self.targets) if self.state_of_targets[t] == 0 ]
 
         state_id = self.name_to_state(name)
         action_count = len(self.env.consmdp.actions_for_state(state_id))
@@ -146,7 +146,9 @@ class ManhattanEnv:
         return dist
     
     def decrease_ctrs(self, cons):
-        nearby = self.find_nearby_targets(self.position)
+        # FIXME: distance is turned off for now
+        # nearby = self.find_nearby_targets(self.position)
+        nearby = self.targets
         for t in self.targets:
             if self.state_of_targets[t] != -1:
                 self.state_of_targets[t] -= min(cons, self.state_of_targets[t])
@@ -435,6 +437,7 @@ if __name__ == "__main__":
 
     for i in range(30):
         print(x.current_state())
+        print(x.possible_actions())
         a = x.possible_actions()[0]
         x.play_action(a)
     x.animate_simulation(interval=100)

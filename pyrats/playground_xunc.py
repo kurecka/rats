@@ -1,6 +1,7 @@
 import envs
 
 from rats import Hallway, LP_solver, Manhattan
+import numpy as np
 from utils import set_log_level
 import time
 
@@ -76,10 +77,10 @@ targets = ['42455666', '42442977', '596775930']
 
 
 # periods 
-periods = { target : 50 for target in targets }
+periods = { target : 10 for target in targets }
 
 # higher period for last target
-periods[targets[-1]] = 100
+periods[targets[-1]] = 20
 print(periods)
 
 # default manhattan data
@@ -87,12 +88,29 @@ print(periods)
 # '42440966','1061531802','42455666']
 
 # targets = ['42440465','42445916']
-
-# last arg randomizes starting state 
 e = envs.Manhattan(1000, targets, periods, init_state, cons_thd=10)
 
-for i in range(100):
-    print(e.current_state())
-    a = e.get_action(0)
-    e.play_action(a)
-e.animate_simulation() 
+total_rew = 0
+total_pen = 0
+
+for i in range(100000):
+    s = e.current_state()
+    # print(s)
+    # print(e.possible_actions(s))
+    # print(e.current_state())
+    a = np.random.choice(e.possible_actions(s))
+    # print("played", a)
+    prev_s = s
+    s, r, p, o = e.play_action(a)
+
+    if ( r > 0 ):
+        print(prev_s, "into", s)
+
+    total_rew += r
+    total_pen += p
+
+e.animate_simulation()
+print("OVER", total_rew, total_pen)
+print(e.current_state())
+print(e.possible_actions(e.current_state()))
+

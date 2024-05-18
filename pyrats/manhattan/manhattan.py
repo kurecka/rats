@@ -1,3 +1,5 @@
+
+import copy
 from fimdpenv import AEVEnv
 import folium
 
@@ -44,6 +46,9 @@ class ManhattanEnv:
 
         # maps int -> ( state, energy )
         self.checkpoints = dict()
+
+        # maps int -> histories
+        self.histories = dict()
 
         if not init_state:
             # randomize starting state
@@ -96,7 +101,7 @@ class ManhattanEnv:
     def name(self):
         return "ManhattanEnv"
 
-    def num_of_actions(self):
+    def num_actions(self):
         return len( self.possible_actions() )
 
     """
@@ -120,14 +125,20 @@ class ManhattanEnv:
 
     # c++ state is a tuple of (state_name, state_of_targets, decision_node)
     def possible_actions(self, state = None):
-        state_name = self.position if state == None else state[0]
+
+        # workaround since the algorithms call this from cpp and the state gets
+        # default initialized for some reason 
+        if state is None or state[0] == '':
+            state_name = self.position
+        else:
+            state_name = state[0]
         return self.get_actions_for_state(state_name)
 
     def get_action(self, idx):
         return idx
 
 
-    # TODO: need to adjust and remove dummy nodes probably
+    # TODO: need to adjust and remove dummy nodes here
     def outcome_probabilities(self, name, action):
 
         dist = dict()
@@ -249,8 +260,11 @@ class ManhattanEnv:
         return self.energy <= 0
 
     def make_checkpoint(self, checkpoint_id):
-        self.histories[checkpoint_id] = self.history
-        self.checkpoints[checkpoint_id] = (self.position, self.energy, self.state_of_targets, self.decision_node)
+        history_copy = copy.deepcopy(self.history)
+        counter_copy = copy.deepcopy(self.state_of_targets)
+
+        self.histories[checkpoint_id] = history_copy
+        self.checkpoints[checkpoint_id] = (self.position, self.energy, counter_copy, self.decision_node)
 
     def restore_checkpoint(self, checkpoint_id):
         self.history = self.histories[checkpoint_id]
@@ -285,6 +299,8 @@ class ManhattanEnv:
         """
         targets = self.targets
         init_state = self.init_state
+
+        print(self.history)
 
         def is_int(s):
             try: 
@@ -432,7 +448,6 @@ if __name__ == "__main__":
 
     # higher period for last target
     periods[targets[-1]] = 100
-    print(periods)
     x = ManhattanEnv(3000, targets, periods, init_state)
 
     for i in range(30):

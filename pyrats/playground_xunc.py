@@ -78,10 +78,10 @@ targets = ['42455666', '42442977', '596775930']
 
 
 # periods 
-periods = { target : 10 for target in targets }
+periods = { target : 30 for target in targets }
 
 # higher period for last target
-periods[targets[-1]] = 20
+periods[targets[-1]] = 100
 print(periods)
 
 # default manhattan data
@@ -94,12 +94,12 @@ e = envs.Manhattan(1000, targets, periods, init_state, cons_thd=10)
 total_rew = 0
 total_pen = 0
 
-'''
-random walk environment test
-
-for i in range(100000):
+"""
+for i in range(10):
     s = e.current_state()
-    # print(s)
+    print(i, s)
+    if i == 2:
+        e.make_checkpoint(0)
     # print(e.possible_actions(s))
     # print(e.current_state())
     a = np.random.choice(e.possible_actions(s))
@@ -112,28 +112,40 @@ for i in range(100000):
 
     total_rew += r
     total_pen += p
+    e.animate_simulation()
 
-e.animate_simulation()
-print("OVER", total_rew, total_pen)
+e.restore_checkpoint(0)
 print(e.current_state())
-print(e.possible_actions(e.current_state()))
-'''
+e.reset()
+"""
+r = 0
+p = 0
+sr = 0
+sp = 0
 
 for i in range(1):
     # e = envs.InvestorEnv(2, 20)
     h = envs.EnvironmentHandler(e, 500)
-    a = agents.RAMCP(
+    e.reset()
+
+    print(e.current_state())
+    print(h.get_current_state())
+
+    a = agents.ParetoUCT(
         h,
-        max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=0.3, gamma=0.95,
+        max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=1.0, gamma=0.95,
         exploration_constant=5
     )
 
     e.reset()
     a.reset()
+    print("bfore", a.get_handler().get_current_state())
+    i = 0
     while not a.get_handler().is_over():
-        a.play()
+        print(f"{i}", a.get_handler().get_current_state())
         s = a.get_handler().get_current_state()
-        print("Step:", a.get_handler().get_num_steps(), "State: (", s[0] % e.get_width(), ",", s[0] // e.get_width(), ")", "Reward:", a.get_handler().get_reward(), "Penalty:", a.get_handler().get_penalty())
+        a.play()
+        #print("Step:", a.get_handler().get_num_steps(), "State: (", s, ")", "Reward:", a.get_handler().get_reward(), "Penalty:", a.get_handler().get_penalty())
         # print()
     h = a.get_handler()
     print(h.get_reward())
@@ -142,5 +154,7 @@ for i in range(1):
     p += (h.get_penalty() - p) / (i+1)
     sp += h.get_penalty()
     print(f'{i}: {r} {p}')
+    print(a.get_graphviz())
+    e.animate_simulation(100, "ahoj.html")
 
 

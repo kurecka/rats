@@ -117,11 +117,22 @@ for i in range(10):
 e.restore_checkpoint(0)
 print(e.current_state())
 e.reset()
+
 """
 r = 0
 p = 0
 sr = 0
 sp = 0
+
+e.reset()
+e.play_action(0)
+print(e.current_state())
+e.play_action(0)
+print(e.current_state())
+e.play_action(0)
+print(e.current_state())
+print(e.possible_actions(e.current_state()))
+print("posrany", e.current_state())
 
 for i in range(1):
     # e = envs.InvestorEnv(2, 20)

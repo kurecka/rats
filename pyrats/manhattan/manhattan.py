@@ -135,7 +135,7 @@ class ManhattanEnv:
         return self.get_actions_for_state(state_name)
 
     def get_action(self, idx):
-        return idx
+        return possible_actions()[idx]
 
 
     # TODO: need to adjust and remove dummy nodes here

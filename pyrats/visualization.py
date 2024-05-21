@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import multiprocessing
+import os
 
 """
 Visualization script,
@@ -12,6 +13,9 @@ sqrt(runs) in aggregate_df_ifnormation and process_line
 """
 
 
+# csv format: agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible;runs
+# plot the mean reward and penalty of the (agent, exp_const) for each time limit,
+# mark infeasible solutions with a red X
 def visualize_large_hg( filename ):
 
     # filter path
@@ -19,8 +23,29 @@ def visualize_large_hg( filename ):
     plot_name = paths[-1]
 
     df = pd.read_csv( filename , sep=';')
+    agent_list = ["ParetoUCT", "DualUCT", "RAMCP"]
+    exp_const = [1, 5, 20]
 
-    #TODO
+    for agent in agent_list:
+        for c in exp_const:
+            sub_df = df[(df['agent'] == agent) & (df['exp_const'] == c)]
+
+            # plot reward
+            plt.plot( sub_df['time_limit'], sub_df['mean_reward'], label='Mean reward',
+                     marker='none', color = 'k')
+            for row in sub_df.rows():
+                if not row['feasible']:
+                    plt.plot(row['time_limit'], row['mean_reward'], marker='X', markersize=10,
+                             markeredgecolor='r', markerfacecolor='none')
+                    
+    plt.xlabel('Time limit (ms)')
+    plt.ylabel('Reward')
+    plt.title(f"{plot_name}")
+    plt.legend()
+    plt.grid(True, linewidth='0.4', linestyle='--')
+    plt.savefig(f'large_HG_eval/plots/{plot_name}.png')
+    plt.close()
+
 
 def aggregate_df_information(dataframe, timesteps, samples):
    
@@ -269,5 +294,11 @@ def visualize_small_hg_old( filename , time_limits ):
 
 
 # time_limits = [5, 10, 15, 25, 50, 100, 250, 500]
-time_limits = [5, 10, 25, 50, 100, 250, 500]
-process_small_hg( time_limits, samples=100 )
+# time_limits = [5, 10, 25, 50, 100, 250, 500]
+# process_small_hg( time_limits, samples=100 )
+
+if __name__ == "__main__":
+
+    # visualize all the large HG results in large_HG_eval/results
+    for filename in os.listdir("large_HG_eval/results"):
+        visualize_large_hg( f"large_HG_eval/results/{filename}" )

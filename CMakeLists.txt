@@ -8,7 +8,7 @@ option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defi
 option(ENABLE_LTO "Enable link time optimization" ON)
 option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." OFF)
-option(PEDANTIC "Enable pedantic compiler warnings." ON)
+option(PEDANTIC "Enable pedantic compiler warnings." OFF)
 
 # Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -60,9 +60,6 @@ add_library(${LIBRARY_NAME} OBJECT ${SOURCES})
 # Lib needs its header files, and users of the library must also see these (PUBLIC). (No change needed)
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-# There's also (probably) doctests within the library, so we need to see this as well.
-# target_link_libraries(${LIBRARY_NAME} PUBLIC doctest)
-
 # Link libraries
 target_link_libraries(${LIBRARY_NAME} PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 target_include_directories(${LIBRARY_NAME} SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
@@ -73,8 +70,6 @@ target_link_libraries(${LIBRARY_NAME} PRIVATE pybind11::pybind11)
 # Set the compile options you want (change as needed). Only if PEDANTIC is ON.
 if(PEDANTIC)
     message(STATUS "Enabling pedantic compiler warnings for ${LIBRARY_NAME}. If this is annoying, set -DPEDANTIC=OFF.")
-    # target_set_warnings(${LIBRARY_NAME} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-    # target_compile_options(${LIBRARY_NAME} PRIVATE -Wno-exit-time-destructors -Wno-global-constructors)# -Wno-poison-system-directories)
 endif()
 
 # --------------------------------------------------------------------------------
@@ -82,7 +77,6 @@ endif()
 # --------------------------------------------------------------------------------
 
 # Add the executeble
-# add_executable(${MAIN_APP_NAME} app/main.cpp)
 set(MAIN_TESTS_NAME regtests)
 add_executable(${MAIN_TESTS_NAME} tests/main.cpp)
 
@@ -102,9 +96,6 @@ target_link_libraries(${_target} PRIVATE pybind11::pybind11)
 # Set the compilation options
 if (PEDANTIC)
     message(STATUS "Enabling pedantic compiler warnings for ${_target}. If this is annoying, set -DPEDANTIC=OFF.")
-    # target_set_warnings(${_target} ENABLE ALL AS_ERROR ALL DISABLE Annoying)
-    # target_compile_options(${_target} PRIVATE -Wno-missing-prototypes)
-    # target_compile_options(${_target} PRIVATE -Wno-poison-system-directories)
 endif()
 target_enable_lto(${_target} optimized)  # enable link-time-optimization if available for non-debug configurations
 endforeach()
@@ -112,15 +103,11 @@ endforeach()
 
 # Set the properties you require, e.g. what C++ standard to use.
 set_target_properties(
-    # ${LIBRARY_NAME} ${MAIN_APP_NAME} ${MAIN_MODULE_NAME}
-    ${LIBRARY_NAME} ${MAIN_TESTS_NAME} #${MAIN_MODULE_NAME}
+    ${LIBRARY_NAME} ${MAIN_TESTS_NAME}
       PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
         COMPILE_OPTIONS "-O2"
-        # COMPILE_OPTIONS "-fmax-errors=1"
 )
 
-# Set up tests (see tests/CMakeLists.txt).
-# add_subdirectory(tests)

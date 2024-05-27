@@ -7,11 +7,6 @@
 
 #include "exampleConfig.h"
 
-// #include <fstream>
-// #include "spdlog/spdlog.h"
-// #include "spdlog/sinks/basic_file_sink.h"
-// #include "spdlog/fmt/ostr.h"
-
 
 void set_log_level(std::string level) {
     std::transform(level.begin(), level.end(), level.begin(), 
@@ -37,14 +32,6 @@ std::string build_info() {
     return info;
 }
 
-// void set_graphviz_file(std::string file_name) {
-//     std::ofstream file(file_name, std::ofstream::out | std::ofstream::trunc);
-//     file.close();
-//     auto graph_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(file_name);
-//     auto logger = std::make_shared<spdlog::logger>("graphviz", graph_sink);
-//     logger->set_pattern("%v");
-//     spdlog::register_logger(logger);
-// }
 
 PYBIND11_MODULE(rats, m) {
     rats::py::register_environments(m);
@@ -55,6 +42,5 @@ PYBIND11_MODULE(rats, m) {
 
     m.def("set_log_level", &set_log_level, "Set the log level");
     m.def("build_info", &build_info, "Get the build info");
-    // m.def("set_graphviz_file", &set_graphviz_file, "Set the graphviz file"); }
 }
 

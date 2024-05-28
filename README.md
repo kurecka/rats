@@ -31,64 +31,15 @@ This repository contains code base for development and testing of risk-aware tre
 - [x] CSV reporting
 
 ## Building
+Build the docker image accoring to the specified Dockerfile.
 
-Make sure to have `cmake` and the following c++ libraries installed: [`OR-tools`](https://github.com/google/or-tools), spdlog, pybind11, eigen
-
-``` bash
-> cd build
-> cmake .. -DCMAKE_BUILD_TYPE=[Debug | Release]
-> make
-> ./regtest      # Runs the tests.
-> make doc       # Generate html documentation.
+## Maintaining Ray cluster
+You can use `raylite` as a simplified version of malfunctioning `ray` to start and manage ray cluster. 
+To install `raylite` you can use the following command:
+```sh
+cd raylite
+pip install -e .
 ```
-
-In order to build and install as a python package, run the following command:
-```bash
-> pip install .
-```
-
-The command above will build the code using cmake and install the package in the current environment as `rats` package.
-
-## Install OR-tools
-We use `OR-tools` as LP solver. Make sure you have it installed.
-Download the latest version from [here](https://github.com/google/or-tools).
-The following commands should work:
-```bash
-> cd or-tools
-> cmake -S . -B build -DBUILD_DEPS:BOOL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2"
-> sudo cmake --build build --config Release --target install  # install the libraries in the system
-```
-
-## Install python packages
-We use `conda` to maintain python packages. Make sure you have it installed.
-The environment is described in `conda_env.yaml`.
-
-To create new environment according to the env file use:
-```bash
-conda env create -f conda_env.yaml
-```
-
-To activate the environment use:
-```bash
-conda activate rats
-```
-
-After activating the environment, install the following dependencies for the
-Manhattan benchmark:
-```bash
-pip install fimdp fimdpenv
-```
-
-To update your environment according to the env file use:
-```bash
-conda env update -f conda_env.yaml
-```
-
-<!-- To export the description of your current conda environment use:
-```bash
-conda env export --no-build --from-history | grep -v prefix > conda_env.yaml
-``` -->
-
 
 ## Run experiment through ray
 If you have your own ray cluster running or want to run an experiment on a local machine, you can use the following command:

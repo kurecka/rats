@@ -207,7 +207,8 @@ public:
 
             action_node_t* an = root->get_child(a);
             if (an->children.find(s) == an->children.end()) {
-                full_expand_action(an, s, r, p, t);
+                update_predictor(root.get(), a, s, r, p, t);
+                full_expand_action(an);
             }
 
             new_root = an->get_child_unique_ptr(s);
@@ -223,7 +224,8 @@ public:
 
             action_node_t* an = root->get_child(a_idx);
             if (an->children.find(s) == an->children.end()) {
-                full_expand_action(an, s, r, p, t);
+                update_predictor(root.get(), a, s, r, p, t);
+                full_expand_action(an);
             }
 
             // admissable cost

@@ -21,6 +21,20 @@ struct ramcp_data {
 };
 
 
+/*********************************************************************
+ * @brief Action selection for RAMCP based on UCT
+ * 
+ * For each action a compute the UCT value according to the formula:
+ *  UCT(a) = normQ(a) + c * sqrt(log(N + 1) / (n(a) + 0.0001))
+ * where:
+ * normQ(a) = (Q(a) - min(Q)) / (max(Q) - min(Q))
+ * N is the total number of visits of the parent node
+ * n(a) is the number of visits of action a
+ * c is the exploration constant
+ * 
+ * Returns the index of the action with the highest UCT value
+ *********************************************************************/
+
 template<typename SN>
 struct select_action_uct {
     size_t operator()(SN* node, bool /*explore*/) const {
@@ -112,6 +126,17 @@ public:
         return dot_tree;
     }
 
+    /**
+     * @brief Perform i-th simulation of the MCTS algorithm
+     * 
+     * Consists of the following steps:
+     * 1. Selection: Select a leaf node using `select_action_uct` and no descent callback
+     * 2. Expansion: Expand the leaf node using `expand_state`
+     * 3. Rollout: Perform a rollout from the leaf node using `rollout`
+     * 4. Backpropagation: Backpropagate the results of the rollout using `uct_prop_v_value` and `uct_prop_q_value`
+     * 
+     * (5. End simulation: Call the end_sim callback)
+     */
     void simulate(int i) {
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
@@ -123,6 +148,7 @@ public:
     void play() override {
         spdlog::debug("Play: {}", name());
 
+        // Perform simulations: Either based on number of simulations or time limit
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();
             auto end = start + std::chrono::milliseconds(sim_time_limit);
@@ -136,30 +162,48 @@ public:
             }
         }
 
+        // Run LP solver to get the best safe action according to the sampled tree.
+        // The choice of the action is stochastic to balance penalty and reward. The solver remembers
+        // the alternative action and other relevant information to update the risk threshold.
         A a = solver.get_action(root.get(), risk_thd);
 
+        // Plot the tree
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
 
+        // Play the selected action
         auto [s, r, p, t] = common_data.handler.play_action(a);
         spdlog::debug("Play action: {}", to_string(a));
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
-        // spdlog::info("Steps: {}, Action: {}, State: {}, Reward: {}", common_data.handler.get_num_steps(), to_string(a), to_string(s), r);
 
         action_node_t* an = root->get_child(a);
+        // If the action is not in the tree, add it
         if (an->children.find(s) == an->children.end()) {
-            full_expand_action(an, s, r, p, t);
+            update_predictor(root.get(), a, s, r, p, t);
+            full_expand_action(an);
         }
 
+        // Update the penalty threshold
         risk_thd = solver.update_threshold(risk_thd, a, s);
 
+        // Update the root node
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);
         root = std::move(new_root);
         root->get_parent() = nullptr;
     }
 
+
+    /**
+     * Reset:
+     * - Reset the agent
+     * - Reset the risk threshold
+     * - Create a new root node
+     * - Set the common data for the root node
+     * - Set a state for the root node
+     * - Set the gamma and gammap for the handler
+     */
     void reset() override {
         spdlog::debug("Reset: {}", name());
         agent<S, A>::reset();

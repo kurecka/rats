@@ -56,13 +56,8 @@ struct sym_node {
             state_node->children[action].action = action;
             state_node->children[action].common_data = state_node->common_data;
             for (int i=0; i<child.prob_rate; ++i) {
-                full_expand_action(
-                    &(state_node->children[action]),
-                    next_state,
-                    child.observerd_reward,
-                    child.observed_penalty,
-                    child.terminal
-                );
+                update_predictor(&state_node, action, next_state, child.observerd_reward, child.observed_penalty, child.terminal);
+                full_expand_action(&(state_node->children[action]));
                 auto preds = state_node->common_data->predictor.predict_probs(state_node->state, action);
             }
             child.apply(state_node->children[action].children[next_state].get());
@@ -87,9 +82,12 @@ UTest(agents, h1_deterministic) {
     root.common_data = &data;
 
     expand_state(&root);
-    full_expand_action(&(root.children[0]), 1, 0.3, 0.4, 1);
-    full_expand_action(&(root.children[1]), 1, 0.5, 0.5, 1);
-    full_expand_action(&(root.children[2]), 1, 0.1, 0.1, 1);
+    update_predictor(&root, 0, 1, 0.3, 0.4, 1);
+    full_expand_action(&(root.children[0]));
+    update_predictor(&root, 1, 1, 0.5, 0.5, 1);
+    full_expand_action(&(root.children[1]));
+    update_predictor(&root, 2, 1, 0.1, 0.1, 1);
+    full_expand_action(&(root.children[2]));
 
     lp::tree_lp_solver<state_node_t> solver;
     int a0 = solver.get_action(&root, 0.0);
@@ -130,13 +128,28 @@ UTest(agents, h1_stochastic) {
 
     expand_state(&root);
     // args: &(root.children[action]), state_outcome, reward, probability, terminal
-    NTIMES(1) full_expand_action(&(root.children[0]), 1, 0.3, 0.4, 1);
+    NTIMES(1) {
+        update_predictor(&root, 0, 1, 0.3, 0.4, 1);
+        full_expand_action(&(root.children[0]));
+    }
 
-    NTIMES(1) full_expand_action(&(root.children[1]), 1, 1, 1, 1);
-    NTIMES(1) full_expand_action(&(root.children[1]), 2, 0, 0, 1);
+    NTIMES(1) {
+        update_predictor(&root, 1, 1, 1, 1, 1);
+        full_expand_action(&(root.children[1]));
+    }
+    NTIMES(1) {
+        update_predictor(&root, 1, 2, 0, 0, 1);
+        full_expand_action(&(root.children[1]));
+    }
 
-    NTIMES(1) full_expand_action(&(root.children[2]), 1, 1, 1, 1);
-    NTIMES(9) full_expand_action(&(root.children[2]), 2, 0, 0, 1);
+    NTIMES(1) {
+        update_predictor(&root, 2, 1, 1, 1, 1);
+        full_expand_action(&(root.children[2]));
+    }
+    NTIMES(9) {
+        update_predictor(&root, 2, 2, 0, 0, 1);
+        full_expand_action(&(root.children[2]));
+    }
 
     // test outcomes
     // spdlog::set_level(spdlog::level::trace);

@@ -8,16 +8,34 @@
 
 std::pair<float, float> penalties2probs(float penalty1, float penalty2, float thd);
 
-
 struct mixture {
     size_t vals[2];
     float probs[2];
     float penalties[2];
 
-    int last_sampled_action;
+    int last_sampled_index;
 
     mixture() = default;
 
+    /**
+     * @brief A mixture of two actions with associated probabilities
+     * 
+     * @param min_action Action with minimum penalty
+     * @param max_action Action with maximum penalty
+     * @param min_penalty Penalty associated with min_action
+     * @param max_penalty Penalty associated with max_action
+     * @param thd Threshold for the mixture
+     * 
+     * Represents a mixture of two actions with associated probabilities. The mixture is such that the expected penalty
+     * is equal to the threshold thd (if possible).
+     * 
+     * - If the maximum penalty is less than or equal to the threshold, the mixture is deterministic and the action with
+     *  the maximum penalty is always chosen.
+     * - If the minimum penalty is greater than or equal to the threshold, the mixture is deterministic and the action with
+     *  the minimum penalty is always chosen.
+     * - Otherwise, the mixture is probabilistic and the probabilities are computed such that the expected penalty is
+     *  equal to the threshold.
+     */
     mixture(size_t min_action, size_t max_action, float min_penalty, float max_penalty, float thd)
     {
         if (max_penalty <= thd) {
@@ -42,20 +60,20 @@ struct mixture {
     }
 
     size_t sample() {
-        last_sampled_action = rng::unif_float(0, 1) < probs[0] ? 0 : 1;
-        return vals[last_sampled_action];
+        last_sampled_index = rng::unif_float(0, 1) < probs[0] ? 0 : 1;
+        return vals[last_sampled_index];
     }
 
-    float update_thd(float thd, float immediate_penalty = 0) {
+    float update_thd(float thd, float immediate_penalty = 0, float gammap = 1.0f) {
         float new_thd = 0;
         if (vals[0] == vals[1]) {
-            new_thd = thd;
+            new_thd = (thd - immediate_penalty) / gammap;
         } else {
-            int other_action = 1 - last_sampled_action;
-            double alt_thd = penalties[other_action];
-            new_thd = (thd - probs[last_sampled_action] * immediate_penalty - (1 - probs[last_sampled_action]) * alt_thd) / probs[last_sampled_action];
+            float prob_action = probs[last_sampled_index];
+            double alt_thd = penalties[1 - last_sampled_index];
+            new_thd = (thd - prob_action * immediate_penalty - (1 - prob_action) * alt_thd) / (prob_action * gammap);
         }
-        return std::clamp(new_thd, 0.0f, 1.0f);
+        return std::max(new_thd, 0.0f);
     }
 
     template<typename T>
@@ -64,7 +82,7 @@ struct mixture {
     }
 
     float last_penalty() const {
-        return penalties[last_sampled_action];
+        return penalties[last_sampled_index];
     }
 };
 

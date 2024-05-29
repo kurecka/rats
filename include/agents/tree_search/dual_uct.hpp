@@ -24,56 +24,73 @@ struct dual_uct_data {
 };
 
 
+/**
+ * @brief Select action using dual uct
+ * 
+ * @tparam SN State node type
+ * 
+ * @note Compute the UCT value for each action given the current value of lambda.
+ * 
+*/
 template<typename SN>
 struct select_action_dual {
     size_t operator()(SN* node, bool explore) const {
+        // Retrieve parameters from the node
         float risk_thd = node->common_data->risk_thd;
         float lambda = node->common_data->lambda;
         float c = node->common_data->exploration_constant;
 
         auto& children = node->children;
         
+        // Compute lagrangian values
         std::vector<float> uct_values(children.size());
         for (size_t i = 0; i < children.size(); ++i) {
             uct_values[i] = children[i].q.first - lambda * children[i].q.second;
         }
 
-        // get max of uct_values
+        // The values max_v and min_v are used to normalize the Q values
         float max_v = *std::max_element(uct_values.begin(), uct_values.end());
         float min_v = *std::min_element(uct_values.begin(), uct_values.end());
         
+        // If max_v == min_v, then the normalization does not matter since all values are the same.
+        // In this case, we set max_v to min_v + 1 to avoid division by zero.
         if (max_v <= min_v) {
             max_v = min_v + 1;
         }
 
+        // Compute the UCT values
         for (size_t i = 0; i < children.size(); ++i) {
             uct_values[i] += explore * (max_v - min_v) * c * static_cast<float>(
                 sqrt(log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-            );
+            ) + rng::unif_float(0.0001);  // Add a small random value to break ties
         }
 
+        // Find the highest UCT value
         auto best_a = std::max_element(uct_values.begin(), uct_values.end());
         size_t best_action = std::distance(uct_values.begin(), best_a);
         float best_reward = *best_a;
 
-        std::vector<size_t> eps_best_actions;
-        int tree_depth = node->node_depth() - node->common_data->num_steps;
-        const float eps_const = exp(-tree_depth) * 0.1;
+        // Pick the least and the most risky actions among epsilon-optimal actions (w.r.t. lambda)
+        // The epsilon value is computed based on the depth of the tree
+        // Implementation based on https://github.com/secury/CC-POMCP/blob/master/src/mcts.cpp
+        int relative_depth = node->node_depth() - node->common_data->num_steps;
+        const float eps_constant = exp(-relative_depth) * 0.1;
+        const float best_value = children[best_action].q.first - lambda * children[best_action].q.second;
+        const float best_eps = eps_constant * log(node->num_visits + 1) / (children[best_action].num_visits + 1);
+
+        size_t low_action = best_action, high_action = best_action;
+        float low_penalty = children[low_action].q.second;
+        float high_penalty = children[high_action].q.second;
+
         for (size_t i = 0; i < children.size(); ++i) {
-            float eps = eps_const * (sqrt( log(children[i].num_visits + 1) / (children[i].num_visits + 1) )
-                        + sqrt( log(children[best_action].num_visits + 1) / (children[best_action].num_visits + 1) ));
-            if (fabs(uct_values[i] - best_reward) <= eps) {
-                eps_best_actions.push_back(i);
+            auto [reward, penalty] = children[i].q;
+
+            const float value = reward - lambda * penalty;
+            const float eps = eps_constant * log(node->num_visits + 1) / (children[i].num_visits + 1);
+            if (best_value - value <= eps + best_eps) {
+                if (penalty <= low_penalty) { low_penalty = penalty; low_action = i; }
+                if (penalty >= high_penalty) { high_penalty = penalty; high_action = i; }
             }
-        }
-
-
-        size_t low_action = eps_best_actions.front(), high_action = eps_best_actions.front();
-        float low_penalty = 1, high_penalty = 0;
-        for (size_t idx : eps_best_actions) {
-            auto& [reward, penalty] = children[idx].q;
-            if (penalty <= low_penalty) { low_penalty = penalty; low_action = idx; }
-            if (penalty >= high_penalty) { high_penalty = penalty; high_action = idx; }
         }
 
         node->common_data->mix = mixture(low_action, high_action, low_penalty, high_penalty, risk_thd);
@@ -87,10 +104,7 @@ struct select_action_dual {
  * @tparam S State type
  * @tparam A Action type
  * 
- * @note Lambda is preserved between epochs
- * @note Lambda is updated by the following rule:
- * d_lambda = (1-alpha) * d_lambda) + alpha * (sample_risk - risk_thd)
- * lambda = lambda + lr * d_lambda
+ * @note Lambda is preserved between epochs and updated using a gradient step
  *********************************************************************/
 
 template <typename S, typename A, bool use_lp = false>
@@ -114,8 +128,7 @@ private:
     float lr;
     bool use_rollout;
     float initial_lambda;
-    float d_lambda = 0;
-    float lambda_max = 100;
+    float lambda_max = 1e9;
 
     data_t common_data;
 
@@ -153,6 +166,32 @@ public:
         return dot_tree;
     }
 
+    float compute_immediate_penalty(A a) {
+        // Compute immediate penalty (the expected penalty of the action)
+        float immediate_penalty = 0;
+        auto outcomes = common_data.predictor.predict_probs(root->state, a);
+        auto signals = common_data.predictor.predict_signals(root->state, a);
+        for (auto& [outcome_state, outcome_prob] : outcomes) {
+            float observed_penalty = std::get<1>(signals[outcome_state]);
+            immediate_penalty += outcome_prob * observed_penalty;
+        }
+
+        return immediate_penalty;
+    }
+
+    /**
+     * @brief Perform i-th simulation of the MCTS algorithm
+     *
+     * @param i Simulation number
+     *
+     * Consists of the following steps:
+     * 1. Selection: Select a leaf node using `select_action_dual` and no descent callback
+     * 2. Expansion: Expand the leaf node using `expand_state`
+     * 3. Rollout: Perform a rollout from the leaf node using `rollout` (if enabled)
+     * 4. Backpropagation: Propagate the results of the rollout back to the root node
+     * (5. End simulation: Call the end_sim callback)
+     * 6. Perform a gradient step on lambda
+     */
     void simulate(int i) {
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
@@ -179,6 +218,7 @@ public:
         spdlog::debug("thd {}", common_data.risk_thd);
         spdlog::debug("lambda {}", common_data.lambda);
 
+        // Perform simulations: Either based on number of simulations or time limit
         if (sim_time_limit > 0) {
             auto start = std::chrono::high_resolution_clock::now();
             auto end = start + std::chrono::milliseconds(sim_time_limit);
@@ -192,53 +232,51 @@ public:
             }
         }
 
+        // Plot the tree
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
 
         std::unique_ptr<state_node_t> new_root;
         if constexpr (use_lp) {
+            // Use RAMCP LP to decide the next action - helps to maintain feasibility
+
+            // Run the LP solver to get the best safe action according to the sampled tree
             A a = solver.get_action(root.get(), common_data.risk_thd);
             auto [s, r, p, t] = common_data.handler.play_action(a);
             spdlog::debug("Play action: {}", to_string(a));
             spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
-            // spdlog::info("Steps: {}, Action: {}, State: {}, Reward: {}", common_data.num_steps, to_string(a), to_string(s), r);
-
             action_node_t* an = root->get_child(a);
+            // If the state is not in the tree, add it
             if (an->children.find(s) == an->children.end()) {
                 update_predictor(root.get(), a, s, r, p, t);
                 full_expand_action(an);
             }
 
+            // Update the penalty threshold using the LP solver
             new_root = an->get_child_unique_ptr(s);
             common_data.risk_thd = solver.update_threshold(common_data.risk_thd, a, s, p);
         } else {
-            size_t a_idx = select_action_f(root.get(), false);
+            // Use `select_action_dual` to decide the next action
+            size_t a_idx = select_action_f(root.get(), false);  // false -> no exploration
             A a = root->actions[a_idx];
+            // Play the selected action
             auto [s, r, p, t] = agent<S, A>::handler.play_action(a);
             spdlog::debug("Play action: {}", to_string(a));
             spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
-            // spdlog::info("Steps: {}, Action: {}, State: {}, Reward: {}", common_data.num_steps, to_string(a), to_string(s), r);
-
+            // If the state is not in the tree, add it
             action_node_t* an = root->get_child(a_idx);
             if (an->children.find(s) == an->children.end()) {
                 update_predictor(root.get(), a, s, r, p, t);
                 full_expand_action(an);
             }
 
-            // admissable cost
-            float immediate_penalty = 0;
-            auto outcomes = common_data.predictor.predict_probs(root->state, a);
-            auto signals = common_data.predictor.predict_signals(root->state, a);
-            for (auto& [outcome_state, outcome_prob] : outcomes) {
-                float observed_penalty = std::get<1>(signals[outcome_state]);
-                immediate_penalty += outcome_prob * observed_penalty;
-            }
+            // Update the penalty threshold
+            common_data.risk_thd = common_data.mix.update_thd(common_data.risk_thd, compute_immediate_penalty(a));
 
             new_root = an->get_child_unique_ptr(s);
-            common_data.risk_thd = std::max(common_data.mix.update_thd(common_data.risk_thd, immediate_penalty), 0.0f);
         }
         ++common_data.num_steps;
         root = std::move(new_root);
@@ -251,7 +289,6 @@ public:
         agent<S, A>::reset();
         common_data.risk_thd = risk_thd;
         common_data.lambda = initial_lambda;
-        d_lambda = 0;
         root = std::make_unique<state_node_t>();
         root->common_data = &common_data;
         root->state = agent<S, A>::handler.get_current_state();

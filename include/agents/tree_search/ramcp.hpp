@@ -60,7 +60,7 @@ struct select_action_uct {
         for (size_t i = 0; i < children.size(); ++i) {
             uct_value = ((children[i].q.first - min_v) / (max_v - min_v)) +
                 c * static_cast<float>(std::sqrt(std::log(node->num_visits + 1) / (children[i].num_visits + 0.0001))
-            );
+            )  + rng::unif_float(0.0001);  // Add a small random value to break ties
 
             if (uct_value > max_uct) {
                 max_uct = uct_value;
@@ -183,7 +183,7 @@ public:
 
 
         action_node_t* an = root->get_child(a);
-        // If the action is not in the tree, add it
+        // If the state is not in the tree, add it
         if (an->children.find(s) == an->children.end()) {
             update_predictor(root.get(), a, s, r, p, t);
             full_expand_action(an);

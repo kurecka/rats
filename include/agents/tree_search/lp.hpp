@@ -210,7 +210,7 @@ public:
      * It should hold that p(a,s) * (received_penalty + gamma_penalty * new_thd) + alt_penalty = old_thd
     */
     float update_threshold(float thd, A a, S s, float received_penalty) {
-        double branch_budget = thd
+        double branch_budget = thd;
         for (auto& [as, expr] : subtree_penalties) {
             auto [subtree_action, subtree_state] = as;
             if (subtree_action != a || subtree_state != s) {

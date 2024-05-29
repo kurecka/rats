@@ -42,11 +42,15 @@ struct select_action_uct {
         float c = node->common_data->exploration_constant;
 
         auto& children = node->children;
+        
+        // Use max_v, min_v to normalize the Q values
         float max_v = std::max_element(children.begin(), children.end(),
                         [](auto& l, auto& r){ return l.q.first < r.q.first; })->q.first;
         float min_v = std::min_element(children.begin(), children.end(),
                         [](auto& l, auto& r){ return l.q.first < r.q.first; })->q.first;
         
+        // If max_v == min_v, then the normalization does not matter since all values are the same.
+        // In this case, we set max_v to min_v + 1 to avoid division by zero.
         if (max_v <= min_v) {
             max_v = min_v + 1;
         }
@@ -186,7 +190,7 @@ public:
         }
 
         // Update the penalty threshold
-        risk_thd = solver.update_threshold(risk_thd, a, s);
+        risk_thd = solver.update_threshold(risk_thd, a, s, p);
 
         // Update the root node
         std::unique_ptr<state_node_t> new_root = an->get_child_unique_ptr(s);

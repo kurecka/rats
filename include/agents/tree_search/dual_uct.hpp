@@ -212,7 +212,7 @@ public:
             }
 
             new_root = an->get_child_unique_ptr(s);
-            common_data.risk_thd = solver.update_threshold(common_data.risk_thd, a, s);
+            common_data.risk_thd = solver.update_threshold(common_data.risk_thd, a, s, p);
         } else {
             size_t a_idx = select_action_f(root.get(), false);
             A a = root->actions[a_idx];

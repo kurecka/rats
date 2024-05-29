@@ -92,8 +92,7 @@ private:
     }
 
     /**
-     * Set probability flow LP and save important sums as constraints.
-     * Namely: total_reward_const, total_penalty_const, subtree_penalty_const for each subtree rooted at each action-state pair
+     * Set probability flow LP and prepare necessary sums.
     */
     void set_flow(const SN* root) {
         solver->Clear();
@@ -106,64 +105,63 @@ private:
     }
 
     void set_flow_rec(
-        const SN* parent,
-        LinearExpr parent_flow = 1.,
-        float value_discount = 1.,
-        LinearExpr* subtree_penalty = nullptr
+        const SN* parent,  // Parent node
+        LinearExpr parent_flow = 1.,  // Flow from the parent node
+        float value_discount = 1.,  // Discount factor for the value
+        float penalty_discount = 1.,  // Discount factor for the penalty
+        LinearExpr* subtree_penalty = nullptr  // Pointer to the subtree penalty variable of the current node
     ) {
-        // If subtree_penalty does not exist, this is the root node, so save the action flow as policy
+        // If subtree_penalty does not exist, this is the root node.
         bool is_LP_root = !subtree_penalty;
-        spdlog::trace("Setting LP flow for node {}", to_string(parent->state));
-        spdlog::trace(" Num actions: {}", parent->children.size());
         for (auto& action_node : parent->children) {
             // Create action flow variable: non-negative value
             MPVariable* const action_flow = solver->MakeNumVar(0.0, 1.0, "A"+to_string(ctr++));
             parent_flow -= action_flow;
             A action = action_node.action;
 
-            
+            // In the root node, set the action flow as the policy variable
             if (is_LP_root) {
                 policy.insert({action, action_flow});
             }
 
             auto states_distr = common_data->predictor.predict_probs(parent->state, action);
-            spdlog::trace("Setting LP flow for action node {}", to_string(action_node.action));
-            spdlog::trace(" Num states: {}", action_node.children.size());
             for (auto& [state, state_node] : action_node.children) {
                 // Create state flow variable: non-negative value
                 MPVariable* state_flow = solver->MakeNumVar(0.0, 1.0, "S"+to_string(ctr++));
 
                 // state_flow = action_flow * p(s | a)
                 solver->MakeRowConstraint(state_flow == LinearExpr(action_flow) * states_distr[state]);
-                spdlog::trace("LP flow constraint for action-state {}-{}-{}: {}", to_string(parent->state), to_string(action), to_string(state), const2str(state_flow == LinearExpr(action_flow) * states_distr[state]));
 
-                // Add weighted incoming reward to total reward
+                // Add discounted incoming reward to total reward
                 total_reward += LinearExpr(state_flow) * state_node->observed_reward * value_discount;
 
+                // In the root node, create the subtree penalty variable
                 if (is_LP_root) {
                     subtree_penalties[{action, state}] = LinearExpr();
                     subtree_penalty = &subtree_penalties[{action, state}];
                 }
-                // Update subtree penalty
-                (*subtree_penalty) += LinearExpr(state_flow) * state_node->observed_penalty;
+                // Add discounted penalty to the subtree penalty
+                (*subtree_penalty) += LinearExpr(state_flow) * state_node->observed_penalty * penalty_discount;
 
                 if (!state_node->is_leaf_state()) {
                     set_flow_rec(
                         state_node.get(),
                         LinearExpr(state_flow),
                         value_discount * common_data->gamma,
+                        penalty_discount * common_data->gammap,
                         subtree_penalty
                     );
                 } else {
-                    total_reward += LinearExpr(state_flow) * common_data->gamma * state_node->rollout_reward;
-                    (*subtree_penalty) += LinearExpr(state_flow) * state_node->rollout_penalty;
+                    // Add discounted rollout estimate to total reward
+                    total_reward += LinearExpr(state_flow) * value_discount * common_data->gamma * state_node->rollout_reward;
+                    // Add non-discounted rollout penalty to the subtree penalty
+                    (*subtree_penalty) += LinearExpr(state_flow) * penalty_discount * common_data->gammap * state_node->rollout_penalty;
                 }
             }
         }
 
+        // Parent state flow minus the sum of child action flows (already included in `parent_flow`) should be zero
         solver->MakeRowConstraint(parent_flow == 0.f);
-
-        spdlog::trace("LP flow set for node {}: {}", to_string(parent->state), expr2str(parent_flow));
     }
 
 public:
@@ -209,22 +207,21 @@ public:
     /**
      * Compute the maximum penalty threshold after descent under (a, s) so that the constraint is feasible on expectation.
      * 
-     * It should hold that p(a,s) * new_thd + alt_penalty = old_thd
+     * It should hold that p(a,s) * (received_penalty + gamma_penalty * new_thd) + alt_penalty = old_thd
     */
-    float update_threshold(float thd, A a, S s) {
-        double alternative_penalty = 0;
+    float update_threshold(float thd, A a, S s, float received_penalty) {
+        double branch_budget = thd
         for (auto& [as, expr] : subtree_penalties) {
             auto [subtree_action, subtree_state] = as;
             if (subtree_action != a || subtree_state != s) {
-                alternative_penalty += expr.SolutionValue();
+                branch_budget -= expr.SolutionValue();
             }
         }
-        double remaining_penalty = thd - alternative_penalty;
-        spdlog::trace("Alternative penalty: {}, remaining penalty: {}", alternative_penalty, remaining_penalty);
-        spdlog::trace("Policy value: {}", policy[a]->solution_value());
         auto states_distr = common_data->predictor.predict_probs(root_state, a);
-        spdlog::trace("State probability: {}", states_distr[s]);
-        return std::clamp(remaining_penalty / (policy[a]->solution_value() * states_distr[s]), 0.0, 1.0);
+        float transition_prob = policy[a]->solution_value() * states_distr[s];
+
+        double descendent_budget = (branch_budget / transition_prob - received_penalty) / common_data->gammap;
+        return std::max(0., descendent_budget);
     }
 };
 

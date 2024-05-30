@@ -18,15 +18,15 @@ struct mixture {
     mixture() = default;
 
     /**
-     * @brief A mixture of two actions with associated probabilities
+     * @brief A stochastic mixture of two outcomes with associated penalties
      * 
-     * @param min_action Action with minimum penalty
-     * @param max_action Action with maximum penalty
-     * @param min_penalty Penalty associated with min_action
-     * @param max_penalty Penalty associated with max_action
+     * @param min_outcome Outcome with minimum penalty
+     * @param max_outcome Outcome with maximum penalty
+     * @param min_penalty Penalty associated with min_outcome
+     * @param max_penalty Penalty associated with max_outcome
      * @param thd Threshold for the mixture
      * 
-     * Represents a mixture of two actions with associated probabilities. The mixture is such that the expected penalty
+     * Represents a mixture of two outcomes with associated penalties. The mixture is such that the expected penalty
      * is equal to the threshold thd (if possible).
      * 
      * - If the maximum penalty is less than or equal to the threshold, the mixture is deterministic and the action with
@@ -36,23 +36,23 @@ struct mixture {
      * - Otherwise, the mixture is probabilistic and the probabilities are computed such that the expected penalty is
      *  equal to the threshold.
      */
-    mixture(size_t min_action, size_t max_action, float min_penalty, float max_penalty, float thd)
+    mixture(size_t min_outcome, size_t max_outcome, float min_penalty, float max_penalty, float thd)
     {
         if (max_penalty <= thd) {
-            vals[0] = vals[1] = max_action;
+            vals[0] = vals[1] = max_outcome;
             penalties[0] = penalties[1] = max_penalty;
             probs[0] = 0;
             probs[1] = 1;
         }
         else if (min_penalty >= thd) {
-            vals[1] = vals[0] = min_action;
+            vals[1] = vals[0] = min_outcome;
             penalties[1] = penalties[0] = min_penalty;
             probs[0] = 1;
             probs[1] = 0;
         }
         else {
-            vals[0] = min_action;
-            vals[1] = max_action;
+            vals[0] = min_outcome;
+            vals[1] = max_outcome;
             penalties[0] = min_penalty;
             penalties[1] = max_penalty;
             std::tie(probs[0], probs[1]) = penalties2probs(min_penalty, max_penalty, thd);

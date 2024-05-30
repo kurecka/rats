@@ -46,6 +46,10 @@ std::vector<std::tuple<float, float, T>> upper_hull(std::vector<std::tuple<float
     return hull;
 }
 
+
+/**
+ * @brief Enumeration of possible outcomes of a stochastic event associated with a playable penalty threshold
+ */
 struct outcome_support {
     // outcome index, new_thd
     std::vector<std::pair<size_t, float>> support;
@@ -76,8 +80,19 @@ struct outcome_support {
     }
 };
 
+
+/**
+ * @brief A class to represent an exact estimate of the pareto curve, both for state and action curves.
+ * 
+ * The estimate is exact in the sense that it precisely satisfies the Bellman equations.
+ * 
+ * The state curve 
+*/
 struct EPC {
     size_t num_samples = 0;
+    // A vector of a points on a curve. Each point is a tuple of (reward, penalty, outcome_support)
+    // If the curve is a state curve, the outcome_support is a single outcome (the played action) with a penalty threshold
+    // If the curve is an action curve, the outcome_support is a set of outcomes (the possible destination states) with their penalty thresholds
     std::vector<std::tuple<float, float, outcome_support>> points;
 
 public:
@@ -125,13 +140,20 @@ public:
         return *this;
     }
 
+    /**
+     * @brief Select a mixture of two points on the curve that satisfies the given threshold
+    */
     template<bool is_state_curve = false>
     mixture select_vertex(float thd) {
         size_t idx;
-        // find idx of first point with risk > risk_thd or idx = points.size()
+        // Find idx of first point with risk > risk_thd or idx = points.size()
         for (idx = 0; idx < points.size() && std::get<1>(points[idx]) <= thd; ++idx);
 
-        size_t point_idx1 = idx > 0 ? idx-1 : idx, point_idx2 = idx == points.size() ? idx-1 : idx;
+        // If idx = 0, chose 0-th point for the left vertex. Otherwise, chose the last point with risk <= risk_thd
+        size_t point_idx1 = idx > 0 ? idx-1 : idx;
+
+        // If idx = points.size(), chose the last point for the right vertex. Otherwise, chose the first point with risk > risk_thd
+        size_t point_idx2 = idx == points.size() ? idx-1 : idx;
 
         auto& [reward1, penalty1, supp1] = points[point_idx1];
         auto& [reward2, penalty2, supp2] = points[point_idx2];
@@ -139,8 +161,10 @@ public:
             if (!supp1.num_outcomes()) {
                 return mixture(0, 0, 0, 0, thd);
             }
+            // Mixture of the two actions and their assigned penalty thresholds
             return mixture(supp1.get_first_outcome(), supp2.get_first_outcome(), penalty1, penalty2, thd);
         } else {
+            // Mixture of the two points on the curve
             return mixture(point_idx1, point_idx2, penalty1, penalty2, thd);
         }
     }
@@ -194,7 +218,15 @@ public:
     }
 };
 
+
+/**
+ * @brief Merge a set of action EPCs into a single state EPC by taking the convex hull of the points.
+ * 
+ * The incomong reward and penalty values are not considered in the merging process.
+ * I.e. the outcome curve describes the reward-penalty thresholds achievable from the state.
+ */
 EPC convex_hull_merge(std::vector<EPC*> curves) {
+    // Each point is a tuple of (reward, penalty_threshold, (action_index, penalty_threshold))
     std::vector<std::tuple<float, float, outcome_support>> points;
     for (size_t i = 0; i < curves.size(); ++i) {
         for (size_t j = 0; j < curves[i]->points.size(); ++j) {
@@ -210,6 +242,13 @@ EPC convex_hull_merge(std::vector<EPC*> curves) {
     return curve;
 }
 
+
+/**
+ * @brief Merge a set of state EPCs into a single action EPC by taking the weighted average of the points.
+ * 
+ * The input curves are assumed to contain information about the incoming reward and penalty values.
+ * Hence the outcome curve describes the expected reward and penalty values achievable after taking the action.
+ */
 EPC weighted_merge(std::vector<EPC*> curves, std::vector<float> weights, std::vector<size_t> state_refs) {
     std::vector<std::vector<std::tuple<float, float, outcome_support>>> points(curves.size());
     size_t total_points = 0;

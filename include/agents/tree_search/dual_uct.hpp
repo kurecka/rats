@@ -274,7 +274,7 @@ public:
             }
 
             // Update the penalty threshold
-            common_data.risk_thd = common_data.mix.update_thd(common_data.risk_thd, compute_immediate_penalty(a));
+            common_data.risk_thd = common_data.mix.update_thd(common_data.risk_thd, compute_immediate_penalty(a), common_data.gammap);
 
             new_root = an->get_child_unique_ptr(s);
         }

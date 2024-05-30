@@ -117,13 +117,13 @@ struct select_action_pareto {
  * @brief Compute the expected immediate penalty of an action
 */
 template<typename SN>
-float compute_immediate_penalty(SN* sn, A a) {
+float compute_immediate_penalty(SN* sn, typename SN::A a) {
     auto common_data = sn->common_data;
 
     // Compute immediate penalty (the expected penalty of the action)
     float immediate_penalty = 0;
-    auto outcomes = common_data.predictor.predict_probs(sn->state, a);
-    auto signals = common_data.predictor.predict_signals(sn->state, a);
+    auto outcomes = common_data->predictor.predict_probs(sn->state, a);
+    auto signals = common_data->predictor.predict_signals(sn->state, a);
     for (auto& [outcome_state, outcome_prob] : outcomes) {
         float observed_penalty = std::get<1>(signals[outcome_state]);
         immediate_penalty += outcome_prob * observed_penalty;
@@ -183,7 +183,7 @@ struct descend_callback {
             } else if (point_penalty0 > action_thd) {
                 // If the minimum playable penalty is greater than the action threshold, decrease the threshold
                 // so that all missing budget is removed from the played branch
-                float outcome_prob = common_data->predictor.predict_probs(s0, a)[s];
+                float outcome_prob = common_data->predictor.predict_probs(s0->state, a)[s];
                 common_data->sample_risk_thd = state_penalty0 - (point_penalty0 - action_thd) / (common_data->gammap * outcome_prob);
             } else {
                 // If the minimum playable penalty is less than the action threshold, distribute the remaining budget to all branches

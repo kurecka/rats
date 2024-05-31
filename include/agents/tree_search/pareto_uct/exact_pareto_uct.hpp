@@ -352,11 +352,10 @@ private:
 public:
     pareto_uct(
         environment_handler<S, A> _handler,
-        int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
+        int _max_depth, float _risk_thd, float _gamma, float _gammap = 1, float _max_disc_penalty = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, int _graphviz_depth = -1,
-        float _lambda = -1,
-        float _max_disc_penalty = 1
+        float _lambda = -1
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)

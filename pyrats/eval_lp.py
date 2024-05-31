@@ -443,7 +443,8 @@ def evaluate_agent( env, filename, agent, c, p1, p2, results, time_limits, repet
                     'mean_penalty': mean_p,
                     'std_penalty': std_p,
                     'feasible': feasible,
-                    'mean_time_per_step': mean_time_per_step
+                    'mean_time_per_step': mean_time_per_step,
+                    'repetitions': repetitions
                 }]
             )
         )
@@ -521,12 +522,11 @@ def eval_solvers(agent_list, time_limits, params_grid, agent_repetitions=100, ou
 
 
 if __name__ == "__main__":
-    set_log_level("DEBUG")
 
-    agents = [agents.ParetoUCT] #agents.RAMCP, agents.DualUCT] #, agents.ParetoUCT]
-    time_limits = [5, 10, 25, 50] #, 100, 250, 500]
+    agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
+    time_limits = [5, 10, 25, 50]
     grid_desc = {
-        'c_s': [0.1, 1, 5, 20], #[0, 0.1, 0.2, 0.3, 0.4],
+        'c_s': [0, 0.1, 0.2, 0.3, 0.4],
         'p_slides': [0, 0.2],
         'p_traps': [0.1, 0.7],
         'map': GridWorldDataset.get_maps()
@@ -538,7 +538,7 @@ if __name__ == "__main__":
     eval_solvers(
         agent_list=agents,
         time_limits=time_limits,
-        params_grid=params_grid[:5],
+        params_grid=params_grid,
         agent_repetitions=100,
         output_dir="/work/rats/outputs"
     )

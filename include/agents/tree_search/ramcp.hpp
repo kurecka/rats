@@ -98,6 +98,7 @@ private:
     int num_sim;
     int sim_time_limit;
     float risk_thd;
+    bool use_rollout;
 
     data_t common_data;
 
@@ -112,6 +113,7 @@ public:
         int _max_depth, float _risk_thd, float _gamma,
         float _gammap = 1, int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0,
+        bool _rollout = true,
         int _graphviz_depth = -1
     )
     : agent<S, A>(_handler)
@@ -119,6 +121,7 @@ public:
     , num_sim(_num_sim)
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
+    , use_rollout(_rollout)
     , common_data({_risk_thd, _exploration_constant, _gamma, _gammap, agent<S, A>::handler, {}})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
@@ -144,7 +147,9 @@ public:
     void simulate(int i) {
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
-        rollout(leaf);
+        if (use_rollout) {
+            rollout(leaf);
+        }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
     }

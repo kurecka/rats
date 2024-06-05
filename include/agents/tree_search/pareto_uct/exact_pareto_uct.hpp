@@ -344,7 +344,7 @@ private:
     int num_sim;
     int sim_time_limit;
     float risk_thd;
-    float gamma;
+    bool use_rollout;
     float lambda;
     float lambda_max = 100;
     double grad_buffer = 0;
@@ -360,7 +360,9 @@ public:
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1, float _max_disc_penalty = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
-        float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, int _graphviz_depth = -1,
+        float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, 
+        bool _rollout = true,
+        int _graphviz_depth = -1,
         float _lambda = -1
     )
     : agent<S, A>(_handler)
@@ -368,7 +370,7 @@ public:
     , num_sim(_num_sim)
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
-    , gamma(_gamma)
+    , use_rollout(_rollout)
     , lambda(_lambda)
     , common_data({_risk_thd, _risk_thd, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, {}, lambda, _max_disc_penalty})
     , graphviz_depth(_graphviz_depth)
@@ -398,7 +400,7 @@ public:
      * Consists of the following steps:
      * 1. Selection: Select a leaf node using `select_action_pareto` and `descend_callback`
      * 2. Expansion: Expand the selected leaf node
-     * 3. No Rollout: To maintain the information precise
+     * 3. Rollout: Perform a rollout from the leaf node
      * 4. Backpropagation: Propagate the values up the tree using `exact_pareto_propagate`
      * (5. End simulation: Call the end_sim callback)
      * 6. Perform a gradient step on the lambda parameter (if enabled)
@@ -407,7 +409,9 @@ public:
         common_data.sample_risk_thd = common_data.risk_thd;
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
-        // rollout(leaf, false);
+        if (use_rollout) {
+            rollout(leaf, true);
+        }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
         if constexpr (use_lambda) {

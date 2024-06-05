@@ -23,7 +23,7 @@ OmegaConf.register_new_resolver("gid", lambda: os.getgid())
 
 @click.command()
 @click.argument('action', type=click.Choice(['up', 'down', 'dashboard', 'attach', 'git-pull', 'chown', 'sync', 'hcmd', 'wcmd']))
-@click.argument('config', type=click.Path(exists=True))
+@click.argument('config', type=click.Path(exists=True), default='ray_launch.yaml')
 
 @click.option('--cmd', type=str, default=None, help='Command to run on the head or worker nodes.')
 @click.option('--user', '-u', type=str, default=None,

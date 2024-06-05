@@ -2,6 +2,7 @@ import numpy as np
 from itertools import product
 from random import shuffle
 from sys import argv
+from utils import is_color_connected, map2str
 
 
 def get_tile_set(char_tile_set):
@@ -27,13 +28,6 @@ def match_tile(map, x, y, tile_set, i, j):
         map[x+di, y+dj] = tile_set[i+di][j+dj]
     return True
 
-def map2str(map):
-    map[map == 0] = ord(' ')
-    return '\n'.join([
-        line.astype(np.uint8).tobytes().decode('ascii')
-        for line in map
-    ])
-
 
 def wfc(map, x, y, tile_set, depth=0):
     indices = tile_set_indices(tile_set)
@@ -57,29 +51,6 @@ def wfc(map, x, y, tile_set, depth=0):
             # reset non-fixed tiles
             map[not_fixed] = 0
     return False
-
-def is_connected(map, c='P'):
-    height, width = map.shape
-    visited = np.zeros((height, width), dtype=bool)
-    count = (map == ord(c)).sum()
-    if count == 0:
-        return True    
-
-    x, y = np.argwhere(map == ord(c))[0]
-    stack = [(x, y)]
-    
-    while stack:
-        x, y = stack.pop()
-        if visited[x, y]:
-            continue
-        count -= 1
-        visited[x, y] = True
-        if map[x, y] == ord(c):
-            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                x_, y_ = x+dx, y+dy
-                if 0 <= x_ < height and 0 <= y_ < width and map[x_, y_] == ord(c) and not visited[x_, y_]:
-                    stack.append((x_, y_))
-    return count == 0
     
 
 char_tile_set = """
@@ -108,7 +79,7 @@ def main(width=8, height=8):
 
     if wfc(map, width//2, height//2, tile_set):
         print(map2str(map))
-        print("Connected:", is_connected(map))
+        print("Connected:", is_color_connected(map, color=ord('P')))
     else:
         print("No solution found")
 

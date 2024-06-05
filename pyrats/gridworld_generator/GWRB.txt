@@ -1,0 +1,1176 @@
+Map 0
+Space prob: 0.3
+Wall prob: 0.2
+########
+#GG#TTT#
+#T.B#TT#
+#..TTTT#
+##TGGTT#
+#TT.TTT#
+#TTTGT##
+########
+
+Map 1
+Space prob: 0.3
+Wall prob: 0.2
+########
+#G.T.TT#
+#TTTTGB#
+#.TGT.G#
+#TTTGTT#
+##T#T.T#
+#TTTTTT#
+########
+
+Map 2
+Space prob: 0.3
+Wall prob: 0.3
+########
+#T.T.TT#
+##.TTTT#
+#GGTG.##
+#...TT##
+#..G.TT#
+##T#.GB#
+########
+
+Map 3
+Space prob: 0.3
+Wall prob: 0.3
+########
+#T#G#TT#
+#G.T.TT#
+#TTGTT.#
+#TGTTGT#
+#TTTTT.#
+#T.BTTT#
+########
+
+Map 4
+Space prob: 0.3
+Wall prob: 0.4
+########
+#TTTTTT#
+#T#GGT.#
+#T.BT.T#
+#TGT####
+##.GTTT#
+##G#TTT#
+########
+
+Map 5
+Space prob: 0.3
+Wall prob: 0.4
+########
+#G.TG.T#
+#T#BTTT#
+#TG.##T#
+#TTTGTT#
+#T..GTT#
+#TTT#T##
+########
+
+Map 6
+Space prob: 0.3
+Wall prob: 0.5
+########
+#TT#T.B#
+##GTT.T#
+#TTGTGT#
+#T.TTG.#
+#TGTTTT#
+##TTTTT#
+########
+
+Map 7
+Space prob: 0.3
+Wall prob: 0.5
+########
+#TTBTTG#
+#T.#G.T#
+##GTTTT#
+##TTTTT#
+#GTTTT.#
+###TTTG#
+########
+
+Map 8
+Space prob: 0.3
+Wall prob: 0.6
+########
+#TTTBTT#
+#T##.TT#
+#T.TG#G#
+##.#T#T#
+#TG.#T##
+#GTTGT##
+########
+
+Map 9
+Space prob: 0.3
+Wall prob: 0.6
+########
+##TTGGB#
+#TTTT.##
+##.##TT#
+#TT#T#.#
+#.T#TTG#
+#G.TG###
+########
+
+Map 10
+Space prob: 0.3
+Wall prob: 0.7
+########
+###TG#T#
+##TBTTT#
+#GG#TT.#
+#..T.#.#
+#TT##T##
+#G..GT##
+########
+
+Map 11
+Space prob: 0.3
+Wall prob: 0.7
+########
+####T#T#
+#.B#TGT#
+##T#T#T#
+#GGT#T.#
+#T#TTG##
+#T#TGTT#
+########
+
+Map 12
+Space prob: 0.3
+Wall prob: 0.8
+########
+#TGTT.T#
+#TT.#T##
+#.TT#BG#
+#.GT####
+#.T#TT##
+#GTGT###
+########
+
+Map 13
+Space prob: 0.3
+Wall prob: 0.8
+########
+#TG#TB##
+#TG##GT#
+#TTTT.G#
+#T#T#.##
+#T#TTGT#
+#T#T####
+########
+
+Map 14
+Space prob: 0.4
+Wall prob: 0.2
+########
+#TTT.GT#
+#G.TG#T#
+#TGTBTT#
+#TT.T.T#
+#TGT.TT#
+#T.TTT.#
+########
+
+Map 15
+Space prob: 0.4
+Wall prob: 0.2
+########
+#TG.#BT#
+#..TTTT#
+##TT#T##
+#.GTTGT#
+#T#TT.T#
+##TTTGG#
+########
+
+Map 16
+Space prob: 0.4
+Wall prob: 0.3
+########
+#TBTG.T#
+##.T#T.#
+#G.T...#
+#GT#T###
+#TTTTGT#
+#GT#T.T#
+########
+
+Map 17
+Space prob: 0.4
+Wall prob: 0.3
+########
+##TG.TG#
+#..BTTT#
+#T.GTTT#
+#GT.TT.#
+#.TT.G.#
+##T.TTT#
+########
+
+Map 18
+Space prob: 0.4
+Wall prob: 0.4
+########
+#.TGTG.#
+#T#T.T##
+#T#TGT##
+#...GGT#
+#TTTTTT#
+#BT.TT.#
+########
+
+Map 19
+Space prob: 0.4
+Wall prob: 0.4
+########
+#TTBTT.#
+#TTTTTG#
+#TGG.TT#
+#TT..T.#
+#TT.GG##
+#TTT#TT#
+########
+
+Map 20
+Space prob: 0.4
+Wall prob: 0.5
+########
+#.TG.T.#
+###G#.T#
+#BT.TTG#
+#G###TT#
+##.#G.T#
+##.TT#T#
+########
+
+Map 21
+Space prob: 0.4
+Wall prob: 0.5
+########
+#TTT.TB#
+#TG.GT##
+#TGT#TT#
+#T#GTT.#
+###...G#
+#TT..TT#
+########
+
+Map 22
+Space prob: 0.4
+Wall prob: 0.6
+########
+#T.TTTT#
+##GTG#T#
+#TTTTTT#
+#TTGB..#
+##GTG#.#
+#..T.#T#
+########
+
+Map 23
+Space prob: 0.4
+Wall prob: 0.6
+########
+#T#TTG##
+#G#G.TT#
+#.TTTTT#
+#T##T..#
+#TT.TGG#
+#B..#.T#
+########
+
+Map 24
+Space prob: 0.4
+Wall prob: 0.7
+########
+##T##.##
+#...TT.#
+#T#.TGT#
+#GT.GT.#
+#G#TT.##
+#T##GBT#
+########
+
+Map 25
+Space prob: 0.4
+Wall prob: 0.7
+########
+#GGGG..#
+#.TB.T##
+#.TTT###
+#T#.#..#
+#T#TG.T#
+####T.T#
+########
+
+Map 26
+Space prob: 0.4
+Wall prob: 0.8
+########
+#T.G#TG#
+#B.T.TG#
+#TT#TTT#
+###TTTT#
+####T#G#
+##TGT#.#
+########
+
+Map 27
+Space prob: 0.4
+Wall prob: 0.8
+########
+#.GTG.G#
+##B#TG##
+#T...T.#
+#TTT.###
+#G#TTT.#
+#..T##T#
+########
+
+Map 28
+Space prob: 0.5
+Wall prob: 0.2
+########
+#.T..T.#
+#TBT.TT#
+#T.GTG.#
+#GTTTTT#
+#TTG.TT#
+#TT#GTT#
+########
+
+Map 29
+Space prob: 0.5
+Wall prob: 0.2
+########
+#GTTT.T#
+#T#.TTT#
+#TT.GTT#
+#TTGTBT#
+#TG..T.#
+#TTGTTT#
+########
+
+Map 30
+Space prob: 0.5
+Wall prob: 0.3
+########
+#TT.TGT#
+#.#TTTT#
+#.TTT.B#
+#.TTGTT#
+#G##.TT#
+#.T.GGT#
+########
+
+Map 31
+Space prob: 0.5
+Wall prob: 0.3
+########
+#TGBTT##
+#TTT..G#
+#T.TT.T#
+#TTT..T#
+#TTTTGG#
+#GT.T.##
+########
+
+Map 32
+Space prob: 0.5
+Wall prob: 0.4
+########
+##.#TTT#
+#.TTB.G#
+##T###T#
+##GTG#.#
+#..GTTG#
+###TTTT#
+########
+
+Map 33
+Space prob: 0.5
+Wall prob: 0.4
+########
+#..T#TT#
+#G.TG.T#
+###TG#T#
+#TBTTT.#
+#T#TGT.#
+#TTG.T.#
+########
+
+Map 34
+Space prob: 0.5
+Wall prob: 0.5
+########
+#T##T#B#
+#T...G.#
+#G#TTTT#
+#T.G#T.#
+#TT#.#.#
+##GG.TT#
+########
+
+Map 35
+Space prob: 0.5
+Wall prob: 0.5
+########
+#TT#TT##
+#.T.G.T#
+##B#.TT#
+#GG.TTT#
+#T##GT##
+##TTTG.#
+########
+
+Map 36
+Space prob: 0.5
+Wall prob: 0.6
+########
+#.TTTG##
+#.#GGT##
+#.....T#
+#TTT#BT#
+#..GTGT#
+#.TT..T#
+########
+
+Map 37
+Space prob: 0.5
+Wall prob: 0.6
+########
+#.B..TT#
+#T...T##
+#TTT..T#
+#TGGTTT#
+##T#GT##
+#GGT..T#
+########
+
+Map 38
+Space prob: 0.5
+Wall prob: 0.7
+########
+#..B##T#
+#..GTGT#
+#TGGT#.#
+#T.#G#T#
+#..#TT.#
+#T###T.#
+########
+
+Map 39
+Space prob: 0.5
+Wall prob: 0.7
+########
+#TT.GTT#
+####.###
+#T..TBT#
+#T####.#
+##GT#G.#
+#..G.TG#
+########
+
+Map 40
+Space prob: 0.5
+Wall prob: 0.8
+########
+##TT#.G#
+#.GB.T##
+##T#.#T#
+#TG.T.##
+####GT##
+###T.GT#
+########
+
+Map 41
+Space prob: 0.5
+Wall prob: 0.8
+########
+#.TTGT##
+##.###G#
+#.T##T.#
+##..TTG#
+##B#.#T#
+##.TTGG#
+########
+
+Map 42
+Space prob: 0.6
+Wall prob: 0.2
+########
+#TT.TTT#
+#TT#.TT#
+#G.GT..#
+#TGTTGT#
+#TB..TT#
+#TGT#T##
+########
+
+Map 43
+Space prob: 0.6
+Wall prob: 0.2
+########
+#T.TGGT#
+#GT..TT#
+#.TG.TT#
+#..TB#.#
+#TTG.T.#
+#TTT#T.#
+########
+
+Map 44
+Space prob: 0.6
+Wall prob: 0.3
+########
+#T.T..G#
+#.GT..T#
+##.TGTT#
+#.TGTT.#
+#T#.B.##
+#.TTTGT#
+########
+
+Map 45
+Space prob: 0.6
+Wall prob: 0.3
+########
+#TTTBG##
+#TT##.##
+#GT....#
+#.G.G#.#
+#T#T.T.#
+#.TTGT##
+########
+
+Map 46
+Space prob: 0.6
+Wall prob: 0.4
+########
+##T.TTT#
+#T.TGTT#
+##GTT#T#
+#TGT.T.#
+#GTTBT.#
+#..TTG.#
+########
+
+Map 47
+Space prob: 0.6
+Wall prob: 0.4
+########
+##T#.T##
+#TGG.B##
+#.#..TT#
+###.TGT#
+#.T..G.#
+#.#GT.T#
+########
+
+Map 48
+Space prob: 0.6
+Wall prob: 0.5
+########
+#.#..###
+#T#GGG.#
+#.###TT#
+#GT#.T.#
+#TTGTB.#
+##..#.T#
+########
+
+Map 49
+Space prob: 0.6
+Wall prob: 0.5
+########
+#.GTTTT#
+#.#.T..#
+#TT.G.T#
+#TGT..G#
+#T..TB##
+#..TGT##
+########
+
+Map 50
+Space prob: 0.6
+Wall prob: 0.6
+########
+#TG.TT.#
+#TT.T.T#
+#B#GG###
+#.G#.T##
+#.G.#T##
+##TTT#T#
+########
+
+Map 51
+Space prob: 0.6
+Wall prob: 0.6
+########
+##G##TT#
+#T.T.G##
+##BTTT##
+#T.#.G##
+#.T.T.G#
+##TGTTT#
+########
+
+Map 52
+Space prob: 0.6
+Wall prob: 0.7
+########
+##T#..T#
+##.TG###
+#T#T##T#
+#G..TG.#
+##G#.#.#
+##BTT#G#
+########
+
+Map 53
+Space prob: 0.6
+Wall prob: 0.7
+########
+#.#.#G##
+#B..TGT#
+#T.T##.#
+#T.#GTT#
+#GTTGTT#
+#.T#T.##
+########
+
+Map 54
+Space prob: 0.6
+Wall prob: 0.8
+########
+##.TTGG#
+#T##.#G#
+#..##..#
+#.G.T.##
+#.#GTBT#
+#T#TT#.#
+########
+
+Map 55
+Space prob: 0.6
+Wall prob: 0.8
+########
+#BTT#GT#
+#T#TTTT#
+#GT....#
+#T#T#.##
+#T#T#.##
+##TGGTG#
+########
+
+Map 56
+Space prob: 0.7
+Wall prob: 0.2
+########
+#TTT.#T#
+#G#T.TT#
+#T..GBT#
+#GTT.###
+#.#TTTT#
+#GTT.GT#
+########
+
+Map 57
+Space prob: 0.7
+Wall prob: 0.2
+########
+##TT#T.#
+#G.BTTT#
+#TT.T.T#
+#G.T...#
+#.TT..G#
+##.TG.G#
+########
+
+Map 58
+Space prob: 0.7
+Wall prob: 0.3
+########
+#...#TG#
+#TTTBGT#
+#.T.TG##
+#TTTT.T#
+#TT#TG.#
+#.G..T.#
+########
+
+Map 59
+Space prob: 0.7
+Wall prob: 0.3
+########
+#..#..T#
+#TTT.#T#
+#.TT.TG#
+#.G.GBG#
+##TG#.T#
+#....T.#
+########
+
+Map 60
+Space prob: 0.7
+Wall prob: 0.4
+########
+#TG...B#
+##T.T#G#
+#G..TT.#
+#T.G#T##
+#.TTTT.#
+#GTT.T.#
+########
+
+Map 61
+Space prob: 0.7
+Wall prob: 0.4
+########
+#..TGT.#
+#.TT.###
+#...GTT#
+##TTT..#
+#GTT#TT#
+#TBTGTG#
+########
+
+Map 62
+Space prob: 0.7
+Wall prob: 0.5
+########
+#T.....#
+#GGT#.T#
+#.T.G..#
+#T#TT#B#
+#TTGT#G#
+##TT#TT#
+########
+
+Map 63
+Space prob: 0.7
+Wall prob: 0.5
+########
+#TGT#T.#
+#.G..G.#
+#T..##.#
+#GTTT.T#
+#..G..T#
+#.B.#.##
+########
+
+Map 64
+Space prob: 0.7
+Wall prob: 0.6
+########
+#T.TT.##
+#...#TT#
+#.#..#G#
+#TB.G.G#
+#T..####
+#GG...T#
+########
+
+Map 65
+Space prob: 0.7
+Wall prob: 0.6
+########
+#G...#.#
+##T.G..#
+#T.#TT##
+#T#..###
+#BT.#GG#
+#TT.GT##
+########
+
+Map 66
+Space prob: 0.7
+Wall prob: 0.7
+########
+##T#G###
+##T#..T#
+#T.TTGB#
+#T#GTT.#
+###T.#G#
+#..TG.##
+########
+
+Map 67
+Space prob: 0.7
+Wall prob: 0.7
+########
+#G.GG.T#
+#T.G#.T#
+#TT...B#
+##.#T###
+#.G...T#
+##.TT.T#
+########
+
+Map 68
+Space prob: 0.7
+Wall prob: 0.8
+########
+#.T#B..#
+#.#GTT.#
+#.#TT.T#
+#.G..TT#
+#G#TT#G#
+#TG.T..#
+########
+
+Map 69
+Space prob: 0.7
+Wall prob: 0.8
+########
+####T..#
+#T..#.T#
+#.#TT.T#
+#.T.T#G#
+#BGT#G.#
+#.#TTGG#
+########
+
+Map 70
+Space prob: 0.8
+Wall prob: 0.2
+########
+#.#G..T#
+#.BG.#T#
+#..T.GT#
+#.T.#.T#
+#...GTG#
+#.TTT..#
+########
+
+Map 71
+Space prob: 0.8
+Wall prob: 0.2
+########
+#......#
+#GTTT.T#
+#GG#...#
+#TG#TT##
+#T.TTTG#
+#..T.BT#
+########
+
+Map 72
+Space prob: 0.8
+Wall prob: 0.3
+########
+#...GT.#
+#.B.T..#
+#TGT.GG#
+#T.#.###
+#...G.T#
+#TT.T..#
+########
+
+Map 73
+Space prob: 0.8
+Wall prob: 0.3
+########
+#T#TBT.#
+#..TTTT#
+#TTTGG.#
+#.T##TG#
+#G.#GT.#
+#......#
+########
+
+Map 74
+Space prob: 0.8
+Wall prob: 0.4
+########
+#.G.#..#
+#T.TT.T#
+#TTT..T#
+#G.#GGB#
+#....TT#
+##TTT.G#
+########
+
+Map 75
+Space prob: 0.8
+Wall prob: 0.4
+########
+#T#.T#.#
+###T#.G#
+#..G...#
+#T#GTT.#
+#..G#G.#
+#.TBTTT#
+########
+
+Map 76
+Space prob: 0.8
+Wall prob: 0.5
+########
+##GT.TT#
+#T.#T..#
+##GT.#.#
+#T...TT#
+##B###G#
+#GTG...#
+########
+
+Map 77
+Space prob: 0.8
+Wall prob: 0.5
+########
+#TTT#G##
+#T...GT#
+##.TG#T#
+#.BG..T#
+#.GT.TT#
+#T.TT.##
+########
+
+Map 78
+Space prob: 0.8
+Wall prob: 0.6
+########
+##.#...#
+#...##T#
+#GTG#.G#
+##....B#
+##.GTT.#
+#..TGTT#
+########
+
+Map 79
+Space prob: 0.8
+Wall prob: 0.6
+########
+#TT...T#
+#T#.B..#
+#.G#G#.#
+##G#.T.#
+#...G#G#
+###T#T.#
+########
+
+Map 80
+Space prob: 0.8
+Wall prob: 0.7
+########
+###.##G#
+#.GB...#
+##..#.T#
+#.G..###
+###GTT.#
+##....G#
+########
+
+Map 81
+Space prob: 0.8
+Wall prob: 0.7
+########
+#G###.##
+#...B.##
+#.G.GGT#
+#.T#T..#
+#.#G#.##
+###.TT.#
+########
+
+Map 82
+Space prob: 0.8
+Wall prob: 0.8
+########
+##.#.###
+#T.GGTT#
+#..GTTT#
+#G.#.###
+#.GT#.##
+#.#.TB.#
+########
+
+Map 83
+Space prob: 0.8
+Wall prob: 0.8
+########
+###G#.G#
+#....G##
+##.#.#G#
+#T.#.B.#
+#T.T.###
+##G...T#
+########
+
+Map 84
+Space prob: 0.9
+Wall prob: 0.2
+########
+#T.T#.G#
+#T.T.G##
+#TG..B.#
+#..TG..#
+#T.TTGT#
+##.T..T#
+########
+
+Map 85
+Space prob: 0.9
+Wall prob: 0.2
+########
+#TTB#.T#
+#G..TGT#
+#GT#...#
+#.T.TGT#
+#.....T#
+#.T.TG##
+########
+
+Map 86
+Space prob: 0.9
+Wall prob: 0.3
+########
+#TGT.GT#
+##.#T.##
+#GTT...#
+#.#TB#T#
+#GTT..##
+#..G..T#
+########
+
+Map 87
+Space prob: 0.9
+Wall prob: 0.3
+########
+#.#T#T##
+#GG.T..#
+#TTTT.##
+#GT.TT.#
+#.#B#GT#
+#....GT#
+########
+
+Map 88
+Space prob: 0.9
+Wall prob: 0.4
+########
+##.GT.T#
+#B.#T..#
+##.T..T#
+##.#TT.#
+#.G.TG.#
+#TTTGTG#
+########
+
+Map 89
+Space prob: 0.9
+Wall prob: 0.4
+########
+#G....T#
+#..G..T#
+#..#..G#
+#G###.##
+#...T.##
+#.#BTG.#
+########
+
+Map 90
+Space prob: 0.9
+Wall prob: 0.5
+########
+##G.G..#
+#....G.#
+#.#.TG##
+#T..T.T#
+#TGBT..#
+#T#.T.##
+########
+
+Map 91
+Space prob: 0.9
+Wall prob: 0.5
+########
+#.T..G.#
+##BTTT##
+#T.#G.##
+#...GG.#
+#..#T.##
+####GTT#
+########
+
+Map 92
+Space prob: 0.9
+Wall prob: 0.6
+########
+#..##..#
+#TTG#.T#
+#G.#.BT#
+#..TT.##
+#.GT.G.#
+#T.TGT.#
+########
+
+Map 93
+Space prob: 0.9
+Wall prob: 0.6
+########
+#TGTT.T#
+#.....G#
+#G.#.#G#
+##T.TTB#
+#T.....#
+##TG.#.#
+########
+
+Map 94
+Space prob: 0.9
+Wall prob: 0.7
+########
+###GTGG#
+#.#..#B#
+#GG..T.#
+#.#..T.#
+#..T#T.#
+#.#....#
+########
+
+Map 95
+Space prob: 0.9
+Wall prob: 0.7
+########
+##.TG..#
+#T.###.#
+#..G.G.#
+##.#T.T#
+##.#T.T#
+#..#GGB#
+########
+
+Map 96
+Space prob: 0.9
+Wall prob: 0.8
+########
+#B..T#.#
+##.GTT.#
+#..T...#
+#T#T#.G#
+#.....##
+##G#GG##
+########
+
+Map 97
+Space prob: 0.9
+Wall prob: 0.8
+########
+#.B..G.#
+#..TG.##
+#...####
+#T..#G.#
+#.GG...#
+#.##.#T#
+########
+

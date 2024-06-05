@@ -58,55 +58,46 @@ def wfc(map, x, y, tile_set, depth=0):
             map[not_fixed] = 0
     return False
 
+def is_connected(map, c='P'):
+    height, width = map.shape
+    visited = np.zeros((height, width), dtype=bool)
+    count = (map == ord(c)).sum()
+    if count == 0:
+        return True    
 
-def main(width=8, height=8):
-#     char_tile_set = """
-# ################
-# #..TTT...G.#T.T#
-# #T..T...TT.#...#
-# #...T.#......G.#
-# #..GT......#...#
-# #.TTTTTT.#T##TT#
-# #...TG...#G#...#
-# ################
-# """
+    x, y = np.argwhere(map == ord(c))[0]
+    stack = [(x, y)]
+    
+    while stack:
+        x, y = stack.pop()
+        if visited[x, y]:
+            continue
+        count -= 1
+        visited[x, y] = True
+        if map[x, y] == ord(c):
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                x_, y_ = x+dx, y+dy
+                if 0 <= x_ < height and 0 <= y_ < width and map[x_, y_] == ord(c) and not visited[x_, y_]:
+                    stack.append((x_, y_))
+    return count == 0
+    
 
-#     char_tile_set = """
-# ###############
-# #...TT#...TTT.#
-# #.T.#T#G...T..#
-# #..G....TTTT.G#
-# #..TT#T#...T..#
-# #..GTTG....T..#
-# #G.#TT#..TTTT.#
-# #TTTG..#G.T.T.#
-# #..##..#T.TGTG#
-# #..#....#T.T..#
-# #....#....T...#
-# #.T#TTTT####..#
-# #TTGTTGTTTG#..#
-# #..#...T#.T#..#
-# ###############
-# """
-
-    char_tile_set = """
-################
-#.......#......#
-#.##.##.##..##.#
-##.#..T..#..T..#
-#..T..#....T#..#
-##TT#..#T..##..#
-#.#GT...T..#...#
-#.#.T..TTT.#TT##
-#.#G#......#G.G#
-##TT##.TTT.##T##
-#.T..T..GT...TG#
-#.T..T.TTT...T.#
-#GT....GT....T.#
-################
+char_tile_set = """
+############################
+#PP...........#...PPP..PPP.#
+#.PPPPP..PP...#.PPP.....PP.#
+#.....P..P....#...PPPPPPP..#
+#..P..PPPP....#...P...PP...#
+#PPPPPP..P..PP#PPPPP...P...#
+#...P....P...P#...P........#
+#...P....PPPPP#...PPPPPPPPP#
+#..PPPPPPPP...#...PP..P....#
+#..P.....PPPPP#PPPP...PPPP.#
+#..PPP........#..........PP#
+############################
 """
 
-
+def main(width=8, height=8):
     tile_set = get_tile_set(char_tile_set)
 
     map = np.zeros((height, width), dtype=np.int32)
@@ -115,15 +106,12 @@ def main(width=8, height=8):
     map[:, 0] = ord('#')
     map[:, -1] = ord('#')
 
-    if wfc(map, 1, 1, tile_set):
-        space_indices = np.argwhere(map == ord('.'))
-        b = 10000000 % len(space_indices)
-        x, y = space_indices[b]
-        map[x, y] = ord('B')
+    if wfc(map, width//2, height//2, tile_set):
         print(map2str(map))
+        print("Connected:", is_connected(map))
     else:
         print("No solution found")
-    
+
 
 
 if __name__ == '__main__':

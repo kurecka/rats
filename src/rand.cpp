@@ -3,7 +3,6 @@
 #include <iostream>
 #include "rand.hpp"
 
-unsigned int rng::_seed = 0;
 std::random_device rng::rd = std::random_device();
 std::mt19937 rng::engine = std::mt19937(rng::rd());
 

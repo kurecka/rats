@@ -4,7 +4,6 @@
 
 class rng {
 private:
-    static unsigned int _seed;
     static std::random_device rd;
     static std::mt19937 engine;
 
@@ -14,11 +13,6 @@ private:
 
 
     public:
-    static void init(unsigned int seed = 0) {
-      _seed = seed;
-      engine.seed(_seed);
-    }
-
     /**
      * @brief Set the seed of the random number generator
      * 

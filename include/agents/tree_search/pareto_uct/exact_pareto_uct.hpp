@@ -49,6 +49,7 @@ template<typename SN, bool use_lambda = false>
 struct select_action_pareto {
     size_t operator()(SN* node, bool explore) const {
         float c = node->common_data->exploration_constant;
+        float risk_thd = node->common_data->sample_risk_thd;
 
         // If exploring, a new uct curve must be built
         EPC merged_curve;
@@ -73,6 +74,13 @@ struct select_action_pareto {
                 c *= (h_reward - l_reward);
             }
 
+            // Find least penalty on a pareto curve
+            float min_penalty = std::numeric_limits<float>::infinity();
+            for (auto& child : node->children) {
+                auto [l_penalty, h_penalty] = child.q.curve.penalty_bounds();
+                min_penalty = std::min(min_penalty, l_penalty);
+            }
+
             for (auto& child : node->children) {
                 action_curves.push_back(child.q.curve);
                 // Reward bonus
@@ -83,7 +91,7 @@ struct select_action_pareto {
                     r_uct = std::numeric_limits<float>::infinity();
                 } else {
                     r_uct = c * sqrt(log(node->num_visits + 1) / (child.num_visits + 0.0001));
-                    if constexpr (use_lambda) {
+                    if (use_lambda || min_penalty >= risk_thd) {
                         p_uct = - c * sqrt(log(node->num_visits + 1) / (child.num_visits + 0.0001));
                     }
                 }
@@ -100,11 +108,9 @@ struct select_action_pareto {
 
         if constexpr (use_lambda) {
             float lambda = node->common_data->lambda;
-            float risk_thd = node->common_data->risk_thd;
             node->common_data->mix = curve_ptr->select_vertex_by_lambda<true>(risk_thd, lambda);
         } else {
             // Choose the optimal stochastic mixture of two vertices on the curve based on the risk threshold
-            float risk_thd = node->common_data->sample_risk_thd;
             node->common_data->mix = curve_ptr->select_vertex<true>(risk_thd);
         }
         

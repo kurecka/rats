@@ -209,6 +209,10 @@ public:
         return {std::get<0>(points.front()), std::get<0>(points.back())};
     }
 
+    std::pair<float, float> const penalty_bounds() const {
+        return {std::get<1>(points.front()), std::get<1>(points.back())};
+    }
+
     size_t num_outcomes() const {
         return std::get<2>(points.front()).num_outcomes();
     }

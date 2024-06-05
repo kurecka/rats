@@ -10,6 +10,7 @@ from pathlib import Path
 from itertools import product
 import pandas as pd
 from utils import set_log_level
+from gridworld_generator.dataset import RandomGridWorldDataset
 
 
 class GridWorldDataset:
@@ -419,17 +420,16 @@ def evaluate_agent( env, filename, agent, c, p1, p2, results, time_limits, repet
 
     results = []
 
-    for time_limit in time_limits:
-        print( "limit:", time_limit )
+    ray_results = ray.get([eval_config_parallel.remote((env, agent, c, p1, p2, time_limit)) for time_limit in time_limits for _ in range(repetitions)])
 
-        temp_results = ray.get([eval_config_parallel.remote((env, agent, c, p1, p2, time_limit)) for _ in range(repetitions)])
+    temp_results_list = [ray_results[i:i+repetitions] for i in range(0, len(ray_results), repetitions)]
 
+    for temp_results, time_limit in zip(temp_results_list, time_limits):
         rews, pens, times, steps = zip(*temp_results)
         mean_time_per_step = np.sum(np.array(times)) / np.sum(np.array(steps))
 
         mean_r, mean_p, std_p, std_r = np.mean(rews), np.mean(pens), np.std(pens, ddof=1), np.std(rews, ddof=1)
 
-        feasible = ( mean_p - std_p * 1.65 <= c )
         results.append(
             pd.DataFrame(
                 [{
@@ -442,7 +442,6 @@ def evaluate_agent( env, filename, agent, c, p1, p2, results, time_limits, repet
                     'std_reward': std_r,
                     'mean_penalty': mean_p,
                     'std_penalty': std_p,
-                    'feasible': feasible,
                     'mean_time_per_step': mean_time_per_step,
                     'repetitions': repetitions
                 }]
@@ -483,7 +482,7 @@ def eval_lp(params_grid):
     pool.close()
     pool.join()
 
-    return pd.DataFrame(res, columns=['reward', 'time', 'computable'])
+    return pd.DataFrame(res, columns=['reward', 'time', 'feasible'])
 
 
 def eval_solvers(agent_list, time_limits, params_grid, agent_repetitions=100, output_dir="/work/rats/pyrats"):
@@ -511,7 +510,7 @@ def eval_solvers(agent_list, time_limits, params_grid, agent_repetitions=100, ou
     res_lp = pd.concat([benchmarks, cs, res_lp], axis=1)
     res_lp.to_csv(
         output_dir / "results_lp.csv",
-        columns=['benchmark', 'c', 'computable', 'reward', 'time'],
+        columns=['benchmark', 'c', 'feasible', 'reward', 'time'],
         index=False, sep=';',
     )
 
@@ -522,17 +521,19 @@ def eval_solvers(agent_list, time_limits, params_grid, agent_repetitions=100, ou
 
 
 if __name__ == "__main__":
-
     agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
     time_limits = [5, 10, 25, 50]
     grid_desc = {
-        'c_s': [0, 0.1, 0.2, 0.3, 0.4],
-        'p_slides': [0, 0.2],
-        'p_traps': [0.1, 0.7],
-        'map': GridWorldDataset.get_maps()
+        'c_s': [0, 0.1, 0.2, 0.35, 0.5],
+        'p_slides': [0.2],
+        'p_traps': [0.1],
+        'map': RandomGridWorldDataset.get_maps()
     }
     params_tuples = product(*[grid_desc[key] for key in grid_desc])
     params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
+
+    output_dir = Path("/work/rats/outputs/" + time.strftime("%Y%m%d-%H%M%S"))
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     ray.init(address="auto")
     eval_solvers(
@@ -540,6 +541,6 @@ if __name__ == "__main__":
         time_limits=time_limits,
         params_grid=params_grid,
         agent_repetitions=100,
-        output_dir="/work/rats/outputs"
+        output_dir=output_dir,
     )
     ray.shutdown()

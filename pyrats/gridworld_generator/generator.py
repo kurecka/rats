@@ -184,12 +184,12 @@ def parse_args():
     return args, grid, grid_args, non_grid_args
 
 
-def print_instance(instance_order: int, map: np.array, params: Dict):
+def print_instance(instance_order: int, map: np.array, params: Dict, grid_args: list):
     print(f"Instance {instance_order}")
     print("Params:", end=' ')
-    for key, val in params.items():
-        print(f"{key}={val},", end=' ')
-    print()
+    print(','.join(f"{key}={val}" for key,val in params.items()))
+    print("GridParams:", end=' ')
+    print(','.join(f"{key}={val}" for key,val in params.items() if key in grid_args))
     print("Map:")
     print(map2str(frame_map(map)))
     print()
@@ -201,27 +201,29 @@ if __name__ == '__main__':
 
     Sample usage:
         # Generate various 10x10 maps
-        python3 grid.py 10 10 -l 2 -a 0.5 -b 0.2 -w 0.7 -g 0.2 -e 0.8
-        python3 grid.py 10 10 -l 2 -a 0.8 -b 0.1 -w 0.5 -g 0.5 -e 0.8
+        python3 generator.py 10 10 -l 2 -a 0.5 -b 0.2 -w 0.7 -g 0.2 -e 0.8
+        python3 generator.py 10 10 -l 2 -a 0.8 -b 0.1 -w 0.5 -g 0.5 -e 0.8
 
         # Generate two 6x6 maps with a single command
-        python3 grid.py 6 6 -n 2
+        python3 generator.py 6 6 -n 2
 
         # Generate multiple maps using a paramter grid
-        python3 grid.py 6 6 -l 2 -a 0.3 -b 0.2 -w [0.2,0.5,0.8] -g 5 -e [0.3,0.5,0.8] -n 1
+        python3 generator.py 6 6 -l 2 -a 0.3 -b 0.2 -w [0.2,0.5,0.8] -g 5 -e [0.3,0.5,0.8] -n 1
 
         # Generate a map with integral number of gold cells
-        python3 grid.py 6 6 -g 5
+        python3 generator.py 6 6 -g 5
         # Generate a map with 30% gold cells
-        python3 grid.py 6 6 -g 0.3
+        python3 generator.py 6 6 -g 0.3
         
         # Generate a map using the tree-in-grid generator
-        python3 grid.py 10 10 --gen TG -g 5 -w 0.2 --stride 1 -b 0.4
+        python3 generator.py 10 10 --gen TG -g 5 -w 0.2 --stride 1 -b 0.4
 
         # Use ranom seed
-        python3 grid.py 6 6 --seed -1
+        python3 generator.py 6 6 --seed -1
 
     """
+    print('python3', *argv, end='\n\n')
+
     args, grid, grid_args, non_grid_args = parse_args()
     if args.seed >= 0:
         np.random.seed(args.seed)
@@ -251,5 +253,5 @@ if __name__ == '__main__':
             else:
                 raise NotImplementedError(f"Generator {args.gen} is not implemented.")
             
-            print_instance(instance_order, map, all_params)
+            print_instance(instance_order, map, all_params, grid_args)
             instance_order += 1

@@ -1,0 +1,1666 @@
+python3 generator.py 6 6 -l 2 -a [0,0.3] -b [0.1,0.25] -w [0.2,0.3,0.5,0.7] -g 5 -e [0.5,0.7,0.8,0.9] -n 2
+
+Instance 1
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.5,w=0.2
+GridParams: a=0,b=0.1,e=0.5,w=0.2
+Map:
+########
+#TTTGB##
+#T.T#.T#
+#T.TG.T#
+#T..G#T#
+#G.T.GT#
+#TTTTTT#
+########
+
+Instance 2
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.5,w=0.2
+GridParams: a=0,b=0.1,e=0.5,w=0.2
+Map:
+########
+##TGT#T#
+#TTTTGG#
+#TGTT.T#
+#..TTTT#
+#T.TT#T#
+#T.BTGT#
+########
+
+Instance 3
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.5,w=0.3
+GridParams: a=0,b=0.1,e=0.5,w=0.3
+Map:
+########
+#T.T.TT#
+#TGT.T##
+#GGTBTT#
+##T#T###
+#T#TG..#
+#TGTTT##
+########
+
+Instance 4
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.5,w=0.3
+GridParams: a=0,b=0.1,e=0.5,w=0.3
+Map:
+########
+#.TTTT##
+#GTT#TT#
+#G.T.B.#
+#GGTT#.#
+#GTT.###
+#T##TTT#
+########
+
+Instance 5
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.5,w=0.5
+GridParams: a=0,b=0.1,e=0.5,w=0.5
+Map:
+########
+#T#TTTT#
+#.TTGTG#
+#TTTGTT#
+##GB.#G#
+#.T#.#T#
+###.T.T#
+########
+
+Instance 6
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.5,w=0.5
+GridParams: a=0,b=0.1,e=0.5,w=0.5
+Map:
+########
+##GTB###
+##.#.#T#
+##TGGT.#
+#T..#TG#
+#T.TTTT#
+#GT.##T#
+########
+
+Instance 7
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.5,w=0.7
+GridParams: a=0,b=0.1,e=0.5,w=0.7
+Map:
+########
+##TT####
+#TGTTG##
+##TG.#T#
+#TTG####
+#....GB#
+###T####
+########
+
+Instance 8
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.5,w=0.7
+GridParams: a=0,b=0.1,e=0.5,w=0.7
+Map:
+########
+#..TGB##
+##TTTGT#
+##T.##T#
+#GT.####
+#.#T.GT#
+###T#GT#
+########
+
+Instance 9
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.7,w=0.2
+GridParams: a=0,b=0.1,e=0.7,w=0.2
+Map:
+########
+##TTTTT#
+#T.GGTT#
+#GTTTT.#
+#TTTTT.#
+##TTBTT#
+#GG..T##
+########
+
+Instance 10
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.7,w=0.2
+GridParams: a=0,b=0.1,e=0.7,w=0.2
+Map:
+########
+#TTBG.##
+#T##T.T#
+#TTTT.T#
+#T..GT.#
+#TGTG..#
+#G.#T.T#
+########
+
+Instance 11
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.7,w=0.3
+GridParams: a=0,b=0.1,e=0.7,w=0.3
+Map:
+########
+#.TT..##
+#G##T.##
+#.GGT.B#
+###GT#.#
+#T.TGT.#
+#TTT.T##
+########
+
+Instance 12
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.7,w=0.3
+GridParams: a=0,b=0.1,e=0.7,w=0.3
+Map:
+########
+#TGTTT##
+#.T#TTT#
+#.T#T..#
+#G#TT.T#
+#GBGT.T#
+#T#G..##
+########
+
+Instance 13
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.7,w=0.5
+GridParams: a=0,b=0.1,e=0.7,w=0.5
+Map:
+########
+#T##TTT#
+#TT#...#
+#..T.TG#
+#T.G.#G#
+#TTB##.#
+#TTG##G#
+########
+
+Instance 14
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.7,w=0.5
+GridParams: a=0,b=0.1,e=0.7,w=0.5
+Map:
+########
+#T###.T#
+#.TG..T#
+#TTTTT##
+#G.BTGT#
+##TG#G.#
+###T##T#
+########
+
+Instance 15
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.7,w=0.7
+GridParams: a=0,b=0.1,e=0.7,w=0.7
+Map:
+########
+#GT.G###
+#B##TT##
+#GTT.G##
+##GT#.##
+#.T#TT##
+#T..TT##
+########
+
+Instance 16
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.7,w=0.7
+GridParams: a=0,b=0.1,e=0.7,w=0.7
+Map:
+########
+##T##.##
+#T#T#G##
+#GT.GB##
+#.T.#G.#
+#TTT#T##
+#T#G.T##
+########
+
+Instance 17
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.8,w=0.2
+GridParams: a=0,b=0.1,e=0.8,w=0.2
+Map:
+########
+#TTTTTT#
+#GGTB..#
+##GT.T.#
+#.T.TT.#
+###T.TG#
+#TTG.TT#
+########
+
+Instance 18
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.8,w=0.2
+GridParams: a=0,b=0.1,e=0.8,w=0.2
+Map:
+########
+#G..GT##
+#TTGTTT#
+#TTGT..#
+#B#GTTT#
+#.T...T#
+#TT#TTT#
+########
+
+Instance 19
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.8,w=0.3
+GridParams: a=0,b=0.1,e=0.8,w=0.3
+Map:
+########
+#TT#.#T#
+#T##G.G#
+#B....T#
+#.GTT..#
+#TT#T#.#
+#TTGG#T#
+########
+
+Instance 20
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.8,w=0.3
+GridParams: a=0,b=0.1,e=0.8,w=0.3
+Map:
+########
+#TTT.TT#
+##.#G###
+#TBG.GG#
+#TGT#T.#
+#..TTTT#
+#T.##T##
+########
+
+Instance 21
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.8,w=0.5
+GridParams: a=0,b=0.1,e=0.8,w=0.5
+Map:
+########
+#GTTGGT#
+#.T#T.T#
+#.G...##
+#TG#T.T#
+#.B#.TT#
+#T##TTT#
+########
+
+Instance 22
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.8,w=0.5
+GridParams: a=0,b=0.1,e=0.8,w=0.5
+Map:
+########
+#T.TTTT#
+#.GGGT##
+##TTTT##
+###TG###
+#T.#.B##
+##.G.TT#
+########
+
+Instance 23
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.8,w=0.7
+GridParams: a=0,b=0.1,e=0.8,w=0.7
+Map:
+########
+##.#..##
+#T.TTGT#
+#.BTT.G#
+###TT#.#
+#GGG#T##
+###T####
+########
+
+Instance 24
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.8,w=0.7
+GridParams: a=0,b=0.1,e=0.8,w=0.7
+Map:
+########
+##.G.B##
+####.###
+#GTTGG.#
+#...T.##
+#G.#T.T#
+#T####T#
+########
+
+Instance 25
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.9,w=0.2
+GridParams: a=0,b=0.1,e=0.9,w=0.2
+Map:
+########
+#TT.TTT#
+#G..G..#
+#.GTTTT#
+#TG.GT.#
+#T.TBT.#
+#TTT.#T#
+########
+
+Instance 26
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.9,w=0.2
+GridParams: a=0,b=0.1,e=0.9,w=0.2
+Map:
+########
+#TTTT..#
+#TT.G.##
+##TT#GT#
+#TBG..G#
+#.TGT#T#
+##TTTTT#
+########
+
+Instance 27
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.9,w=0.3
+GridParams: a=0,b=0.1,e=0.9,w=0.3
+Map:
+########
+#T...TB#
+#T.T.GG#
+#T.TTT.#
+##T#TG.#
+#TG...T#
+##.#TGT#
+########
+
+Instance 28
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.9,w=0.3
+GridParams: a=0,b=0.1,e=0.9,w=0.3
+Map:
+########
+#.T#T.T#
+#.#TT.T#
+#GG..GG#
+#.TTT.T#
+#..#GB.#
+#T##.#.#
+########
+
+Instance 29
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.9,w=0.5
+GridParams: a=0,b=0.1,e=0.9,w=0.5
+Map:
+########
+#.#T#.T#
+#...#GT#
+#TT...G#
+#TG.TG##
+#B#T#.##
+#.#T#G##
+########
+
+Instance 30
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.9,w=0.5
+GridParams: a=0,b=0.1,e=0.9,w=0.5
+Map:
+########
+#.G#..T#
+##.T#.##
+##GTTB##
+#T.#TG##
+#G..T.##
+#TT..GT#
+########
+
+Instance 31
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.9,w=0.7
+GridParams: a=0,b=0.1,e=0.9,w=0.7
+Map:
+########
+###..###
+#BT..#T#
+#.T#.TT#
+#.TTG###
+###GG.##
+##GGT###
+########
+
+Instance 32
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.1,e=0.9,w=0.7
+GridParams: a=0,b=0.1,e=0.9,w=0.7
+Map:
+########
+##.#.#T#
+#T.GT#T#
+###.##G#
+#.B.TG.#
+##G#GT##
+##.#T..#
+########
+
+Instance 33
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.5,w=0.2
+GridParams: a=0,b=0.25,e=0.5,w=0.2
+Map:
+########
+#TTT.TT#
+#TGB..T#
+#T#T.TT#
+##TT..G#
+#TTT.TG#
+#GGT.TT#
+########
+
+Instance 34
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.5,w=0.2
+GridParams: a=0,b=0.25,e=0.5,w=0.2
+Map:
+########
+#TGTTB##
+#TTG.TT#
+#T.#TTT#
+#.T#TTG#
+#GTTTTT#
+#TTGTTT#
+########
+
+Instance 35
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.5,w=0.3
+GridParams: a=0,b=0.25,e=0.5,w=0.3
+Map:
+########
+#..B..G#
+#T#G.TT#
+#.TTT#G#
+#G#TTT.#
+#.TGTT.#
+#.TTT#T#
+########
+
+Instance 36
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.5,w=0.3
+GridParams: a=0,b=0.25,e=0.5,w=0.3
+Map:
+########
+###TT#T#
+#TT.G.T#
+#T#TTTT#
+#GG.GTT#
+###T.GT#
+#T.BT#.#
+########
+
+Instance 37
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.5,w=0.5
+GridParams: a=0,b=0.25,e=0.5,w=0.5
+Map:
+########
+###G.#T#
+##.TGTG#
+#G.TGT##
+##B#TT##
+#TTTTT##
+#####TT#
+########
+
+Instance 38
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.5,w=0.5
+GridParams: a=0,b=0.25,e=0.5,w=0.5
+Map:
+########
+#T.GTGG#
+##T###.#
+#TT#TTT#
+#T.T#TB#
+#TGTTTT#
+#TTTGTT#
+########
+
+Instance 39
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.5,w=0.7
+GridParams: a=0,b=0.25,e=0.5,w=0.7
+Map:
+########
+#T#TT.##
+#T#T.###
+#GBGTTT#
+##TG#T##
+##G..TT#
+#T.G#TT#
+########
+
+Instance 40
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.5,w=0.7
+GridParams: a=0,b=0.25,e=0.5,w=0.7
+Map:
+########
+##TT.#.#
+#GG#.BG#
+#.T.TTT#
+#.TGT###
+#.#..TG#
+#.TT####
+########
+
+Instance 41
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.7,w=0.2
+GridParams: a=0,b=0.25,e=0.7,w=0.2
+Map:
+########
+##..TT.#
+#TGTTG.#
+#T.TTBT#
+#G.T.G.#
+#TTTT.T#
+#T#TTGT#
+########
+
+Instance 42
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.7,w=0.2
+GridParams: a=0,b=0.25,e=0.7,w=0.2
+Map:
+########
+#TTTT#T#
+#GG.#TT#
+##TT.GT#
+#TB.TTT#
+#.G#T.G#
+#T...#T#
+########
+
+Instance 43
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.7,w=0.3
+GridParams: a=0,b=0.25,e=0.7,w=0.3
+Map:
+########
+#.TTTTT#
+#..GG.G#
+#TT#TTG#
+##G#T###
+#T....B#
+#.#TTTT#
+########
+
+Instance 44
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.7,w=0.3
+GridParams: a=0,b=0.25,e=0.7,w=0.3
+Map:
+########
+#TT#TTT#
+#T.TTG.#
+#TTTTGB#
+#TGG..T#
+#TGT.#T#
+#TTT...#
+########
+
+Instance 45
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.7,w=0.5
+GridParams: a=0,b=0.25,e=0.7,w=0.5
+Map:
+########
+#T#T##G#
+#G..TB.#
+#.#.T#.#
+###.TT.#
+##G.T#T#
+#.G.G..#
+########
+
+Instance 46
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.7,w=0.5
+GridParams: a=0,b=0.25,e=0.7,w=0.5
+Map:
+########
+#TBGG.T#
+#GT#T#T#
+#.T#T.T#
+#T.#T.T#
+#T.G..##
+##.T.G##
+########
+
+Instance 47
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.7,w=0.7
+GridParams: a=0,b=0.25,e=0.7,w=0.7
+Map:
+########
+##TTB#T#
+#T##...#
+##T###.#
+#..###.#
+#T.GGGG#
+####G.T#
+########
+
+Instance 48
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.7,w=0.7
+GridParams: a=0,b=0.25,e=0.7,w=0.7
+Map:
+########
+#TTT##G#
+#.#.T..#
+#TTT##T#
+#G#T##.#
+#G#.B.G#
+#T.G#.##
+########
+
+Instance 49
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.8,w=0.2
+GridParams: a=0,b=0.25,e=0.8,w=0.2
+Map:
+########
+#TTTT#B#
+##G.TT.#
+#TG.TTT#
+#TG#T.G#
+#T.T..T#
+#T.TG#T#
+########
+
+Instance 50
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.8,w=0.2
+GridParams: a=0,b=0.25,e=0.8,w=0.2
+Map:
+########
+#TT.T.##
+#T.GT.T#
+##TGGTT#
+#TB#...#
+#TGT..T#
+#T#TGT.#
+########
+
+Instance 51
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.8,w=0.3
+GridParams: a=0,b=0.25,e=0.8,w=0.3
+Map:
+########
+#TTTTTG#
+##.#T#T#
+#T.TGBG#
+#TG.TG.#
+#T.#TT.#
+##T##T##
+########
+
+Instance 52
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.8,w=0.3
+GridParams: a=0,b=0.25,e=0.8,w=0.3
+Map:
+########
+#T#.TT.#
+#TTTGG.#
+#GG.BT.#
+#TT#.T.#
+#..#.TG#
+#.T#TTT#
+########
+
+Instance 53
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.8,w=0.5
+GridParams: a=0,b=0.25,e=0.8,w=0.5
+Map:
+########
+#T...T##
+#.#BT.G#
+#G#.G.G#
+#TT#.TG#
+#TTT.T##
+###T..##
+########
+
+Instance 54
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.8,w=0.5
+GridParams: a=0,b=0.25,e=0.8,w=0.5
+Map:
+########
+###TT#G#
+#TTTTTG#
+#.B...G#
+#TT#TT.#
+#.##GT.#
+##T#.TG#
+########
+
+Instance 55
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.8,w=0.7
+GridParams: a=0,b=0.25,e=0.8,w=0.7
+Map:
+########
+##GGG.T#
+###TT..#
+##TT##.#
+####.T.#
+#.##G#.#
+#TT.BGT#
+########
+
+Instance 56
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.8,w=0.7
+GridParams: a=0,b=0.25,e=0.8,w=0.7
+Map:
+########
+#.B#..G#
+##.#T.##
+#T...G##
+##T##..#
+##G##G##
+##G##T##
+########
+
+Instance 57
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.9,w=0.2
+GridParams: a=0,b=0.25,e=0.9,w=0.2
+Map:
+########
+#.B..T.#
+#.TT.T.#
+##TGGTT#
+#.TTT#.#
+#.TGGGT#
+#.T.##T#
+########
+
+Instance 58
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.9,w=0.2
+GridParams: a=0,b=0.25,e=0.9,w=0.2
+Map:
+########
+#GTT#.B#
+#GTT.GT#
+#T.#.T.#
+#..#T#.#
+#T.GG..#
+#T.TTTT#
+########
+
+Instance 59
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.9,w=0.3
+GridParams: a=0,b=0.25,e=0.9,w=0.3
+Map:
+########
+#TGGT#.#
+#T.TT..#
+##TT.BT#
+#....T.#
+#G#T.TG#
+#.T.G..#
+########
+
+Instance 60
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.9,w=0.3
+GridParams: a=0,b=0.25,e=0.9,w=0.3
+Map:
+########
+#TGGGTT#
+#T.##T.#
+#TG...B#
+#TT.TT.#
+##G.TT.#
+##.#T..#
+########
+
+Instance 61
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.9,w=0.5
+GridParams: a=0,b=0.25,e=0.9,w=0.5
+Map:
+########
+#T#GT#T#
+#B.T.T##
+#T.#T..#
+#.GT.T.#
+#.TT#G.#
+##TTGG.#
+########
+
+Instance 62
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.9,w=0.5
+GridParams: a=0,b=0.25,e=0.9,w=0.5
+Map:
+########
+#T.G..##
+##.T#..#
+##TTT#.#
+#T#G#T.#
+#..BGGG#
+######T#
+########
+
+Instance 63
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.9,w=0.7
+GridParams: a=0,b=0.25,e=0.9,w=0.7
+Map:
+########
+#.#....#
+#.B.#.##
+#.G##..#
+#G#TT#.#
+#GG.#TT#
+#T#G#T##
+########
+
+Instance 64
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0,b=0.25,e=0.9,w=0.7
+GridParams: a=0,b=0.25,e=0.9,w=0.7
+Map:
+########
+#G###T##
+#.T#.###
+#.G#..G#
+#TT.B.G#
+##..#..#
+##T.G###
+########
+
+Instance 65
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.5,w=0.2
+GridParams: a=0.3,b=0.1,e=0.5,w=0.2
+Map:
+########
+#TTTTGG#
+#.GTT.T#
+#TTTTBT#
+##TT#.T#
+#TTTGTT#
+#TTG#TT#
+########
+
+Instance 66
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.5,w=0.2
+GridParams: a=0.3,b=0.1,e=0.5,w=0.2
+Map:
+########
+#GTGTBT#
+#TTT.TT#
+#TTT.T##
+#GTGGTT#
+#TTTTTT#
+#.TTTTT#
+########
+
+Instance 67
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.5,w=0.3
+GridParams: a=0.3,b=0.1,e=0.5,w=0.3
+Map:
+########
+##T..TT#
+#T#T#GT#
+#TTTTTG#
+##..T#B#
+##.TGGG#
+##TT#T##
+########
+
+Instance 68
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.5,w=0.3
+GridParams: a=0.3,b=0.1,e=0.5,w=0.3
+Map:
+########
+#..TTTT#
+#TBTT#G#
+#TTTT.G#
+#.#G.TT#
+#.TGG..#
+#TT#TT.#
+########
+
+Instance 69
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.5,w=0.5
+GridParams: a=0.3,b=0.1,e=0.5,w=0.5
+Map:
+########
+##TTTTT#
+##TT.BG#
+#TTT#T.#
+#TG#TTG#
+##G..TT#
+#G.#TTT#
+########
+
+Instance 70
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.5,w=0.5
+GridParams: a=0.3,b=0.1,e=0.5,w=0.5
+Map:
+########
+##T##T##
+##GBTT.#
+##G.T.T#
+##TT.G.#
+#T.G#.T#
+#GTT#T##
+########
+
+Instance 71
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.5,w=0.7
+GridParams: a=0.3,b=0.1,e=0.5,w=0.7
+Map:
+########
+####TT.#
+#TGT.G##
+#.##TG##
+#TB.TT##
+#.T##TT#
+#TTGGTT#
+########
+
+Instance 72
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.5,w=0.7
+GridParams: a=0.3,b=0.1,e=0.5,w=0.7
+Map:
+########
+#T######
+#G###.T#
+#T#TT#T#
+#BT#G#G#
+#TG#TTT#
+##.T.TG#
+########
+
+Instance 73
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.7,w=0.2
+GridParams: a=0.3,b=0.1,e=0.7,w=0.2
+Map:
+########
+#TTTTTT#
+#TTBGT.#
+#GTTGTT#
+#TTTGT##
+#T...TT#
+#..TG.##
+########
+
+Instance 74
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.7,w=0.2
+GridParams: a=0.3,b=0.1,e=0.7,w=0.2
+Map:
+########
+#T#TT#.#
+#.....B#
+#TGTTT.#
+##.TTTT#
+#GG#GGT#
+#T.T.TT#
+########
+
+Instance 75
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.7,w=0.3
+GridParams: a=0.3,b=0.1,e=0.7,w=0.3
+Map:
+########
+#GG#T.##
+##.TGTG#
+#TT##T.#
+#T.##B.#
+#TG...T#
+###TT#T#
+########
+
+Instance 76
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.7,w=0.3
+GridParams: a=0.3,b=0.1,e=0.7,w=0.3
+Map:
+########
+#.#TTG##
+#GTTTTT#
+#.#GG.T#
+#...T.T#
+#GT#.BT#
+#TTTT.T#
+########
+
+Instance 77
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.7,w=0.5
+GridParams: a=0.3,b=0.1,e=0.7,w=0.5
+Map:
+########
+###T#GT#
+#GGT..##
+####.T##
+#TT#B.T#
+##TT.#T#
+#TGTGTT#
+########
+
+Instance 78
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.7,w=0.5
+GridParams: a=0.3,b=0.1,e=0.7,w=0.5
+Map:
+########
+#T#..T##
+#T##T..#
+#G#BT.##
+#GG#.###
+#TGTT.T#
+#TTTTGT#
+########
+
+Instance 79
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.7,w=0.7
+GridParams: a=0.3,b=0.1,e=0.7,w=0.7
+Map:
+########
+#.T###T#
+##T.#GG#
+##.#T#.#
+##B.#.G#
+##TTG..#
+##GT##.#
+########
+
+Instance 80
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.7,w=0.7
+GridParams: a=0.3,b=0.1,e=0.7,w=0.7
+Map:
+########
+#TGT#T##
+#.GB.###
+#T#.#T##
+##.G.GT#
+##GT#T##
+####T###
+########
+
+Instance 81
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.8,w=0.2
+GridParams: a=0.3,b=0.1,e=0.8,w=0.2
+Map:
+########
+#.G.G.T#
+#TTG#T##
+#T..TTT#
+#.BTT#T#
+#G.G.#T#
+##TTT#T#
+########
+
+Instance 82
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.8,w=0.2
+GridParams: a=0.3,b=0.1,e=0.8,w=0.2
+Map:
+########
+#TTTTTT#
+#T#GG.G#
+#.TBTTT#
+#G...G.#
+#.T#T.T#
+#.TTTTT#
+########
+
+Instance 83
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.8,w=0.3
+GridParams: a=0.3,b=0.1,e=0.8,w=0.3
+Map:
+########
+###GT###
+#.GTG.T#
+#TTT#.T#
+#T..BGT#
+#TTT#GT#
+##T....#
+########
+
+Instance 84
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.8,w=0.3
+GridParams: a=0.3,b=0.1,e=0.8,w=0.3
+Map:
+########
+#G#.TTT#
+#GT.G.T#
+##TT#.T#
+#T.#..T#
+#T.TTGB#
+#.TTTG.#
+########
+
+Instance 85
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.8,w=0.5
+GridParams: a=0.3,b=0.1,e=0.8,w=0.5
+Map:
+########
+##.#TGG#
+##.#.TB#
+#TGT.T.#
+#T...#G#
+#T#TG.T#
+#TT##T.#
+########
+
+Instance 86
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.8,w=0.5
+GridParams: a=0.3,b=0.1,e=0.8,w=0.5
+Map:
+########
+#TGTT.B#
+##GTTT.#
+##G....#
+#TGTTT.#
+#TG##TT#
+##.##..#
+########
+
+Instance 87
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.8,w=0.7
+GridParams: a=0.3,b=0.1,e=0.8,w=0.7
+Map:
+########
+##T.#.##
+###.#.##
+#G..TG##
+##BT.G##
+##G#T.##
+##.#TG##
+########
+
+Instance 88
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.8,w=0.7
+GridParams: a=0.3,b=0.1,e=0.8,w=0.7
+Map:
+########
+##TT##T#
+#..GGG##
+#.#T#G##
+#.T#T.##
+##T#.GT#
+##B.T###
+########
+
+Instance 89
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.9,w=0.2
+GridParams: a=0.3,b=0.1,e=0.9,w=0.2
+Map:
+########
+#T.#G.G#
+##.T.T##
+#T.T.#T#
+#TG..GT#
+#TT##.T#
+##G...B#
+########
+
+Instance 90
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.9,w=0.2
+GridParams: a=0.3,b=0.1,e=0.9,w=0.2
+Map:
+########
+#.B.TTT#
+#.TT#TT#
+#.GTTTT#
+#.#TTTT#
+#G.TT.T#
+#TGGG..#
+########
+
+Instance 91
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.9,w=0.3
+GridParams: a=0.3,b=0.1,e=0.9,w=0.3
+Map:
+########
+#T.GT..#
+##TTBT.#
+##TT.T.#
+#T#TT#T#
+#G.G..G#
+#TT#T#G#
+########
+
+Instance 92
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.9,w=0.3
+GridParams: a=0.3,b=0.1,e=0.9,w=0.3
+Map:
+########
+#TTT#TT#
+#G.TGG.#
+#G#.TT##
+##T....#
+#T#TGT.#
+#.B..TT#
+########
+
+Instance 93
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.9,w=0.5
+GridParams: a=0.3,b=0.1,e=0.9,w=0.5
+Map:
+########
+##T.G.T#
+#.#.#TT#
+#T.B.###
+#TTG#T.#
+###G.GT#
+#TTTT#G#
+########
+
+Instance 94
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.9,w=0.5
+GridParams: a=0.3,b=0.1,e=0.9,w=0.5
+Map:
+########
+#G.#TT##
+#G#B.TT#
+#GT.##.#
+#.G.G..#
+#.#..#.#
+####.TT#
+########
+
+Instance 95
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.9,w=0.7
+GridParams: a=0.3,b=0.1,e=0.9,w=0.7
+Map:
+########
+##..#.##
+#TTGG.##
+###.##T#
+###G#T##
+#G.T#TT#
+##TGB#T#
+########
+
+Instance 96
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.1,e=0.9,w=0.7
+GridParams: a=0.3,b=0.1,e=0.9,w=0.7
+Map:
+########
+#..GTGG#
+#.###T.#
+#...##.#
+###..#B#
+###GG..#
+#T#.####
+########
+
+Instance 97
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.5,w=0.2
+GridParams: a=0.3,b=0.25,e=0.5,w=0.2
+Map:
+########
+#TGTTTT#
+#GT...T#
+#GGBT.T#
+##T#T.T#
+##TTG.T#
+##T.TTT#
+########
+
+Instance 98
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.5,w=0.2
+GridParams: a=0.3,b=0.25,e=0.5,w=0.2
+Map:
+########
+#TTTGTT#
+#TT#T#T#
+#GT..TB#
+#TT.GG.#
+#.TGT.T#
+#.TT#.##
+########
+
+Instance 99
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.5,w=0.3
+GridParams: a=0.3,b=0.25,e=0.5,w=0.3
+Map:
+########
+##TTGTT#
+#TTGG..#
+#T.T#TT#
+#BGTTTT#
+#T.TTT.#
+#TT..G.#
+########
+
+Instance 100
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.5,w=0.3
+GridParams: a=0.3,b=0.25,e=0.5,w=0.3
+Map:
+########
+#.T.GTT#
+#G.TT#T#
+#TTT#.G#
+##.TTTG#
+#TGTB..#
+#TT#TTT#
+########
+
+Instance 101
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.5,w=0.5
+GridParams: a=0.3,b=0.25,e=0.5,w=0.5
+Map:
+########
+###TTTT#
+#TTTTT##
+##GT.###
+#TGTTGG#
+#BTT.TG#
+##T#.###
+########
+
+Instance 102
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.5,w=0.5
+GridParams: a=0.3,b=0.25,e=0.5,w=0.5
+Map:
+########
+##.TBT##
+#T.#GT.#
+##T#GG.#
+##G##GT#
+##T#TT##
+#TT#TT##
+########
+
+Instance 103
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.5,w=0.7
+GridParams: a=0.3,b=0.25,e=0.5,w=0.7
+Map:
+########
+###TB#.#
+####.G.#
+##T#.###
+##.TT#G#
+#TG.TG.#
+##T#G#T#
+########
+
+Instance 104
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.5,w=0.7
+GridParams: a=0.3,b=0.25,e=0.5,w=0.7
+Map:
+########
+####.TG#
+##T.G.T#
+#.T#####
+#TB#####
+##GGTT##
+#T.#TGT#
+########
+
+Instance 105
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.7,w=0.2
+GridParams: a=0.3,b=0.25,e=0.7,w=0.2
+Map:
+########
+#TTTTTT#
+#.T.GTT#
+#B..#T##
+#GT...T#
+#.TTTTT#
+#TTGGG##
+########
+
+Instance 106
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.7,w=0.2
+GridParams: a=0.3,b=0.25,e=0.7,w=0.2
+Map:
+########
+#T.TG.T#
+#GTTT.T#
+#G....T#
+#TTT#TT#
+#T.T..##
+#TGG.B.#
+########
+
+Instance 107
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.7,w=0.3
+GridParams: a=0.3,b=0.25,e=0.7,w=0.3
+Map:
+########
+##TT.#.#
+#T..B.G#
+#TT.#T##
+#G..####
+#TG.GG.#
+#TTT#TT#
+########
+
+Instance 108
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.7,w=0.3
+GridParams: a=0.3,b=0.25,e=0.7,w=0.3
+Map:
+########
+#.#.#.T#
+#G.B..T#
+#G#T#.T#
+#TTT#GT#
+#GTTTGT#
+#..TT.T#
+########
+
+Instance 109
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.7,w=0.5
+GridParams: a=0.3,b=0.25,e=0.7,w=0.5
+Map:
+########
+#..T####
+#T.#T..#
+#TGGBTG#
+###T..T#
+#TT#GTT#
+#T##.GT#
+########
+
+Instance 110
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.7,w=0.5
+GridParams: a=0.3,b=0.25,e=0.7,w=0.5
+Map:
+########
+##.T..G#
+##T.#TT#
+#BT#T.T#
+#.T...##
+#.G.TG.#
+#.TTGGT#
+########
+
+Instance 111
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.7,w=0.7
+GridParams: a=0.3,b=0.25,e=0.7,w=0.7
+Map:
+########
+##TTG#.#
+#T.TTB.#
+##GT####
+#T.#G###
+#.T.GG.#
+######T#
+########
+
+Instance 112
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.7,w=0.7
+GridParams: a=0.3,b=0.25,e=0.7,w=0.7
+Map:
+########
+###T.BT#
+#TT#GTT#
+####T.##
+#T##G#.#
+#.T#..G#
+#T.GG###
+########
+
+Instance 113
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.8,w=0.2
+GridParams: a=0.3,b=0.25,e=0.8,w=0.2
+Map:
+########
+#TTTTTT#
+#G#T.GG#
+#T#..#T#
+#.T...T#
+#TTB.TT#
+#.G.TG.#
+########
+
+Instance 114
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.8,w=0.2
+GridParams: a=0.3,b=0.25,e=0.8,w=0.2
+Map:
+########
+#TTG#TT#
+#T#.TG.#
+#TT.TTG#
+#TT..T.#
+#T.B..G#
+####TTG#
+########
+
+Instance 115
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.8,w=0.3
+GridParams: a=0.3,b=0.25,e=0.8,w=0.3
+Map:
+########
+#T.TBTT#
+#T#.TT.#
+#.TGTGT#
+#.T.TGT#
+#G...GT#
+#TT#T#T#
+########
+
+Instance 116
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.8,w=0.3
+GridParams: a=0.3,b=0.25,e=0.8,w=0.3
+Map:
+########
+#TBTT###
+#...G.T#
+#T.T.TG#
+#TGT.T.#
+#T#.GT.#
+#...TTG#
+########
+
+Instance 117
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.8,w=0.5
+GridParams: a=0.3,b=0.25,e=0.8,w=0.5
+Map:
+########
+#TT.G.##
+#.T#T.##
+#.T#.G.#
+#GG##.T#
+##T.BG##
+##T##T##
+########
+
+Instance 118
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.8,w=0.5
+GridParams: a=0.3,b=0.25,e=0.8,w=0.5
+Map:
+########
+#...T#.#
+#.#.T#.#
+#GT#G#B#
+##T..GT#
+#TTGTT##
+#T..TGT#
+########
+
+Instance 119
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.8,w=0.7
+GridParams: a=0.3,b=0.25,e=0.8,w=0.7
+Map:
+########
+##.T####
+#TT#.T##
+##...GG#
+##.T.###
+####GTG#
+###BT.G#
+########
+
+Instance 120
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.8,w=0.7
+GridParams: a=0.3,b=0.25,e=0.8,w=0.7
+Map:
+########
+##G#.T.#
+#TTT.T##
+##.#TT##
+#TG#G#B#
+#.TG..G#
+#TT#T#T#
+########
+
+Instance 121
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.9,w=0.2
+GridParams: a=0.3,b=0.25,e=0.9,w=0.2
+Map:
+########
+#T.#TTG#
+#TGTTT.#
+#TB..G.#
+#GTT.T.#
+#..T.T##
+#T.G..T#
+########
+
+Instance 122
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.9,w=0.2
+GridParams: a=0.3,b=0.25,e=0.9,w=0.2
+Map:
+########
+#TT#...#
+#.TBT.##
+#GGG#.T#
+#T#T#.T#
+#T..TGT#
+#.G...T#
+########
+
+Instance 123
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.9,w=0.3
+GridParams: a=0.3,b=0.25,e=0.9,w=0.3
+Map:
+########
+##TT#TT#
+#.#T.T.#
+#B#TT.G#
+#G#T#GT#
+#G...GT#
+##.TT..#
+########
+
+Instance 124
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.9,w=0.3
+GridParams: a=0.3,b=0.25,e=0.9,w=0.3
+Map:
+########
+##.TTTT#
+#.BT#GT#
+#.TG#G##
+#.TGT..#
+#....GT#
+#.T.#.T#
+########
+
+Instance 125
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.9,w=0.5
+GridParams: a=0.3,b=0.25,e=0.9,w=0.5
+Map:
+########
+#TG##TT#
+##..GB.#
+##.#T#G#
+#G.T#T.#
+##..#TG#
+#T.TT#T#
+########
+
+Instance 126
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.9,w=0.5
+GridParams: a=0.3,b=0.25,e=0.9,w=0.5
+Map:
+########
+#T..G.##
+##GTTT##
+####TBT#
+##..G.G#
+###.T.##
+#TTGT#T#
+########
+
+Instance 127
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.9,w=0.7
+GridParams: a=0.3,b=0.25,e=0.9,w=0.7
+Map:
+########
+#####..#
+##...#G#
+#..TBT.#
+#T##GG.#
+####.T##
+#T#GG.##
+########
+
+Instance 128
+Params: width=6,height=6,g=5,l=2,stride=2,gen=LG,seed=0,n=2,a=0.3,b=0.25,e=0.9,w=0.7
+GridParams: a=0.3,b=0.25,e=0.9,w=0.7
+Map:
+########
+##..G..#
+#TTT.#.#
+#.GGB#.#
+#TGT##.#
+##.TT.G#
+##.T#TT#
+########
+

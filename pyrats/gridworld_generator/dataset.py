@@ -1,27 +1,36 @@
 from pathlib import Path
 
-def get_random_maps():
-    path = 'gridworld_generator/GWRB.txt'
-    files = []
-    maps = []
-    with open(path) as f:
-        text = f.read()
-        maps_data = text.split('Map')[1:]
-        for i, map_data in enumerate(maps_data):
-            lines = map_data.split('\n')
-            space_prob = float(lines[1].split(':')[-1])
-            wall_prob = float(lines[2].split(':')[-1])
-            file_name = f'map{i}-{space_prob}-{wall_prob}'
-            map = '\n'.join(lines[3:])
-            files.append(file_name)
+
+class GridWorldDataset:
+    def __init__(self, path='GWRB.txt'):
+        self.names, self.maps = self.parse_maps(path)
+
+    def parse_maps(self, path):
+        names = []
+        maps = []
+        with open(path) as f:
+            text = f.read()
+
+        instance_data = text.split('Instance')[1:]
+        for i, map_data in enumerate(instance_data):
+            metadata, map_data = map_data.split('Map:')
+
+            map = map_data.strip()
+
+            lines = metadata.split('\n')
+            params = ''
+            for line in lines:
+                if 'GridParams:' in line:
+                    line = line.replace('GridParams:', '')
+                    if line.strip():
+                        params = '-' + '-'.join([param.strip() for param in line.split(',') if param.strip()])
+                    break
+            instance_name = f'map{i+1}{params}'
+
+            names.append(instance_name)
             maps.append(map)
 
-    return files, maps
+        return names, maps
 
-
-class RandomGridWorldDataset:
-    filenames, maps = get_random_maps()
-
-    @classmethod
-    def get_maps(cls):
-        return list(zip(cls.filenames, cls.maps))
+    def get_maps(self):
+        return list(zip(self.names, self.maps))

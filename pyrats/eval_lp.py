@@ -10,330 +10,7 @@ from pathlib import Path
 from itertools import product
 import pandas as pd
 from utils import set_log_level
-from gridworld_generator.dataset import RandomGridWorldDataset
-
-
-class GridWorldDataset:
-    filenames = [
-        "final_13",
-        "final_14",
-        "final_15",
-        "final_16",
-        "final_17",
-        "final_18",
-        "final_19",
-        "final_1",
-        "final_20",
-        "final_2",
-        "final_3",
-        "final_4",
-        "final_5",
-        "final_6",
-        "final_7",
-        "final_8",
-        "final_9",
-    ]
-
-    maps2 = [
-'''##########
-#GGGTTBTG#
-#GGGTT.TT#
-#..GTT.TG#
-#T.TTT.T##
-#..TTT.T##
-#T..T..T##
-##########''',
-
-'''#############
-#..T........#
-#..TTGTGTGTG#
-#..TT.......#
-#..TTGTGTGTG#
-#.B...TTTTTT#
-#############''',
-
-'''##########
-#GTGT.TGT#
-#..TG....#
-#T.T.TBTT#
-#..TG..TG#
-#GT..TG..#
-##########''',
-
-'''##########
-#..GT...G#
-#TB.TTGTT#
-#..GT.TGT#
-#TG......#
-#..GTGT.T#
-##########''',
-
-"""##########
-#TGTGTGTG#
-#BTGTGTG.#
-#GT.##TGT#
-#TG...TG.#
-#GTG.GTG.#
-##########""",
-
-"""##########
-#GTGTGTGT#
-#B....G..#
-#GTGT.TGT#
-#TGTG...T#
-#.G.GT.GT#
-##########""",
-
-"""#############
-#......#....#
-#..T.G.#....#
-#..TG.....T.#
-#..TTGTGTGTG#
-#..B..TTTTTT#
-#############""",
-
-"""########
-#G..TGG#
-#T.B..T#
-#GT#TGG#
-########""",
-
-"""########
-#GTG..B#
-#.T.TTT#
-#.T.TTT#
-#....TG#
-########""",
-
-"""#########
-#TT.G..T#
-#..##.#G#
-#...GTTG#
-#B..TTTG#
-#########""",
-
-"""#######
-##GGGG#
-#BTTGG#
-#..TG.#
-#T.#T.#
-#T.#..#
-#T...T#
-#######""",
-
-"""
-##########
-#GTGT.TGT#
-#..TG#...#
-#T.#.#BTT#
-#.#TG#.TG#
-#GT..TG..#
-##########""",
-
-"""#######
-#BTTTG#
-#T.T..#
-#GT...#
-#######""",
-
-"""########
-#GT.TTT#
-#.TBTT.#
-#TT.TTG#
-########
-""",
-
-"""########
-#G..TGG#
-#T.BTTT#
-#GT#TGG#
-########""",
-
-"""#########
-#TT.G..##
-#..TTTTG#
-#...G.TG#
-#B..T.TG#
-#########""",
-
-"""######
-#..G.#
-#G#TT#
-#.TTT#
-##T..#
-#.B#G#
-#..#T#
-#TTTG#
-######""",
-
-
-"""#########
-#GGGTTT##
-#GGGTT.B#
-#..GTT.T#
-#T.TTT.G#
-#G.TTT.T#
-#T.....T#
-#########""",
-
-"""#########
-#GGGTTT##
-#GGGTT.B#
-#..GTT.T#
-#T.TTT..#
-#..TTT.T#
-#T.....T#
-#########""",
-
-"""##########
-#GGGTTT###
-#GGGTT.B##
-#..GTT.T##
-#T.TTT.TG#
-#..TTT.T##
-#T..T..TG#
-##########""",
-    ]
-
-    maps = [
-'''##########
-#..GT...G#
-#TB.TTGTT#
-#..GT.TGT#
-#TG......#
-#..GTGT.T#
-##########''',
-
-"""##########
-#TGTGTGTG#
-#BTGTGTG.#
-#GT.##TGT#
-#TG...TG.#
-#GTG.GTG.#
-##########""",
-
-"""##########
-#GTGTGTGT#
-#B....G..#
-#GTGT.TGT#
-#TGTG...T#
-#.G.GT.GT#
-##########""",
-
-"""#############
-#......#....#
-#..T.G.#....#
-#..TG.....T.#
-#..TTGTGTGTG#
-#..B..TTTTTT#
-#############""",
-
-"""########
-#G..TGG#
-#T.B..T#
-#GT#TGG#
-########""",
-
-"""########
-#GTG..B#
-#.T.TTT#
-#.T.TTT#
-#....TG#
-########""",
-
-"""#########
-#TT.G..T#
-#..##.#G#
-#...GTTG#
-#B..TTTG#
-#########""",
-
-"""#######
-##GGGG#
-#BTTGG#
-#..TG.#
-#T.#T.#
-#T.#..#
-#T...T#
-#######""",
-
-"""
-##########
-#GTGT.TGT#
-#..TG#...#
-#T.#.#BTT#
-#.#TG#.TG#
-#GT..TG..#
-##########""",
-
-"""#######
-#BTTTG#
-#T.T..#
-#GT...#
-#######""",
-
-"""########
-#GT.TTT#
-#.TBTT.#
-#TT.TTG#
-########
-""",
-
-"""########
-#G..TGG#
-#T.BTTT#
-#GT#TGG#
-########""",
-
-"""#########
-#TT.G..##
-#..TTTTG#
-#...G.TG#
-#B..T.TG#
-#########""",
-
-"""######
-#..G.#
-#G#TT#
-#.TTT#
-##T..#
-#.B#G#
-#..#T#
-#TTTG#
-######""",
-
-
-"""#########
-#GGGTTT##
-#GGGTT.B#
-#..GTT.T#
-#T.TTT.G#
-#G.TTT.T#
-#T.....T#
-#########""",
-
-"""#########
-#GGGTTT##
-#GGGTT.B#
-#..GTT.T#
-#T.TTT..#
-#..TTT.T#
-#T.....T#
-#########""",
-
-"""##########
-#GGGTTT###
-#GGGTT.B##
-#..GTT.T##
-#T.TTT.TG#
-#..TTT.T##
-#T..T..TG#
-##########""",
-    ]
-
-    @classmethod
-    def get_maps(cls):
-        return list(zip(cls.filenames, cls.maps))
+from gridworld_generator.dataset import GridWorldDataset
 
 
 def eval_agent_config(env, agent, c, slide, trap, time_limit):
@@ -523,17 +200,33 @@ def eval_solvers(agent_list, time_limits, params_grid, agent_repetitions=100, ou
 if __name__ == "__main__":
     agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
     time_limits = [5, 10, 25, 50]
+    dataset = 'gridworld_generator/HW_SMALL.txt'
     grid_desc = {
         'c_s': [0, 0.1, 0.2, 0.35, 0.5],
         'p_slides': [0.2],
         'p_traps': [0.1],
-        'map': RandomGridWorldDataset.get_maps()
+        'map': GridWorldDataset(dataset).get_maps()
     }
     params_tuples = product(*[grid_desc[key] for key in grid_desc])
     params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
 
     output_dir = Path("/work/rats/outputs/" + time.strftime("%Y%m%d-%H%M%S"))
     output_dir.mkdir(parents=True, exist_ok=True)
+    with open(output_dir / "metadata.txt", "w") as f:
+        f.write("Agents: ")
+        for agent in agents:
+            f.write(agent.__name__ + ", ")
+        f.write("\nTime limits: ")
+        f.write(str(time_limits))
+        f.write("\nParams grid:")
+        grid_desc_copy = grid_desc.copy()
+        grid_desc_copy.pop('map')
+        grid_desc_copy['dataset'] = dataset
+        f.write(str(grid_desc_copy))
+        f.write("\n")
+
+    with open(output_dir / "metadata.txt", "r") as f:
+        print(f.read())
 
     ray.init(address="auto")
     eval_solvers(

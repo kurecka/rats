@@ -449,7 +449,8 @@ public:
         common_data.sample_risk_thd = common_data.risk_thd;
 
         // Select the best action
-        A a = select_action_t()(root.get(), false);
+        size_t a_idx = select_action_t()(root.get(), false);
+        A a = root->actions[a_idx];
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }

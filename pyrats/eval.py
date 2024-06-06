@@ -138,6 +138,20 @@ def eval_config(agent, time_limit, params, agent_repetitions=1, max_depth=100):
     return asyncio.gather(*futures)
 
 
+async def process_futures(futures, output_dir):
+    print(f"Processing batch of {len(futures)} futures")
+    for completed in asyncio.as_completed(futures):
+        result = aggregate_results(await completed)
+
+        central_file = output_dir / "results.csv"
+        if central_file.exists():
+            result.to_csv(central_file, mode='a', header=False, index=False)
+        else:
+            result.to_csv(central_file, index=False)
+    
+    futures.clear()
+
+
 async def eval_solvers(
         agent_list, time_limits, params_grid,
         agent_repetitions=100,
@@ -146,25 +160,23 @@ async def eval_solvers(
     ):
     output_dir = Path(output_dir)
 
+    def iterate_configs():
+        for params in params_grid:
+            for agent in agent_list:
+                for time_limit in time_limits:
+                    yield agent, time_limit, params
+
     futures = []
-
+    # Run LP solver
     for params in params_grid:
-        futures.append(eval_config('LP', None, params))
-        for agent in agent_list:
-            for time_limit in time_limits:
-                futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
-    
-    
-    for completed in asyncio.as_completed(futures):
-        result = aggregate_results(await completed)
+        futures.append(eval_config('LP', None, params))    
+    await process_futures(futures, output_dir)
 
-        central_file = output_dir / "results.csv"
-        if central_file.exists():
-            df = pd.read_csv(central_file)
-            df = pd.concat([df, result], ignore_index=True, axis=0)
-        else:
-            df = result
-        df.to_csv(central_file, index=False)
+    # Run agent solvers
+    for agent, time_limit, params in iterate_configs():
+        futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
+        if len(futures) >= 8000 / agent_repetitions:
+            await process_futures(futures, output_dir)
 
 
 def prepare_output_dir(output_dir: Path, metadata: dict):

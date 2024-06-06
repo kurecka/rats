@@ -33,4 +33,4 @@ class GridWorldDataset:
         return names, maps
 
     def get_maps(self):
-        return list(zip(self.names, self.maps))
+        return list(zip(self.names, [{'map': map} for map in self.maps]))

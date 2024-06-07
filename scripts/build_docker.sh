@@ -1,5 +1,4 @@
-# NAMESPACE="gitlab.fi.muni.cz:5050/risk-aware-decision-making"
-NAMESPACE=xkurecka
+NAMESPACE="gitlab.fi.muni.cz:5050/risk-aware-decision-making"
 TAG='latest'
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 COMMIT=$(git rev-parse --short HEAD)
@@ -24,8 +23,8 @@ echo ""
 echo -e "\033[0;32mGit branch:\033[0m $BRANCH"
 echo -e "\033[0;32mGit commit:\033[0m $COMMIT"
 
-# Check git is clean
-if [ -n "$(git status --porcelain)" ]; then
+# Check git is clean (except for this script)
+if [ -n "$(git status --porcelain | grep -v build_docker.sh)" ]; then
     echo
     echo -e "\033[0;31mGit is not clean. Please commit your changes before building the docker image.\033[0m"
     exit 1

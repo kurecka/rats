@@ -1,6 +1,5 @@
 docker:
-    # image: "gitlab.fi.muni.cz:5050/risk-aware-decision-making/rats"
-    image: "xkurecka/rats:latest"
+    image: "gitlab.fi.muni.cz:5050/risk-aware-decision-making/rats"
     container_name: "rats-app-${auth.ssh_user}"
 #     # If true, pulls latest version of image. Otherwise, `docker run` will only pull the image
 #     # if no cached version is present.
@@ -31,8 +30,8 @@ auth:
     gid: ${gid:}
 
 sync_head_to_workers: 
-    - /var/data/${auth.ssh_user}/rats/build/rats.so
-    - /var/data/${auth.ssh_user}/rats/pyrats/
+    - /var/data/${auth.ssh_user}/rats/build/
+    - /var/data/${auth.ssh_user}/rats/rats/
 
 head_start_ray_commands:
     - ray stop
@@ -44,7 +43,7 @@ worker_start_ray_commands:
     - ray start --address=${provider.head_ip}:6379
 
 worker_start_privileged_commands:
-    - chown ${auth.uid}:${auth.gid} /work/rats
+    - chown -R ${auth.uid}:${auth.gid} /work/rats
 
 head_stop_ray_commands:
     - docker stop ${docker.container_name}

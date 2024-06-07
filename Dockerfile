@@ -30,24 +30,10 @@ WORKDIR /build/or-tools
 RUN cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2"
 RUN cmake --build build --target install -j $num_jobs
 
-# RUN mkdir -p ~/miniconda3
-# RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-# RUN bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-# RUN rm -rf ~/miniconda3/miniconda.sh
-# ENV PATH=/root/miniconda3/bin:$PATH
-# RUN conda init bash
-
-# RUN conda install -c conda-forge gcc=12.2.0
-# RUN conda install -n base pybind11
-# RUN conda install -n base -c rapidsai-nightly cmake_setuptools
-# RUN conda install -n base -c conda-forge gymnasium
-# RUN conda install -n base -c conda-forge hydra-core
-# RUN conda install -n base -c anaconda pandas
-# RUN conda install -n base -c anaconda numpy
-# RUN conda install -n base -c anaconda matplotlib
 RUN apt-get install -y python3-pip
 
 RUN pip install "pybind11[global]"
+RUN pip install "ray[default]"
 RUN pip install gymnasium
 RUN pip install cmake_setuptools
 RUN pip install pandas

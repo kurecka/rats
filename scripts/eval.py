@@ -5,7 +5,7 @@ import pprint
 import yaml
 import json
 
-from rats import Hallway, LP_solver
+from _rats import LP_solver
 import time
 import numpy as np
 from multiprocessing import Pool

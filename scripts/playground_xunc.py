@@ -1,7 +1,7 @@
 from rats import agents
 from rats import envs
 
-from rats import Hallway, LP_solver, Manhattan
+from _rats import LP_solver, Manhattan
 import numpy as np
 from rats.utils import set_log_level
 import time

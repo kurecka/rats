@@ -2,7 +2,7 @@ from rats import envs
 import ray
 from rats import agents
 
-from rats import Hallway, LP_solver
+from _rats import LP_solver
 from math import sqrt
 from rats.utils import set_log_level
 import time

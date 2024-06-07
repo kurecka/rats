@@ -1,16 +1,14 @@
 docker:
-    image: "gitlab.fi.muni.cz:5050/risk-aware-decision-making/rats"
+    image: "gitlab.fi.muni.cz:5050/risk-aware-decision-making/rats:latest"
     container_name: "rats-app-${auth.ssh_user}"
 #     # If true, pulls latest version of image. Otherwise, `docker run` will only pull the image
 #     # if no cached version is present.
     pull_before_run: True
     run_options:   # Extra options to pass into "docker run"
-        - -v /var/data/${auth.ssh_user}/rats/include:/work/rats/include
+        - -v /var/data/${auth.ssh_user}/rats/logs:/work/rats/logs
         - -v /var/data/${auth.ssh_user}/rats/rats:/work/rats/rats
         - -v /var/data/${auth.ssh_user}/rats/cpprats:/work/rats/cpprats
         - -v /var/data/${auth.ssh_user}/rats/outputs:/work/rats/outputs
-        - -v /var/data/${auth.ssh_user}/rats/pybind:/work/rats/pybind
-        - -v /var/data/${auth.ssh_user}/rats/tests:/work/rats/tests
         - -v /var/data/${auth.ssh_user}/rats/scripts:/work/rats/scripts
         - -u ${auth.uid}:${auth.gid}
 

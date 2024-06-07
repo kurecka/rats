@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from rats import envs
 import ray
 from rats import agents
@@ -177,6 +179,11 @@ async def eval_solvers(
         futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
         if len(futures) >= 8000 / agent_repetitions:
             await process_futures(futures, output_dir)
+    
+    if futures:
+        await process_futures(futures, output_dir)
+    
+    print("All configurations evaluated.")
 
 
 def prepare_output_dir(output_dir: Path, metadata: dict):

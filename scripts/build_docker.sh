@@ -23,15 +23,21 @@ echo ""
 echo -e "\033[0;32mGit branch:\033[0m $BRANCH"
 echo -e "\033[0;32mGit commit:\033[0m $COMMIT"
 
+# Define parameter --dirty to skip the git clean check
+clean_check=true
+if [ "$1" == "--dirty" ]; then
+    clean_check=false
+fi
+
 # Check git is clean (except for this script)
-if [ -n "$(git status --porcelain | grep -v build_docker.sh)" ]; then
+if [ -n "$(git status --porcelain | grep -v build_docker.sh)" ] && [ "$clean_check" = true ]; then
     echo
     echo -e "\033[0;31mGit is not clean. Please commit your changes before building the docker image.\033[0m"
     exit 1
 fi
 
 # Check remote is up-to-date
-if [ "$(git rev-list HEAD...origin/$BRANCH --count)" -ne 0 ]; then
+if [ "$(git rev-list HEAD...origin/$BRANCH --count)" -ne 0 ] && [ "$clean_check" = true ]; then
     echo -e "\033[0;31mRemote is not up-to-date. Please push your changes before building the docker image.\033[0m"
     exit 1
 fi

@@ -53,4 +53,4 @@ dashboard_port: 8265
 
 dashboard_command: ssh -f -N -L ${dashboard_port}:localhost:${dashboard_port} ${auth.ssh_user}@${provider.head_ip}
 
-attach_command: docker exec -it -u ${auth.uid} ${docker.container_name} /bin/bash
+attach_command: docker exec -it -u ${auth.uid}:${auth.gid} ${docker.container_name} /bin/bash

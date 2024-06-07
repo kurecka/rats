@@ -24,12 +24,12 @@ echo ""
 echo -e "\033[0;32mGit branch:\033[0m $BRANCH"
 echo -e "\033[0;32mGit commit:\033[0m $COMMIT"
 
-# # Check git is clean
-# if [ -n "$(git status --porcelain)" ]; then
-#     echo
-#     echo -e "\033[0;31mGit is not clean. Please commit your changes before building the docker image.\033[0m"
-#     exit 1
-# fi
+# Check git is clean
+if [ -n "$(git status --porcelain)" ]; then
+    echo
+    echo -e "\033[0;31mGit is not clean. Please commit your changes before building the docker image.\033[0m"
+    exit 1
+fi
 
 # Check remote is up-to-date
 if [ "$(git rev-list HEAD...origin/$BRANCH --count)" -ne 0 ]; then

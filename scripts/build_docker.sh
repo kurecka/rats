@@ -27,7 +27,6 @@ echo -e "\033[0;32mGit commit:\033[0m $COMMIT"
 # Check git is clean
 if [ -n "$(git status --porcelain)" ]; then
     echo
-    
     echo -e "\033[0;31mGit is not clean. Please commit your changes before building the docker image.\033[0m"
     exit 1
 fi

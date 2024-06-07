@@ -1,6 +1,0 @@
-max_depth: 100
-num_sim: 0
-sim_time_limit: 0
-exploration_constant: 5
-gamma: ${gamma}
-risk_thd: ${risk_thd}

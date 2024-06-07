@@ -1,9 +1,0 @@
-job:
-    chdir: True
-    name: ${metadata.project}
-run:
-  dir: ../outputs/${metadata.project}/${metadata.tag}/${now:%Y-%m-%d/%H-%M-%S}
-sweep:
-  dir: ${hydra.run.dir}/sweep
-help:
-  app_name: Regstar

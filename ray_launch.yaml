@@ -1,25 +1,26 @@
 docker:
-    image: "gitlab.fi.muni.cz:5050/risk-aware-decision-making/rats"
+    # image: "gitlab.fi.muni.cz:5050/risk-aware-decision-making/rats"
+    image: "xkurecka/rats:latest"
     container_name: "rats-app-${auth.ssh_user}"
 #     # If true, pulls latest version of image. Otherwise, `docker run` will only pull the image
 #     # if no cached version is present.
     pull_before_run: True
     run_options:   # Extra options to pass into "docker run"
-        - -v /var/data/${auth.ssh_user}/rats/pyrats:/work/rats/pyrats
         - -v /var/data/${auth.ssh_user}/rats/include:/work/rats/include
-        - -v /var/data/${auth.ssh_user}/rats/src:/work/rats/src
-        - -v /var/data/${auth.ssh_user}/rats/logs:/work/rats/logs
-        - -v /var/data/${auth.ssh_user}/rats/conf:/work/rats/conf
+        - -v /var/data/${auth.ssh_user}/rats/rats:/work/rats/rats
+        - -v /var/data/${auth.ssh_user}/rats/cpprats:/work/rats/cpprats
         - -v /var/data/${auth.ssh_user}/rats/outputs:/work/rats/outputs
         - -v /var/data/${auth.ssh_user}/rats/pybind:/work/rats/pybind
         - -v /var/data/${auth.ssh_user}/rats/tests:/work/rats/tests
+        - -v /var/data/${auth.ssh_user}/rats/scripts:/work/rats/scripts
         - -u ${auth.uid}:${auth.gid}
 
 provider:
     type: local
     head_ip: erinys02.fi.muni.cz
     worker_ips:
-        - erinys03.fi.muni.cz
+        - erinys01.fi.muni.cz
+        # - erinys03.fi.muni.cz
         # - erinys04.fi.muni.cz
         # - erinys05.fi.muni.cz
         # - erinys06.fi.muni.cz
@@ -43,15 +44,7 @@ worker_start_ray_commands:
     - ray start --address=${provider.head_ip}:6379
 
 worker_start_privileged_commands:
-    - chown ${auth.uid}:${auth.gid} /work/rats/pyrats
-    - chown ${auth.uid}:${auth.gid} /work/rats/include
-    - chown ${auth.uid}:${auth.gid} /work/rats/src
-    - chown ${auth.uid}:${auth.gid} /work/rats/logs
-    - chown ${auth.uid}:${auth.gid} /work/rats/conf
-    - chown ${auth.uid}:${auth.gid} /work/rats/outputs
-    - chown ${auth.uid}:${auth.gid} /work/rats/pybind
-    - chown ${auth.uid}:${auth.gid} /work/rats/tests
-    # - chown ${auth.uid}:${auth.gid} /work/rats/build
+    - chown ${auth.uid}:${auth.gid} /work/rats
 
 head_stop_ray_commands:
     - docker stop ${docker.container_name}

@@ -2,7 +2,8 @@ from pathlib import Path
 
 
 class GridWorldDataset:
-    def __init__(self, path='GWRB.txt'):
+    def __init__(self, path='GWRB.txt', base=1):
+        self.base = base
         self.names, self.maps = self.parse_maps(path)
 
     def parse_maps(self, path):
@@ -25,7 +26,7 @@ class GridWorldDataset:
                     if line.strip():
                         params = '-' + '-'.join([param.strip() for param in line.split(',') if param.strip()])
                     break
-            instance_name = f'map{i+1}{params}'
+            instance_name = f'map{i+self.base}{params}'
 
             names.append(instance_name)
             maps.append(map)

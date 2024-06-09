@@ -220,9 +220,14 @@ if __name__ == "__main__":
     agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
     agent_repetitions = 100
     max_depth = 100
-    time_limits = [5, 10]#, 25, 50]
-    dataset_path = 'gridworld_generator/HW_SMALL.txt'
-    instances = GridWorldDataset(dataset_path).get_maps()[:2]
+    time_limits = [5, 10, 25]#, 50]
+    dataset_paths = [
+        'gridworld_generator/HW_SMALL.txt',
+        'gridworld_generator/HW_OLD.txt',
+    ]
+    instances = []
+    for dataset_path in dataset_paths:
+        instances += GridWorldDataset(dataset_path, base=len(instances)+1).get_maps()
     grid_desc = {
         'env': [envs.Hallway, envs.ContHallway],
         'c': [0, 0.1, 0.2, 0.35, 0.5],
@@ -246,7 +251,7 @@ if __name__ == "__main__":
         'max_depth': max_depth,
         'time_limits': time_limits,
         'params_grid': grid_desc,
-        'dataset_path': dataset_path,
+        'dataset_paths': dataset_paths,
         'num_instances': len(instances),
     }
     prepare_output_dir(output_dir, metadata)

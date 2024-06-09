@@ -1,0 +1,177 @@
+Instance 1
+GridParams: legacy
+Map:
+##########
+#..GT...G#
+#TB.TTGTT#
+#..GT.TGT#
+#TG......#
+#..GTGT.T#
+##########
+
+
+Instance 2
+GridParams: legacy
+Map:
+#############
+#......#....#
+#..T.G.#....#
+#..TG.....T.#
+#..TTGTGTGTG#
+#..B..TTTTTT#
+#############
+
+
+Instance 3
+GridParams: legacy
+Map:
+########
+#G..TGG#
+#T.B..T#
+#GT#TGG#
+########
+
+
+Instance 4
+GridParams: legacy
+Map:
+########
+#GTG..B#
+#.T.TTT#
+#.T.TTT#
+#....TG#
+########
+
+
+Instance 5
+GridParams: legacy
+Map:
+#########
+#TT.G..T#
+#..##.#G#
+#...GTTG#
+#B..TTTG#
+#########
+
+
+Instance 6
+GridParams: legacy
+Map:
+#######
+##GGGG#
+#BTTGG#
+#..TG.#
+#T.#T.#
+#T.#..#
+#T...T#
+#######
+
+
+Instance 7
+GridParams: legacy
+Map:
+
+##########
+#GTGT.TGT#
+#..TG#...#
+#T.#.#BTT#
+#.#TG#.TG#
+#GT..TG..#
+##########
+
+
+Instance 8
+GridParams: legacy
+Map:
+#######
+#BTTTG#
+#T.T..#
+#GT...#
+#######
+
+
+Instance 9
+GridParams: legacy
+Map:
+########
+#GT.TTT#
+#.TBTT.#
+#TT.TTG#
+########
+
+
+
+Instance 10
+GridParams: legacy
+Map:
+########
+#G..TGG#
+#T.BTTT#
+#GT#TGG#
+########
+
+
+Instance 11
+GridParams: legacy
+Map:
+#########
+#TT.G..##
+#..TTTTG#
+#...G.TG#
+#B..T.TG#
+#########
+
+
+Instance 12
+GridParams: legacy
+Map:
+######
+#..G.#
+#G#TT#
+#.TTT#
+##T..#
+#.B#G#
+#..#T#
+#TTTG#
+######
+
+
+Instance 13
+GridParams: legacy
+Map:
+#########
+#GGGTTT##
+#GGGTT.B#
+#..GTT.T#
+#T.TTT.G#
+#G.TTT.T#
+#T.....T#
+#########
+
+
+Instance 14
+GridParams: legacy
+Map:
+#########
+#GGGTTT##
+#GGGTT.B#
+#..GTT.T#
+#T.TTT..#
+#..TTT.T#
+#T.....T#
+#########
+
+
+Instance 15
+GridParams: legacy
+Map:
+##########
+#GGGTTT###
+#GGGTT.B##
+#..GTT.T##
+#T.TTT.TG#
+#..TTT.T##
+#T..T..TG#
+##########
+
+

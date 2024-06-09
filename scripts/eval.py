@@ -115,12 +115,18 @@ def aggregate_results(results):
     Aggregates results from multiple runs of the same configuration
     """
     results = pd.DataFrame(results)
-    aggregated = results.groupby(['agent', 'time_limit', 'c', 'env', 'instance']).agg({
+    aggregate_by = ['agent', 'time_limit', 'c', 'env', 'instance']
+    aggrgate_on = {
         'reward': ['mean', 'std'],
         'penalty': ['mean', 'std'],
         'time': ['mean', 'std', 'min', 'max'],
         'steps': ['mean', 'std', 'min', 'max'],
-    }).reset_index()
+    }
+    static_cols = [col for col in results.columns if col not in aggregate_by and col not in aggrgate_on]
+    aggregate_by += static_cols
+    aggregated = results.groupby(aggregate_by).agg(aggrgate_on).reset_index()
+    aggregated['repetitions'] = results.groupby(aggregate_by).size().values
+    assert results.groupby(aggregate_by).ngroups == 1, "An aggregated group contains multiple configurations!"
 
     aggregated.columns = ['_'.join(c for c in col if c).strip() for col in aggregated.columns.values]
     return aggregated
@@ -216,7 +222,7 @@ if __name__ == "__main__":
     max_depth = 100
     time_limits = [5, 10]#, 25, 50]
     dataset_path = 'gridworld_generator/HW_SMALL.txt'
-    instances = GridWorldDataset(dataset_path).get_maps()
+    instances = GridWorldDataset(dataset_path).get_maps()[:2]
     grid_desc = {
         'env': [envs.Hallway, envs.ContHallway],
         'c': [0, 0.1, 0.2, 0.35, 0.5],

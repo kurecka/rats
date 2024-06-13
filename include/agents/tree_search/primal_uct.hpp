@@ -156,7 +156,7 @@ public:
         spdlog::debug("Play action: {}", to_string(a));
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
-        action_node_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a_idx);
         if (an->children.find(s) == an->children.end()) {
             update_predictor(root.get(), a, s, r, p, t);
             full_expand_action(an);

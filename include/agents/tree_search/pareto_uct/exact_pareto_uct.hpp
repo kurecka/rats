@@ -451,6 +451,8 @@ public:
         // Select the best action
         size_t a_idx = select_action_t()(root.get(), false);
         A a = root->actions[a_idx];
+        spdlog::debug("Available actions: {}", to_string(root->actions));
+
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }
@@ -463,7 +465,7 @@ public:
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         // If the state is not in the tree, update the predictor and expand the action node
-        action_node_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a_idx);
         if (an->children.find(s) == an->children.end()) {
             update_predictor(root.get(), a, s, r, p, t);
             full_expand_action(an);

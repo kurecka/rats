@@ -19,10 +19,7 @@ namespace rats {
  *  not implemented - methods used for LP, i.e. getting reward, terminal
  *  state and reward_range()
  *
- *  TODO: should prob adjust states to pos + energy + positions of orders for learning
- *  later, is_terminal() will then simply return whether a given state has <= 0 energy
- *
- *  to adjust implementation, see manhattan/manhattan.py
+ *  to adjust implementation, see rats/manhattan/manhattan.py
  */
 class manhattan : public environment<std::tuple<std::string, std::map< std::string, float >, bool>, int> {
 
@@ -67,7 +64,7 @@ manhattan::manhattan( float capacity,
                       float cons_thd=10.0f)
 {
     using namespace py::literals;
-    python_env = py::module_::import("manhattan.manhattan").attr("ManhattanEnv")(capacity, targets, periods, init_state, cons_thd);
+    python_env = py::module_::import("manhattan").attr("ManhattanEnv")(capacity, targets, periods, init_state, cons_thd);
 }
 
 outcome_t<manhattan::state_t> manhattan::play_action(int action) {

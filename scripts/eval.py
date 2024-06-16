@@ -23,7 +23,7 @@ import asyncio
 def eval_agent_config(agent, time_limit, params, max_depth=100, gamma=0.99, exploration_constant=5):
     """
     Performs a single run of the agent on the environment
-    
+
     Returns: (collected (non-discounted) reward, collected (non-discounted) penalty, total_time, steps)
     """
     params = params.copy()
@@ -156,7 +156,7 @@ async def process_futures(futures, output_dir):
             result.to_csv(central_file, mode='a', header=False, index=False)
         else:
             result.to_csv(central_file, index=False)
-    
+
     futures.clear()
 
 
@@ -164,7 +164,7 @@ async def eval_solvers(
         agent_list, time_limits, params_grid,
         agent_repetitions=100,
         max_depth=100,
-        output_dir="/work/rats/pyrats",
+        output_dir="/work/rats/rats",
     ):
     output_dir = Path(output_dir)
 
@@ -177,7 +177,7 @@ async def eval_solvers(
     futures = []
     # Run LP solver
     for params in params_grid:
-        futures.append(eval_config('LP', None, params))    
+        futures.append(eval_config('LP', None, params))
     await process_futures(futures, output_dir)
 
     # Run agent solvers
@@ -185,10 +185,10 @@ async def eval_solvers(
         futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
         if len(futures) >= 8000 / agent_repetitions:
             await process_futures(futures, output_dir)
-    
+
     if futures:
         await process_futures(futures, output_dir)
-    
+
     print("All configurations evaluated.")
 
 
@@ -196,7 +196,7 @@ def prepare_output_dir(output_dir: Path, metadata: dict):
     output_dir.mkdir(parents=True, exist_ok=True)
     with open(output_dir / "metadata.yaml", "w") as f:
         yaml.dump(metadata, f)
-    
+
     with open(output_dir / "metadata.yaml", "r") as f:
         print("Experiment description:")
         print(f.read())

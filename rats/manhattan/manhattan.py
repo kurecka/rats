@@ -15,7 +15,7 @@ reloads = ['42431659','42430367','1061531810','42443056','1061531448','42448735'
 targets = ['42440465','42445916']
 
 
-# states - labels (json), see above 
+# states - labels (json), see above
 # actions - integers, (see variable aid in fimdp/core.py)
 
 # S - state_label, state_of_targets, decision_node
@@ -41,8 +41,8 @@ class ManhattanEnv:
     """
     def __init__(self, capacity, targets, periods, init_state="", cons_thd=10):
         self.env = AEVEnv.AEVEnv(capacity, targets, [], init_state,
-                datafile="manhattan_res/NYC.json",
-                mapfile ="manhattan_res/NYC.graphml")
+                datafile="/work/rats/rats/manhattan_res/NYC.json",
+                mapfile ="/work/rats/rats/manhattan_res/NYC.graphml")
 
         # maps int -> ( state, energy )
         self.checkpoints = dict()
@@ -72,7 +72,7 @@ class ManhattanEnv:
 
         self.history = []
 
-        # graph with latitude and longitude information 
+        # graph with latitude and longitude information
         G = nx.MultiDiGraph(nx.read_graphml(self.env.mapfile))
         self.geo_data = G.nodes(data=True)
 
@@ -127,7 +127,7 @@ class ManhattanEnv:
     def possible_actions(self, state = None):
 
         # workaround since the algorithms call this from cpp and the state gets
-        # default initialized for some reason 
+        # default initialized for some reason
         if state is None or state[0] == '':
             state_name = self.position
         else:
@@ -155,7 +155,7 @@ class ManhattanEnv:
             dist[self.state_to_name(x)] = float(action_data.distr[x])
 
         return dist
-    
+
     def decrease_ctrs(self, cons):
         # FIXME: distance is turned off for now
         # nearby = self.find_nearby_targets(self.position)
@@ -192,7 +192,7 @@ class ManhattanEnv:
                 nearby.append(target)
 
         return nearby
-        
+
 
     def play_action(self, action):
 
@@ -208,9 +208,9 @@ class ManhattanEnv:
             if action != -1:
                 # accept target
                 self.state_of_targets[self.targets[action]] = -1
-            
+
             return (self.position, self.state_of_targets, self.decision_node), 0, 0, self.is_over()
-        
+
 
         # get linked list of actions from cmdp
         state_id = self.name_to_state(self.position)
@@ -222,7 +222,7 @@ class ManhattanEnv:
         # get successor
         next_state = np.random.choice(list(action_data.distr.keys()),
                                       p=list(action_data.distr.values()))
-        
+
         # skip dummy state, record penalty
         action_iterator = self.env.consmdp.actions_for_state(next_state)
         action_data = next(islice(action_iterator, 0, None))
@@ -284,7 +284,7 @@ class ManhattanEnv:
     """
         taken from AEVEnv
 
-        call after final execution of the policy, i.e. 
+        call after final execution of the policy, i.e.
         after calling play_action() as many times as you wish
     """
 
@@ -303,13 +303,13 @@ class ManhattanEnv:
         print(self.history)
 
         def is_int(s):
-            try: 
+            try:
                 int(s)
                 return True
             except ValueError:
                 return False
 
-        
+
         # Load NYC Geodata
         G = nx.MultiDiGraph(nx.read_graphml(self.env.mapfile))
         for _, _, data in G.edges(data=True, keys=False):
@@ -344,8 +344,8 @@ class ManhattanEnv:
         min_point = [min(global_lat), min(global_lon)]
         max_point =[max(global_lat), max(global_lon)]
         m = folium.Map(zoom_start=1, tiles='cartodbpositron')
-        m.fit_bounds([min_point, max_point])        
-            
+        m.fit_bounds([min_point, max_point])
+
         # add initial state, reload states and target states
         folium.CircleMarker(location=[G.nodes[init_state]['lat'], G.nodes[init_state]['lon']],
                         radius= 3,
@@ -353,7 +353,7 @@ class ManhattanEnv:
                         color='green',
                         fill_color = 'green',
                         fill_opacity=1,
-                        fill=True).add_to(m)        
+                        fill=True).add_to(m)
 
         '''
         for node in reloads:
@@ -412,7 +412,7 @@ class ManhattanEnv:
         positions = [{
             'type': 'Feature',
             'geometry': {
-                        'type':'Point', 
+                        'type':'Point',
                         'coordinates':position['coordinates']
                         },
             'properties': {
@@ -431,7 +431,7 @@ class ManhattanEnv:
         data_lines = {'type': 'FeatureCollection', 'features': features}
         data_positions = {'type': 'FeatureCollection', 'features': positions}
         folium.plugins.TimestampedGeoJson(data_lines,  transition_time=interval,
-                               period='PT1S', add_last_point=False, date_options='mm:ss', duration=None).add_to(m)      
+                               period='PT1S', add_last_point=False, date_options='mm:ss', duration=None).add_to(m)
 
         m.save(filename)
 
@@ -443,7 +443,7 @@ if __name__ == "__main__":
     # three states next to each other for default orders
     targets = ['42455666', '42442977', '596775930']
 
-    # periods 
+    # periods
     periods = { target : 50 for target in targets }
 
     # higher period for last target

@@ -463,7 +463,7 @@ public:
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
         // If the state is not in the tree, update the predictor and expand the action node
-        action_node_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a_idx);
         if (an->children.find(s) == an->children.end()) {
             update_predictor(root.get(), a, s, r, p, t);
             full_expand_action(an);

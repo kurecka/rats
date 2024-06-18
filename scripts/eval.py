@@ -29,6 +29,7 @@ def eval_agent_config(agent, time_limit, params, max_depth=100, gamma=0.99, expl
     params = params.copy()
     env = params.pop('env')
     instance_name, instance = params.pop('instance')
+    print(instance_name, instance)
     c = params.pop('c')
 
     e = env(**instance, **params)
@@ -165,6 +166,7 @@ async def eval_solvers(
         agent_repetitions=100,
         max_depth=100,
         output_dir="/work/rats/rats",
+        run_lp=True
     ):
     output_dir = Path(output_dir)
 
@@ -176,9 +178,10 @@ async def eval_solvers(
 
     futures = []
     # Run LP solver
-    for params in params_grid:
-        futures.append(eval_config('LP', None, params))
-    await process_futures(futures, output_dir)
+    if run_lp:
+        for params in params_grid:
+            futures.append(eval_config('LP', None, params))
+        await process_futures(futures, output_dir)
 
     # Run agent solvers
     for agent, time_limit, params in iterate_configs():

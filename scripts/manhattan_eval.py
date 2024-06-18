@@ -1,4 +1,4 @@
-from eval import print_time_estimation, eval_solvers
+from eval import print_time_estimation, eval_solvers, ask_tag, prepare_output_dir
 
 from rats import envs
 import ray
@@ -27,9 +27,10 @@ if __name__ == "__main__":
     time_limits = [50, 100]#, 25, 50]
     dataset_path = '/work/rats/scripts/manhattan_dataset/test_dataset.txt'
     instances = ManhattanDataset(dataset_path).get_maps()
+    print(instances)
 
     grid_desc = {
-        'env': [envs.Manhattan ],
+        'env': [ envs.Manhattan ],
         'c': [1.0, 2.0, 4.0, 6.0, 8.0],
         'capacity' : [ 1000, 5000 ],
         'cons_thd' : [ 5, 10, 20 ],
@@ -56,6 +57,7 @@ if __name__ == "__main__":
         'dataset_path': dataset_path,
         'num_instances': len(instances),
     }
+    prepare_output_dir(output_dir, metadata)
     print_time_estimation(agents, agent_repetitions, time_limits, params_grid, max_depth)
 
     asyncio.run(eval_solvers(
@@ -64,5 +66,6 @@ if __name__ == "__main__":
         params_grid=params_grid,
         agent_repetitions=agent_repetitions,
         output_dir=output_dir,
+        run_lp=False
     ))
     ray.shutdown()

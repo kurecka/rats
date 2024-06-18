@@ -34,5 +34,6 @@ class ManhattanDataset:
         return names, maps
 
 
+    # todo - move periods into the txt file, or adjust somehow
     def get_maps(self):
-        return list(zip(self.names, [{'map': map} for map in self.maps]))
+        return list(zip(self.names, [{ "targets" : map['targets'], "init_state" : map['init_state'], "periods" : { target : 50 for target in map['targets'] }} for map in self.maps]))

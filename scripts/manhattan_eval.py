@@ -1,4 +1,4 @@
-from eval import *
+from eval import print_time_estimation, eval_solvers
 
 from rats import envs
 import ray
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     instances = ManhattanDataset(dataset_path).get_maps()
 
     grid_desc = {
-        'env': [envs.Manhattan, envs.ContHallway],
+        'env': [envs.Manhattan ],
         'c': [1.0, 2.0, 4.0, 6.0, 8.0],
         'capacity' : [ 1000, 5000 ],
         'cons_thd' : [ 5, 10, 20 ],

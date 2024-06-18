@@ -1,9 +1,9 @@
-from rats import agents
-from rats import envs
+import agents
+import envs
 
-from _rats import LP_solver, Manhattan
+from rats import Hallway, LP_solver, Manhattan
 import numpy as np
-from rats.utils import set_log_level
+from utils import set_log_level
 import time
 
 set_log_level("trace")
@@ -76,6 +76,11 @@ init_state = '42429690'
 # three states next to each other for default orders
 targets = ['42455666', '42442977', '596775930']
 
+targets2 = ['42443056','1061531448','42448735']
+targets3 = ['42446036','42442528','42440966']
+targets4 = [ '42440966','1061531802','42455666']
+
+targets =  targets4
 
 # periods 
 periods = { target : 30 for target in targets }
@@ -85,11 +90,15 @@ periods[targets[-1]] = 100
 print(periods)
 
 # default manhattan data
-# reloads = ['42431659','42430367','1061531810','42443056','1061531448','42448735','596775930','42435275','42429690','42446036','42442528','42440966','42431186','42438503','42442977',
-# '42440966','1061531802','42455666']
+reloads = ['42431659','42430367','1061531810',
+           '42443056','1061531448','42448735',
+           '596775930','42435275','42429690',
+            '42446036','42442528','42440966',
+            '42431186','42438503','42442977', 
+            '42440966','1061531802','42455666']
 
 # targets = ['42440465','42445916']
-e = envs.Manhattan(1000, targets, periods, init_state, cons_thd=10)
+e = envs.Manhattan(10, targets, periods, init_state, cons_thd=10, radius=5.0)
 
 total_rew = 0
 total_pen = 0
@@ -144,7 +153,7 @@ for i in range(1):
 
     a = agents.ParetoUCT(
         h,
-        max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=1.0, gamma=0.95,
+        max_depth=500, num_sim=1000, sim_time_limit=1000, risk_thd=10.0, gamma=0.95,
         exploration_constant=5
     )
 

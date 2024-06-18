@@ -33,11 +33,12 @@ private:
 public:
     ~manhattan() override = default;
 
-    manhattan(  float capacity, 
-                const std::vector<std::string> &targets,
-                const std::map<std::string, float> &periods,
+    manhattan(  const std::vector<std::string> &targets,
                 std::string init_state,
-                float cons_thd);
+                const std::map<std::string, float> &periods,
+                float capacity,
+                float cons_thd,
+                float radius );
 
     std::string name() const override;
 
@@ -60,14 +61,15 @@ public:
     void reset() override;
 };
 
-manhattan::manhattan( float capacity, 
-                      const std::vector<std::string> &targets,
+manhattan::manhattan( const std::vector<std::string> &targets,
+                      std::string init_state,
                       const std::map<std::string, float> &periods,
-                      std::string init_state="",
-                      float cons_thd=10.0f)
+                      float capacity,
+                      float cons_thd=10.0f,
+                      float radius=2.0f )
 {
     using namespace py::literals;
-    python_env = py::module_::import("manhattan.manhattan").attr("ManhattanEnv")(capacity, targets, periods, init_state, cons_thd);
+    python_env = py::module_::import("manhattan").attr("ManhattanEnv")(targets, init_state, periods, capacity, cons_thd, radius);
 }
 
 outcome_t<manhattan::state_t> manhattan::play_action(int action) {

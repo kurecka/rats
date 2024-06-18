@@ -24,8 +24,8 @@ if __name__ == "__main__":
     agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
     agent_repetitions = 100
     max_depth = 300
-    time_limits = [5, 10]#, 25, 50]
-    dataset_path = 'manhattan_dataset/test_dataset.txt'
+    time_limits = [50, 100]#, 25, 50]
+    dataset_path = '/work/rats/scripts/manhattan_dataset/test_dataset.txt'
     instances = ManhattanDataset(dataset_path).get_maps()
 
     grid_desc = {

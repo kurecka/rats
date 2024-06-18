@@ -1,12 +1,11 @@
-import agents
-import envs
 
-from rats import Hallway, LP_solver, Manhattan
+from rats import envs
+from rats import agents
+from rats import utils
 import numpy as np
-from utils import set_log_level
 import time
 
-set_log_level("trace")
+utils.set_log_level("trace")
 
 map1 = """
 ########

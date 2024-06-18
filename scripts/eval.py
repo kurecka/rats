@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 from rats import envs
-import ray
 from rats import agents
+import ray
 import pprint
 import yaml
 import json
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     agent_repetitions = 100
     max_depth = 100
     time_limits = [5, 10]#, 25, 50]
-    dataset_path = 'gridworld_generator/HW_SMALL.txt'
+    dataset_path = '/work/rats/scripts/gridworld_generator/HW_SMALL.txt'
     instances = GridWorldDataset(dataset_path).get_maps()[:2]
     grid_desc = {
         'env': [envs.Hallway, envs.ContHallway],

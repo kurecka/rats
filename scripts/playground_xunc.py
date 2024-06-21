@@ -79,8 +79,6 @@ targets2 = ['42443056','1061531448','42448735']
 targets3 = ['42446036','42442528','42440966']
 targets4 = [ '42440966','1061531802','42455666']
 
-targets =  targets4
-
 # periods 
 periods = { target : 30 for target in targets }
 
@@ -97,7 +95,9 @@ reloads = ['42431659','42430367','1061531810',
             '42440966','1061531802','42455666']
 
 # targets = ['42440465','42445916']
-e = envs.Manhattan(10, targets, periods, init_state, cons_thd=10, radius=5.0)
+
+capacity = 1000
+e = envs.Manhattan(targets, init_state, periods, capacity, cons_thd=10.0, radius=5.0)
 
 total_rew = 0
 total_pen = 0
@@ -133,14 +133,6 @@ sr = 0
 sp = 0
 
 e.reset()
-e.play_action(0)
-print(e.current_state())
-e.play_action(0)
-print(e.current_state())
-e.play_action(0)
-print(e.current_state())
-print(e.possible_actions(e.current_state()))
-print("posrany", e.current_state())
 
 for i in range(1):
     # e = envs.InvestorEnv(2, 20)
@@ -150,9 +142,9 @@ for i in range(1):
     print(e.current_state())
     print(h.get_current_state())
 
-    a = agents.ParetoUCT(
+    a = agents.RAMCP(
         h,
-        max_depth=500, num_sim=1000, sim_time_limit=1000, risk_thd=10.0, gamma=0.95,
+        max_depth=500, num_sim=1000, sim_time_limit=400, risk_thd=10.0, gamma=0.95,
         exploration_constant=5
     )
 

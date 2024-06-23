@@ -20,8 +20,8 @@ provider:
         #- erinys01.fi.muni.cz
          - erinys03.fi.muni.cz
          - erinys04.fi.muni.cz
-         #  - erinys05.fi.muni.cz
-         #  - erinys06.fi.muni.cz
+         - erinys05.fi.muni.cz
+         - erinys06.fi.muni.cz
 
 auth:
     ssh_user: ${user:}

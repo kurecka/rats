@@ -35,8 +35,10 @@ class ManhattanEnv:
 
         capacity - the consumption capacity of the agent. Picking a direction results in a stochastic energy consumption
                    taken from the original AEVEnv benchmark. See https://arxiv.org/abs/2005.07227 - section 7.1.
-
                    This consumption is then subtracted from the agents capacity as well as from the periods.
+                   Once the agent reaches an energy level of zero, the
+                   environment terminates, passing capacity = 0 results in a
+                   non-terminating environment
 
         cons_thd - the delay threshold on the orders, each cons_thd fuel consumed during an active order incurs a penalty of 1
                    on the agent.
@@ -62,12 +64,11 @@ class ManhattanEnv:
         # last known gps position, used when evaluating distance from targets
         self.last_gps = None
 
+        self.energy = capacity
         self.capacity = capacity
 
         self.cons_thd = cons_thd
         self.order_delay = 0
-
-        self.energy = capacity
 
         self.targets = targets
         self.period = period
@@ -150,7 +151,6 @@ class ManhattanEnv:
         return self.position, self.state_of_targets, self.decision_node
 
     def possible_actions(self, state = None):
-
         # if called with default init state tuple (from c++) or None,
         # get actions for current position
         if state is None or state[0] == '':
@@ -169,20 +169,20 @@ class ManhattanEnv:
 
     """
          decreases counters on orders by _cons_, any orders that reach zero and
-         are not sufficiently close (< self.radius), are refreshed to their period.
+         are not sufficiently close (<= self.radius), are refreshed to the
+         period.
 
          returns true if a customer is sufficiently close and his order can be accepted,
          this moves the environment into a decision_node dummy state next step.
     """
     def decrease_ctrs(self, cons):
         orders_available = False
-        for t in self.targets:
 
+        for t in self.targets:
             if self.target_active(t):
                 continue
 
             self.state_of_targets[t] -= cons
-
             if self.state_of_targets[t] <= 0:
                 dist = self.distance_to_target(t)
                 new_value = self.period
@@ -231,10 +231,7 @@ class ManhattanEnv:
 
 
     def play_action(self, action):
-
-        self.history.append( self.position )
-
-        # if in decision node, handle (potential) acceptance of an order
+        # if in decision node, handle (potential) orders
         if self.decision_node:
             self.decision_node = False
 
@@ -247,7 +244,9 @@ class ManhattanEnv:
             return (self.position, self.state_of_targets, self.decision_node), 0, 0, self.is_over()
 
         # otherwise, proceed by moving in the underlying cmdp, recording
-        # reward/penalty and adjusting periods of orders
+        # reward/penalty and adjusting periods of orders, record the state into
+        # history as well
+        self.history.append( self.position )
 
         # get linked list of actions from cmdp
         state_id = self.name_to_state(self.position)
@@ -276,9 +275,7 @@ class ManhattanEnv:
             self.order_delay += action_data.cons
 
         # decrease counters for targets
-        # TODO: maybe clip the consumption to a predefined range like [1, 2, 3]
         self.decision_node = self.decrease_ctrs(action_data.cons)
-
 
         penalty = 0
         # penalize for delay
@@ -318,16 +315,14 @@ class ManhattanEnv:
         self.position = self.init_state
         self.state_of_targets = { t : self.period for t in self.targets }
         self.decision_node = False
-
+        
         self.checkpoints.clear()
-
         self.history = []
-        self.history_recording = False
 
     """
         Visualizes the positions in self.history on the map of manhattan.
+        Taken directly from AEVEnv
     """
-
     # interval signals number of frames between each animation plot
     def animate_simulation(self, interval=100, filename="map.html"):
         """

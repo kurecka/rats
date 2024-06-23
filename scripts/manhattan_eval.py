@@ -32,7 +32,7 @@ if __name__ == "__main__":
         'env': [ envs.Manhattan ],
         'c': [1.0, 5.0, 10.0],
         'capacity' : [ 3000, 5000 ],
-        'periods' : [ [ 30, 30, 30], [ 50, 30, 100 ], [ 30, 100, 30 ] ],
+        'period' : [ 30, 50, 100 ],
         'cons_thd' : [ 50, 100, 200 ],
         'radius' : [ 0.25, 0.5, 1.0, 2.0 ],
         'instance': instances,
@@ -40,9 +40,6 @@ if __name__ == "__main__":
 
     params_tuples = product(*[grid_desc[key] for key in grid_desc])
     params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
-    for params in params_grid:
-        # adjust periods to be a map of targets -> number
-        params['periods'] = dict(zip(params['instance'][1]['targets'], params['periods']))
 
     tag = ask_tag()
     if tag:

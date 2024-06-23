@@ -126,9 +126,6 @@ def aggregate_results(results):
 
     aggregate_by += static_cols
 
-    # handle nonhashable arguments (periods dict in manhattan)
-    results[static_cols] = results[static_cols].astype(str)
-
     aggregated = results.groupby(aggregate_by).agg(aggrgate_on).reset_index()
     aggregated['repetitions'] = results.groupby(aggregate_by).size().values
     assert results.groupby(aggregate_by).ngroups == 1, "An aggregated group contains multiple configurations!"

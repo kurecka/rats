@@ -35,4 +35,4 @@ class ManhattanDataset:
 
 
     def get_maps(self):
-        return list(zip(self.names, [{'map': map} for map in self.maps]))
+        return list(zip(self.names, [{"targets" : map['targets'], "init_state" : map['init_state']} for map in self.maps]))

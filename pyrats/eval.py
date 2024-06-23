@@ -1,18 +1,20 @@
-import envs
+#!/usr/bin/python3
+
+from rats import envs
+from rats import agents
 import ray
-import agents
 import pprint
 import yaml
 import json
 
-from rats import Hallway, LP_solver
+from _rats import LP_solver
 import time
 import numpy as np
 from multiprocessing import Pool
 from pathlib import Path
 from itertools import product
 import pandas as pd
-from utils import set_log_level
+from rats.utils import set_log_level
 from gridworld_generator.dataset import GridWorldDataset
 import asyncio
 
@@ -21,7 +23,7 @@ import asyncio
 def eval_agent_config(agent, time_limit, params, max_depth=100, gamma=0.99, exploration_constant=5):
     """
     Performs a single run of the agent on the environment
-    
+
     Returns: (collected (non-discounted) reward, collected (non-discounted) penalty, total_time, steps)
     """
     params = params.copy()
@@ -113,12 +115,23 @@ def aggregate_results(results):
     Aggregates results from multiple runs of the same configuration
     """
     results = pd.DataFrame(results)
-    aggregated = results.groupby(['agent', 'time_limit', 'c', 'env', 'instance']).agg({
+    aggregate_by = ['agent', 'time_limit', 'c', 'env', 'instance']
+    aggrgate_on = {
         'reward': ['mean', 'std'],
         'penalty': ['mean', 'std'],
         'time': ['mean', 'std', 'min', 'max'],
         'steps': ['mean', 'std', 'min', 'max'],
-    }).reset_index()
+    }
+    static_cols = [col for col in results.columns if col not in aggregate_by and col not in aggrgate_on]
+
+    aggregate_by += static_cols
+
+    # handle nonhashable arguments (periods dict in manhattan)
+    results[static_cols] = results[static_cols].astype(str)
+
+    aggregated = results.groupby(aggregate_by).agg(aggrgate_on).reset_index()
+    aggregated['repetitions'] = results.groupby(aggregate_by).size().values
+    assert results.groupby(aggregate_by).ngroups == 1, "An aggregated group contains multiple configurations!"
 
     aggregated.columns = ['_'.join(c for c in col if c).strip() for col in aggregated.columns.values]
     return aggregated
@@ -148,7 +161,7 @@ async def process_futures(futures, output_dir):
             result.to_csv(central_file, mode='a', header=False, index=False)
         else:
             result.to_csv(central_file, index=False)
-    
+
     futures.clear()
 
 
@@ -156,7 +169,8 @@ async def eval_solvers(
         agent_list, time_limits, params_grid,
         agent_repetitions=100,
         max_depth=100,
-        output_dir="/work/rats/pyrats",
+        output_dir="/work/rats/rats",
+        run_lp=True
     ):
     output_dir = Path(output_dir)
 
@@ -168,9 +182,10 @@ async def eval_solvers(
 
     futures = []
     # Run LP solver
-    for params in params_grid:
-        futures.append(eval_config('LP', None, params))    
-    await process_futures(futures, output_dir)
+    if run_lp:
+        for params in params_grid:
+            futures.append(eval_config('LP', None, params))
+        await process_futures(futures, output_dir)
 
     # Run agent solvers
     for agent, time_limit, params in iterate_configs():
@@ -178,12 +193,17 @@ async def eval_solvers(
         if len(futures) >= 8000 / agent_repetitions:
             await process_futures(futures, output_dir)
 
+    if futures:
+        await process_futures(futures, output_dir)
+
+    print("All configurations evaluated.")
+
 
 def prepare_output_dir(output_dir: Path, metadata: dict):
     output_dir.mkdir(parents=True, exist_ok=True)
     with open(output_dir / "metadata.yaml", "w") as f:
         yaml.dump(metadata, f)
-    
+
     with open(output_dir / "metadata.yaml", "r") as f:
         print("Experiment description:")
         print(f.read())
@@ -208,8 +228,8 @@ if __name__ == "__main__":
     agent_repetitions = 100
     max_depth = 100
     time_limits = [5, 10]#, 25, 50]
-    dataset_path = 'gridworld_generator/HW_SMALL.txt'
-    instances = GridWorldDataset(dataset_path).get_maps()
+    dataset_path = '/work/rats/scripts/gridworld_generator/HW_SMALL.txt'
+    instances = GridWorldDataset(dataset_path).get_maps()[:2]
     grid_desc = {
         'env': [envs.Hallway, envs.ContHallway],
         'c': [0, 0.1, 0.2, 0.35, 0.5],

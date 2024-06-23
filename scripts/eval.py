@@ -27,6 +27,7 @@ def eval_agent_config(agent, time_limit, params, max_depth=100, gamma=0.99, expl
     Returns: (collected (non-discounted) reward, collected (non-discounted) penalty, total_time, steps)
     """
     params = params.copy()
+    print(params)
     env = params.pop('env')
     instance_name, instance = params.pop('instance')
     print(instance_name, instance)
@@ -124,7 +125,12 @@ def aggregate_results(results):
         'steps': ['mean', 'std', 'min', 'max'],
     }
     static_cols = [col for col in results.columns if col not in aggregate_by and col not in aggrgate_on]
+
     aggregate_by += static_cols
+
+    # handle nonhashable arguments (periods dict in manhattan)
+    results[static_cols] = results[static_cols].astype(str)
+    
     aggregated = results.groupby(aggregate_by).agg(aggrgate_on).reset_index()
     aggregated['repetitions'] = results.groupby(aggregate_by).size().values
     assert results.groupby(aggregate_by).ngroups == 1, "An aggregated group contains multiple configurations!"

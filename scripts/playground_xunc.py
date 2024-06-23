@@ -73,17 +73,19 @@ final_13 = """
 init_state = '42429690'
 
 # three states next to each other for default orders
-targets = ['42455666', '42442977', '596775930']
+# targets = ['42455666', '42442977', '596775930']
+targets = ['42440966','1061531802','42455666']
 
 targets2 = ['42443056','1061531448','42448735']
 targets3 = ['42446036','42442528','42440966']
 targets4 = [ '42440966','1061531802','42455666']
 
+
 # periods 
 periods = { target : 30 for target in targets }
 
 # higher period for last target
-periods[targets[-1]] = 100
+# periods[targets[-1]] = 100
 print(periods)
 
 # default manhattan data
@@ -96,8 +98,9 @@ reloads = ['42431659','42430367','1061531810',
 
 # targets = ['42440465','42445916']
 
+
 capacity = 1000
-e = envs.Manhattan(targets, init_state, periods, capacity, cons_thd=10.0, radius=5.0)
+e = envs.Manhattan(targets, init_state, periods, capacity, cons_thd=10.0, radius=0.5)
 
 total_rew = 0
 total_pen = 0
@@ -142,9 +145,9 @@ for i in range(1):
     print(e.current_state())
     print(h.get_current_state())
 
-    a = agents.RAMCP(
+    a = agents.ParetoUCT(
         h,
-        max_depth=500, num_sim=1000, sim_time_limit=400, risk_thd=10.0, gamma=0.95,
+        max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=10.0, gamma=0.999,
         exploration_constant=5
     )
 
@@ -166,6 +169,6 @@ for i in range(1):
     sp += h.get_penalty()
     print(f'{i}: {r} {p}')
     print(a.get_graphviz())
-    e.animate_simulation(100, "ahoj.html")
+    e.animate_simulation(100, "/work/rats/outputs/ahoj.html")
 
 

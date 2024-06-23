@@ -3,7 +3,6 @@ Name ThreeClose
 init_state = 42429690
 targets = 42455666,42442977,596775930
 
-Instance 2
 Name TwoCarnegieOneColumbus
 init_state = 42429690
 targets = 42443056,1061531448,42448735

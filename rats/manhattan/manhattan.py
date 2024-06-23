@@ -31,8 +31,7 @@ class ManhattanEnv:
 
         init_state - initial state of the agent
 
-        periods - the cooldown periods of each customer. Whenever this countdown reaches 0 for a customer
-                  the agent may accept his order (provided the agent is not too far away)
+        period - the cooldown on each customer order.
 
         capacity - the consumption capacity of the agent. Picking a direction results in a stochastic energy consumption
                    taken from the original AEVEnv benchmark. See https://arxiv.org/abs/2005.07227 - section 7.1.
@@ -44,7 +43,7 @@ class ManhattanEnv:
 
         radius - the distance limit on accepting orders in kilometers
     """
-    def __init__(self, targets, init_state, periods, capacity, cons_thd=10.0, radius=2.0):
+    def __init__(self, targets, init_state, period, capacity, cons_thd=10.0, radius=2.0):
         self.env = AEVEnv.AEVEnv(capacity, targets, [], init_state,
                 datafile="/work/rats/rats/manhattan_res/NYC.json",
                 mapfile ="/work/rats/rats/manhattan_res/NYC.graphml")
@@ -71,7 +70,7 @@ class ManhattanEnv:
         self.energy = capacity
 
         self.targets = targets
-        self.periods = periods
+        self.period = period
         self.radius = radius
 
         # decision node -> special part of state (flag) - signals that orders
@@ -79,7 +78,7 @@ class ManhattanEnv:
         self.decision_node = False
 
         # ctr for each target, -1 is active target (accepted order)
-        self.state_of_targets = { t : self.periods[t] for t in self.targets }
+        self.state_of_targets = { t : period for t in self.targets }
 
         # history of positions, used to animate the trajectory of the agent
         self.history = []
@@ -186,7 +185,7 @@ class ManhattanEnv:
 
             if self.state_of_targets[t] <= 0:
                 dist = self.distance_to_target(t)
-                new_value = self.periods[t]
+                new_value = se
 
                 if dist <= self.radius:
                     new_value = 0
@@ -200,7 +199,7 @@ class ManhattanEnv:
     def reload_ctrs(self):
         for t in self.targets:
             if self.state_of_targets[t] == 0:
-                self.state_of_targets[t] = self.periods[t]
+                self.state_of_targets[t] = self.period
 
 
     def distance_to_target(self, target):
@@ -291,7 +290,7 @@ class ManhattanEnv:
         reward = 0
         if (self.position in self.targets) and (self.state_of_targets[self.position] == -1):
             reward = 1
-            self.state_of_targets[self.position] = self.periods[self.position]
+            self.state_of_targets[self.position] = self.period
 
             # if this was the only order, set order delay back to zero
             if not self.currently_delivering():
@@ -317,7 +316,7 @@ class ManhattanEnv:
     def reset(self):
         self.energy = self.capacity
         self.position = self.init_state
-        self.state_of_targets = { t : self.periods[t] for t in self.targets }
+        self.state_of_targets = { t : self.period for t in self.targets }
         self.decision_node = False
 
         self.checkpoints.clear()

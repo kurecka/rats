@@ -35,7 +35,7 @@ public:
 
     manhattan(  const std::vector<std::string> &targets,
                 std::string init_state,
-                const std::map<std::string, float> &periods,
+                float period,
                 float capacity,
                 float cons_thd,
                 float radius );
@@ -63,13 +63,13 @@ public:
 
 manhattan::manhattan( const std::vector<std::string> &targets,
                       std::string init_state,
-                      const std::map<std::string, float> &periods,
+                      float period,
                       float capacity,
                       float cons_thd=10.0f,
                       float radius=2.0f )
 {
     using namespace py::literals;
-    python_env = py::module_::import("manhattan").attr("ManhattanEnv")(targets, init_state, periods, capacity, cons_thd, radius);
+    python_env = py::module_::import("manhattan").attr("ManhattanEnv")(targets, init_state, period, capacity, cons_thd, radius);
 }
 
 outcome_t<manhattan::state_t> manhattan::play_action(int action) {

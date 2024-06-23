@@ -440,7 +440,7 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
-            spdlog::debug("Simulations run: {}", i);
+   	    spdlog::debug("Number of simulations: {}", i);
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);

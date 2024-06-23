@@ -3,7 +3,7 @@ import copy
 from fimdpenv import AEVEnv
 import folium
 from itertools import islice
-from math import asin, cos, sqrt, pi
+from math import asin, cos, sqrt, pi, inf
 
 import numpy as np
 import networkx as nx
@@ -209,7 +209,7 @@ class ManhattanEnv:
 
             # check if last known gps position is initialized
             if self.last_gps is None:
-                return []
+                return inf
 
             # use last known gps position
             else:
@@ -281,10 +281,10 @@ class ManhattanEnv:
 
 
         penalty = 0
-        # penalize for delay.
+        # penalize for delay
         if self.order_delay > self.cons_thd:
             penalty = 1
-            self.order_delay -= self.cons_thd
+            self.order_delay = 0
 
         # reward if order is delivered
         reward = 0

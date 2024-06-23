@@ -3,6 +3,7 @@ Name ThreeClose
 init_state = 42429690
 targets = 42455666,42442977,596775930
 
+Instance 2
 Name TwoCarnegieOneColumbus
 init_state = 42429690
 targets = 42443056,1061531448,42448735
@@ -16,3 +17,9 @@ Instance 4
 Name Bloomingdale
 init_state = 42429690
 targets = 42440966,1061531802,42455666
+
+Instance 5
+Name TenTargets
+init_state = 42434894
+targets = 42443056, 42448735, 42446036, 42438503, 42429690,
+	  42442977, 42431659, 42455666, 596775930, 42430367

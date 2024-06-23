@@ -185,7 +185,7 @@ class ManhattanEnv:
 
             if self.state_of_targets[t] <= 0:
                 dist = self.distance_to_target(t)
-                new_value = se
+                new_value = self.period
 
                 if dist <= self.radius:
                     new_value = 0

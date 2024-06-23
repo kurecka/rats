@@ -81,12 +81,7 @@ targets3 = ['42446036','42442528','42440966']
 targets4 = [ '42440966','1061531802','42455666']
 
 
-# periods 
-periods = { target : 30 for target in targets }
-
-# higher period for last target
-# periods[targets[-1]] = 100
-print(periods)
+period = 300
 
 # default manhattan data
 reloads = ['42431659','42430367','1061531810',
@@ -100,7 +95,7 @@ reloads = ['42431659','42430367','1061531810',
 
 
 capacity = 1000
-e = envs.Manhattan(targets, init_state, periods, capacity, cons_thd=10.0, radius=0.5)
+e = envs.Manhattan(targets, init_state, period, capacity, cons_thd=10.0, radius=0.5)
 
 total_rew = 0
 total_pen = 0

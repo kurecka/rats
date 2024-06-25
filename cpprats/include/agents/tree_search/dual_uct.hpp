@@ -242,12 +242,13 @@ public:
             // Use RAMCP LP to decide the next action - helps to maintain feasibility
 
             // Run the LP solver to get the best safe action according to the sampled tree
-            A a = solver.get_action(root.get(), common_data.risk_thd);
+            size_t a_idx = solver.get_action(root.get(), common_data.risk_thd);
+	    A a = root->actions[a_idx];
             auto [s, r, p, t] = common_data.handler.play_action(a);
             spdlog::debug("Play action: {}", to_string(a));
             spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
-            action_node_t* an = root->get_child(a);
+            action_node_t* an = root->get_child(a_idx);
             // If the state is not in the tree, add it
             if (an->children.find(s) == an->children.end()) {
                 update_predictor(root.get(), a, s, r, p, t);

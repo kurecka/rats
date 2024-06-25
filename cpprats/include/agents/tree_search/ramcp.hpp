@@ -174,7 +174,8 @@ public:
         // Run LP solver to get the best safe action according to the sampled tree.
         // The choice of the action is stochastic to balance penalty and reward. The solver remembers
         // the alternative action and other relevant information to update the risk threshold.
-        A a = solver.get_action(root.get(), risk_thd);
+        size_t a_idx = solver.get_action(root.get(), risk_thd);
+	A a = root->actions[a_idx];
 
         // Plot the tree
         if (graphviz_depth > 0) {
@@ -187,7 +188,7 @@ public:
         spdlog::debug(" Result: s={}, r={}, p={}", to_string(s), r, p);
 
 
-        action_node_t* an = root->get_child(a);
+        action_node_t* an = root->get_child(a_idx);
         // If the state is not in the tree, add it
         if (an->children.find(s) == an->children.end()) {
             update_predictor(root.get(), a, s, r, p, t);

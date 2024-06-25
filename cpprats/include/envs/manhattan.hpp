@@ -19,7 +19,10 @@ namespace rats {
  *  not implemented - methods used for LP, i.e. getting reward, terminal
  *  state and reward_range()
  *
- *  to adjust implementation, see rats/manhattan/manhattan.py
+ *  TODO: should prob adjust states to pos + energy + positions of orders for learning
+ *  later, is_terminal() will then simply return whether a given state has <= 0 energy
+ *
+ *  to adjust implementation, see manhattan/manhattan.py
  */
 class manhattan : public environment<std::tuple<std::string, std::map< std::string, float >, bool>, int> {
 
@@ -30,11 +33,12 @@ private:
 public:
     ~manhattan() override = default;
 
-    manhattan(  float capacity, 
-                const std::vector<std::string> &targets,
-                const std::map<std::string, float> &periods,
+    manhattan(  const std::vector<std::string> &targets,
                 std::string init_state,
-                float cons_thd);
+                float period,
+                float capacity,
+                float cons_thd,
+                float radius );
 
     std::string name() const override;
 
@@ -57,14 +61,15 @@ public:
     void reset() override;
 };
 
-manhattan::manhattan( float capacity, 
-                      const std::vector<std::string> &targets,
-                      const std::map<std::string, float> &periods,
-                      std::string init_state="",
-                      float cons_thd=10.0f)
+manhattan::manhattan( const std::vector<std::string> &targets,
+                      std::string init_state,
+                      float period,
+                      float capacity,
+                      float cons_thd=10.0f,
+                      float radius=2.0f )
 {
     using namespace py::literals;
-    python_env = py::module_::import("manhattan").attr("ManhattanEnv")(capacity, targets, periods, init_state, cons_thd);
+    python_env = py::module_::import("manhattan").attr("ManhattanEnv")(targets, init_state, period, capacity, cons_thd, radius);
 }
 
 outcome_t<manhattan::state_t> manhattan::play_action(int action) {

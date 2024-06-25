@@ -1,12 +1,11 @@
-from rats import agents
-from rats import envs
 
-from _rats import LP_solver, Manhattan
+from rats import envs
+from rats import agents
+from rats import utils
 import numpy as np
-from rats.utils import set_log_level
 import time
 
-set_log_level("trace")
+utils.set_log_level("trace")
 
 map1 = """
 ########
@@ -74,22 +73,31 @@ final_13 = """
 init_state = '42429690'
 
 # three states next to each other for default orders
-targets = ['42455666', '42442977', '596775930']
+# targets = ['42455666', '42442977', '596775930']
+targets1 = ['42440966','1061531802','42455666']
 
+targets2 = ['42443056','1061531448','42448735']
+targets3 = ['42446036','42442528','42440966']
+targets4 = [ '42440966','1061531802','42455666']
 
-# periods 
-periods = { target : 30 for target in targets }
-
-# higher period for last target
-periods[targets[-1]] = 100
-print(periods)
 
 # default manhattan data
-# reloads = ['42431659','42430367','1061531810','42443056','1061531448','42448735','596775930','42435275','42429690','42446036','42442528','42440966','42431186','42438503','42442977',
-# '42440966','1061531802','42455666']
+reloads = ['42431659','42430367','1061531810',
+           '42443056','1061531448','42448735',
+           '596775930','42435275','42429690',
+            '42446036','42442528','42440966',
+            '42431186','42438503','42442977', 
+            '42440966','1061531802','42455666']
 
 # targets = ['42440465','42445916']
-e = envs.Manhattan(1000, targets, periods, init_state, cons_thd=10)
+init_state = "42434894"
+targets = ["42443056", "42448735", "42446036", "42438503", "42429690",
+	  "42442977", "42431659", "42455666","596775930", "42430367"]
+
+period = 50
+
+capacity = 10000
+e = envs.Manhattan(targets, init_state, period, capacity, cons_thd=50.0, radius=1.0)
 
 total_rew = 0
 total_pen = 0
@@ -125,14 +133,6 @@ sr = 0
 sp = 0
 
 e.reset()
-e.play_action(0)
-print(e.current_state())
-e.play_action(0)
-print(e.current_state())
-e.play_action(0)
-print(e.current_state())
-print(e.possible_actions(e.current_state()))
-print("posrany", e.current_state())
 
 for i in range(1):
     # e = envs.InvestorEnv(2, 20)
@@ -144,7 +144,7 @@ for i in range(1):
 
     a = agents.ParetoUCT(
         h,
-        max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=1.0, gamma=0.95,
+        max_depth=500, num_sim=1000, sim_time_limit=10000, risk_thd=10.0, gamma=0.999,
         exploration_constant=5
     )
 
@@ -166,6 +166,6 @@ for i in range(1):
     sp += h.get_penalty()
     print(f'{i}: {r} {p}')
     print(a.get_graphviz())
-    e.animate_simulation(100, "ahoj.html")
+    e.animate_simulation(100, "/work/rats/outputs/ahoj.html")
 
 

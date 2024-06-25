@@ -116,7 +116,9 @@ def aggregate_results(results):
         'steps': ['mean', 'std', 'min', 'max'],
     }
     static_cols = [col for col in results.columns if col not in aggregate_by and col not in aggrgate_on]
+
     aggregate_by += static_cols
+
     aggregated = results.groupby(aggregate_by).agg(aggrgate_on).reset_index()
     aggregated['repetitions'] = results.groupby(aggregate_by).size().values
     assert results.groupby(aggregate_by).ngroups == 1, "An aggregated group contains multiple configurations!"
@@ -158,6 +160,7 @@ async def eval_solvers(
         agent_repetitions=100,
         max_depth=100,
         output_dir="/work/rats/rats",
+        run_lp=True
     ):
     output_dir = Path(output_dir)
 
@@ -169,9 +172,10 @@ async def eval_solvers(
 
     futures = []
     # Run LP solver
-    for params in params_grid:
-        futures.append(eval_config('LP', None, params))
-    await process_futures(futures, output_dir)
+    if run_lp:
+        for params in params_grid:
+            futures.append(eval_config('LP', None, params))
+        await process_futures(futures, output_dir)
 
     # Run agent solvers
     num_configs = sum(1 for _ in iterate_configs())
@@ -220,6 +224,7 @@ def desc2grid(grid_desc):
     else:
         params_tuples = product(*[grid_desc[key] for key in grid_desc])
         return [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
+
 
 def desc2metadata(grid_desc):
     if isinstance(grid_desc, list):

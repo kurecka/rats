@@ -7,6 +7,7 @@ docker:
     run_options:   # Extra options to pass into "docker run"
         - -v /var/data/${auth.ssh_user}/rats/logs:/work/rats/logs
         - -v /var/data/${auth.ssh_user}/rats/rats:/work/rats/rats
+        - -v /var/data/${auth.ssh_user}/rats/scripts:/work/rats/scripts
         - -v /var/data/${auth.ssh_user}/rats/cpprats:/work/rats/cpprats
         - -v /var/data/${auth.ssh_user}/rats/outputs:/work/rats/outputs
         - -v /var/data/${auth.ssh_user}/rats/scripts:/work/rats/scripts
@@ -16,11 +17,11 @@ provider:
     type: local
     head_ip: erinys02.fi.muni.cz
     worker_ips:
-        - erinys01.fi.muni.cz
-        # - erinys03.fi.muni.cz
-        # - erinys04.fi.muni.cz
-        # - erinys05.fi.muni.cz
-        # - erinys06.fi.muni.cz
+        #- erinys01.fi.muni.cz
+         - erinys03.fi.muni.cz
+         - erinys04.fi.muni.cz
+         - erinys05.fi.muni.cz
+         - erinys06.fi.muni.cz
 
 auth:
     ssh_user: ${user:}
@@ -30,6 +31,7 @@ auth:
 sync_head_to_workers: 
     - /var/data/${auth.ssh_user}/rats/build/
     - /var/data/${auth.ssh_user}/rats/rats/
+    - /var/data/${auth.ssh_user}/rats/scripts/
 
 head_start_ray_commands:
     - ray stop

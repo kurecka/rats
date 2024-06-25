@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'raylite=raylite.__main__:main',
+            'raylite = raylite.__main__:main',
         ],
     },
     install_requires=[

@@ -191,6 +191,7 @@ struct descend_callback {
                 // so that all missing budget is removed from the played branch
                 float outcome_prob = common_data->predictor.predict_probs(s0->state, a)[s];
                 common_data->sample_risk_thd = state_penalty0 - (point_penalty0 - action_thd) / (common_data->gammap * outcome_prob);
+                common_data->sample_risk_thd = std::max(common_data->sample_risk_thd, 0.0f);
             } else {
                 // If the minimum playable penalty is less than the action threshold, distribute the remaining budget to all branches
                 // so that the maximum penalty is never exceeded
@@ -439,6 +440,7 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
+   	    spdlog::debug("Number of simulations: {}", i);
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);

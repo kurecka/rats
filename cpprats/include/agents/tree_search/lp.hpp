@@ -171,7 +171,7 @@ public:
      * Compute the optimal policy for the given tree based on the given risk threshold, and estimated transition probabilities.
      * Keep the byproduct of the computation for future use.
     */
-    A get_action(const SN* root, double risk_thd) {
+    size_t get_action(const SN* root, double risk_thd) {
         common_data = root->common_data;
         root_state = root->state;
         set_payoff_objective(root, risk_thd);
@@ -199,9 +199,8 @@ public:
         }
         spdlog::debug("LP policy: {}", policy_str);
 
-        // Sample an action from the policy
-        int sample = rng::custom_discrete(policy_distr);
-        return root->actions[sample];
+        // Sample an action index from the policy
+        return rng::custom_discrete(policy_distr);
     }
 
     /**

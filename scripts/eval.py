@@ -1,22 +1,15 @@
 #!/usr/bin/python3
 
-from rats import envs
 import ray
-from rats import agents
-import pprint
-import yaml
-import json
-
 from _rats import LP_solver
+from rats import envs
 import time
 import numpy as np
-from multiprocessing import Pool
 from pathlib import Path
-from itertools import product
 import pandas as pd
-from rats.utils import set_log_level
-from gridworld_generator.dataset import GridWorldDataset
 import asyncio
+import yaml
+from itertools import product
 
 
 @ray.remote
@@ -147,7 +140,7 @@ def eval_config(agent, time_limit, params, agent_repetitions=1, max_depth=100):
 
 
 async def process_futures(futures, output_dir):
-    print(f"Processing batch of {len(futures)} futures")
+    print(f"Processing batch of {len(futures)} configurations...")
     for completed in asyncio.as_completed(futures):
         result = aggregate_results(await completed)
 
@@ -181,10 +174,19 @@ async def eval_solvers(
     await process_futures(futures, output_dir)
 
     # Run agent solvers
+    num_configs = sum(1 for _ in iterate_configs())
+    done_configs = 0
+    print(f"Total number of configurations: {num_configs}")
+
+
     for agent, time_limit, params in iterate_configs():
         futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
         if len(futures) >= 8000 / agent_repetitions:
+            done_configs += len(futures)
             await process_futures(futures, output_dir)
+            print(f"Done {done_configs}/{num_configs} configurations")
+
+
     
     if futures:
         await process_futures(futures, output_dir)
@@ -214,54 +216,17 @@ def print_time_estimation(agents, agent_repetitions, time_limits, params_grid, n
     print(f"Estimated max time: {estimated_h:.2f} hours", end="\n\n")
 
 
-if __name__ == "__main__":
-    ray.init(address="auto")
+def desc2grid(grid_desc):
+    if isinstance(grid_desc, list):
+        return sum([desc2grid(desc) for desc in grid_desc], [])
+    else:
+        params_tuples = product(*[grid_desc[key] for key in grid_desc])
+        return [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
 
-    agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
-    agent_repetitions = 100
-    max_depth = 100
-    time_limits = [5, 10, 25]#, 50]
-    dataset_paths = [
-        'gridworld_generator/HW_SMALL.txt',
-        'gridworld_generator/HW_OLD.txt',
-    ]
-    instances = []
-    for dataset_path in dataset_paths:
-        instances += GridWorldDataset(dataset_path, base=len(instances)+1).get_maps()
-    grid_desc = {
-        'env': [envs.Hallway, envs.ContHallway],
-        'c': [0, 0.1, 0.2, 0.35, 0.5],
-        'trap_prob': [0.2, 0.7],
-        'slide_prob': [0, 0.2],
-        'instance': instances,
-    }
-    params_tuples = product(*[grid_desc[key] for key in grid_desc])
-    params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
-
-    tag = ask_tag()
-    if tag:
-        tag = '-' + tag
-
-    output_dir = Path("/work/rats/outputs/" + time.strftime("%Y%m%d-%H%M%S") + tag)
-    grid_desc.copy()
-    grid_desc.pop('instance')
-    metadata = {
-        'agents': agents,
-        'agent_repetitions': agent_repetitions,
-        'max_depth': max_depth,
-        'time_limits': time_limits,
-        'params_grid': grid_desc,
-        'dataset_paths': dataset_paths,
-        'num_instances': len(instances),
-    }
-    prepare_output_dir(output_dir, metadata)
-    print_time_estimation(agents, agent_repetitions, time_limits, params_grid, max_depth)
-
-    asyncio.run(eval_solvers(
-        agent_list=agents,
-        time_limits=time_limits,
-        params_grid=params_grid,
-        agent_repetitions=agent_repetitions,
-        output_dir=output_dir,
-    ))
-    ray.shutdown()
+def desc2metadata(grid_desc):
+    if isinstance(grid_desc, list):
+        return [desc2metadata(desc) for desc in grid_desc]
+    else:
+        grid_desc = grid_desc.copy()
+        grid_desc.pop('instance')
+        return grid_desc

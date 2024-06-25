@@ -44,4 +44,9 @@ RUN apt install -y python3-venv
 
 WORKDIR /work/rats
 COPY . .
+
+WORKDIR /work/rats/rats/manhattan
+RUN pip install -e . 
+
+WORKDIR /work/rats
 RUN pip install -e .

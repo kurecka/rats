@@ -206,34 +206,66 @@ def eval_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
     p = h.get_penalty()
     return (rew, p, total_time, steps)
 
-@ray.remote
-def eval_config_parallel(args):
+@ray.remote(memory=6 * 1024 ** 3)  # 6 GB of RAM
+def eval_config_parallel_6gb(args):
     map, agent_type, c, slide, trap, time_limit, exp_const = args
     return eval_config(map, agent_type, c, slide, trap, time_limit, exp_const)
 
+@ray.remote(memory=4 * 1024 ** 3)  # 4 GB of RAM
+def eval_config_parallel_4gb(args):
+    map, agent_type, c, slide, trap, time_limit, exp_const = args
+    return eval_config(map, agent_type, c, slide, trap, time_limit, exp_const)
+
+@ray.remote(memory=3 * 1024 ** 3)  # 3 GB of RAM
+def eval_config_parallel_3gb(args):
+    map, agent_type, c, slide, trap, time_limit, exp_const = args
+    return eval_config(map, agent_type, c, slide, trap, time_limit, exp_const)
+
+@ray.remote
+def eval_config_parallel(args):
+    map, agent_type, c, slide, trap, time_limit, exp_const = args   
+    return eval_config(map, agent_type, c, slide, trap, time_limit, exp_const)
+
 def process_config( map, agent_type, c, slide, trap, time_limit, exp_const ):
-    
-    results = ray.get([eval_config_parallel.remote((map, agent_type, c, slide, trap, time_limit, exp_const)) for _ in range(runs)])
+
+    remote_eval = eval_config_parallel
+
+    if ( agent_type == agents.ParetoUCT ):
+        if ( time_limit >= 3000 ):
+            remote_eval = eval_config_parallel_4gb
+        elif ( time_limit >= 1000 ):
+            remote_eval = eval_config_parallel_3gb
+
+    if ( agent_type == agents.DualUCT ):
+        if ( time_limit >= 3000 ):
+            remote_eval = eval_config_parallel_6gb
+        elif ( time_limit >= 2000 ):
+            remote_eval = eval_config_parallel_4gb
+        elif ( time_limit >= 1000 ):
+            remote_eval = eval_config_parallel_3gb
+
+    results = ray.get([remote_eval.remote((map, agent_type, c, slide, trap, time_limit, exp_const)) for _ in range(runs)])
 
     rews, pens, times, steps = zip(*results)
 
     mean_time_per_step = np.sum(np.array(times)) / np.sum(np.array(steps))
 
-    return (np.mean(rews), np.mean(pens), np.std(rews, ddof=1) / np.sqrt(runs), np.std(pens, ddof=1) / np.sqrt(runs), mean_time_per_step)
+    return (np.mean(rews), np.mean(pens), np.std(rews, ddof=1) / np.sqrt(runs), np.std(pens, ddof=1) / np.sqrt(runs), mean_time_per_step, len(rews))
 
 def run_eval():
 
     results_dir = "/work/rats/pyrats/large_HG_eval/results/"
     os.makedirs(results_dir, exist_ok=True)
 
-    for i, m in enumerate(maps):
+    # for i, m in enumerate(maps):
+    for i, m in [[ 4, map_big5 ]]:
         for trap, slide in confs[i]:
             for c in thd:
                 # new file for each map
                 output_file = f"{results_dir}results_map_big{i+1}_trap:{trap}_slide:{slide}_thd:{c}.csv"
                 with open(output_file, "w") as f:
                     print("Working on conf: ", output_file)
-                    f.write("agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible\n")
+                    f.write("agent;time_limit;exp_const;mean_reward;mean_penalty;std_reward;std_penalty;feasible;emp_feasible;runs\n")
                     for time_limit in time_limits:
                         for agent_type in agent_list:
 
@@ -243,10 +275,10 @@ def run_eval():
                             else:
                                 time_limit_adj = time_limit
                             for exp_const in d:
-                                mean_r, mean_p, std_r, std_p, mean_time = process_config( m, agent_type, c, slide, trap, time_limit_adj, exp_const )
+                                mean_r, mean_p, std_r, std_p, mean_time, finished_runs = process_config( m, agent_type, c, slide, trap, time_limit_adj, exp_const )
                                 emp_feasible = mean_p <= c
                                 feasible = mean_p - std_p * 1.65 <= c
-                                f.write(f"{agent_type.__name__};{mean_time};{exp_const};{mean_r};{mean_p};{std_r};{std_p};{feasible};{emp_feasible}\n")
+                                f.write(f"{agent_type.__name__};{mean_time};{exp_const};{mean_r};{mean_p};{std_r};{std_p};{feasible};{emp_feasible};{finished_runs}\n")
                                 f.flush()
 
 if __name__ == "__main__":

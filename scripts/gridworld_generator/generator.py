@@ -82,7 +82,7 @@ def frame_map(map: np.array, color: int = ord('#')) -> np.array:
     return new_map
 
 
-def generate_layerd_grid(width, height, layers=2, a=0.3, b=0.1, space_prob=0.8, wall_prob=0.5, g=0.3):
+def generate_layered_grid(width, height, layers=2, a=0.3, b=0.1, space_prob=0.8, wall_prob=0.5, g=0.3):
     path_color = ord('P')
     map = np.zeros((width, height), dtype=np.uint8)
     for _ in range(layers):
@@ -218,7 +218,7 @@ if __name__ == '__main__':
         # Generate a map using the tree-in-grid generator
         python3 generator.py 10 10 --gen TG -g 5 -w 0.2 --stride 1 -b 0.4
 
-        # Use ranom seed
+        # Use random seed
         python3 generator.py 6 6 --seed -1
 
     """
@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
         for i in range(int(args.n)):
             if args.gen == 'LG':
-                map = generate_layerd_grid(
+                map = generate_layered_grid(
                     width=all_params['width'], height=all_params['height'],
                     layers=all_params['l'],
                     a=all_params['a'], b=all_params['b'],

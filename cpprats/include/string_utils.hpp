@@ -9,6 +9,21 @@ std::string to_string(T t) {
     return std::to_string(t);
 }
 
+
+template<typename T>
+std::string to_string(const std::vector<T> &vec) {
+
+    std::string str = "{";
+
+    for (size_t i = 0; i < vec.size(); i++){
+        str += to_string(vec[i]);
+
+        if (i != vec.size() - 1) { str += ','; }
+    }
+
+    return str + "}";
+}
+
 template<typename T1, typename T2>
 std::string to_string(const std::pair<T1, T2>& p) {
     return "(" + to_string(p.first) + "," + to_string(p.second) + ")";

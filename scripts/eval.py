@@ -1,8 +1,8 @@
 #!/usr/bin/python3
-
-import ray
-from _rats import LP_solver
 from rats import envs
+import ray
+
+from _rats import LP_solver
 import time
 import numpy as np
 from pathlib import Path
@@ -194,7 +194,6 @@ async def eval_solvers(
         await process_futures(futures, output_dir)
 
     print("All configurations evaluated.")
-
 
 def prepare_output_dir(output_dir: Path, metadata: dict):
     output_dir.mkdir(parents=True, exist_ok=True)

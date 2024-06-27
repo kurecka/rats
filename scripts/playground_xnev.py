@@ -12,6 +12,7 @@ from rats.utils import set_log_level
 # 43 44 45 46 47
 
 
+set_log_level("trace")
 
 map = """
 #######
@@ -214,7 +215,7 @@ for i in range(1):
     e = envs.Hallway(map_big1, 0.1, 0.1)
     # e = envs.InvestorEnv(2, 20)
     h = envs.EnvironmentHandler(e, 500)
-    a = agents.RAMCP(
+    a = agents.ParetoUCT(
         h,
         max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=0.3, gamma=0.95,
         exploration_constant=5

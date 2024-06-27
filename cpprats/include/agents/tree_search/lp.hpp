@@ -29,7 +29,7 @@ private:
     policy: probability of each action in the root node
     subtree_penalties: expected penalty of each subtree rotted at each action-state pair (i.e. they sum up to the total penalty)
     ctr: counter for variable names
-    total_reward: each probaility flow variable is multiplied by the coreesponding reward
+    total_reward: each probability flow variable is multiplied by the coreesponding reward
     objective: objective function
         - if set_payoff_objective is called, it is the total reward and maximized
         - if set_penalty_objective is called, it is the total penalty and minimized

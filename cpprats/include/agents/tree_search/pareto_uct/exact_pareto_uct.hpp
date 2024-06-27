@@ -453,6 +453,8 @@ public:
         // Select the best action
         size_t a_idx = select_action_t()(root.get(), false);
         A a = root->actions[a_idx];
+        spdlog::debug("Available actions: {}", to_string(root->actions));
+
         if (graphviz_depth > 0) {
             dot_tree = to_graphviz_tree(*root.get(), graphviz_depth);
         }

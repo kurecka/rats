@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
 import multiprocessing
@@ -20,30 +21,45 @@ def visualize_large_hg( filename ):
 
     # filter path
     paths = filename.split('/')
-    plot_name = paths[-1]
+
+    # parse name of the plot
+    plot_name = paths[-1][:-4]
+    parsed_name = plot_name.split('_')
+    name = f"map_{parsed_name[2]} {parsed_name[3]} {parsed_name[4]} {parsed_name[5]}"
 
     df = pd.read_csv( filename , sep=';')
     agent_list = ["ParetoUCT", "DualUCT", "RAMCP"]
     exp_const = [1, 5, 20]
 
-    for agent in agent_list:
-        for c in exp_const:
+    colors = ['blue', 'green', 'red']
+
+    for i, agent in enumerate(agent_list):
+        for j, c in enumerate(exp_const):
             sub_df = df[(df['agent'] == agent) & (df['exp_const'] == c)]
 
+            # generate shades of the same color for each agent
+            base_color = mcolors.to_rgb(colors[i])
+            color = [base_color[0] + j * 0.4, base_color[1] + j * 0.4, base_color[2] + j * 0.4]
+
+            # Ensure color values are within 0-1 range
+            color = [min(1, c) for c in color]
+
             # plot reward
-            plt.plot( sub_df['time_limit'], sub_df['mean_reward'], label='Mean reward',
-                     marker='none', color = 'k')
-            for row in sub_df.rows():
+            plt.plot( sub_df['time_limit'], sub_df['mean_reward'], label=f'{agent}, {c}',
+                     marker='none', color=color)
+            
+            for _, row in sub_df.iterrows():
                 if not row['feasible']:
                     plt.plot(row['time_limit'], row['mean_reward'], marker='X', markersize=10,
                              markeredgecolor='r', markerfacecolor='none')
                     
-    plt.xlabel('Time limit (ms)')
+    plt.xlabel('Time limit (s)')
     plt.ylabel('Reward')
-    plt.title(f"{plot_name}")
+    plt.xlim(0, 6)
+    plt.title(f"{name}")
     plt.legend()
     plt.grid(True, linewidth='0.4', linestyle='--')
-    plt.savefig(f'large_HG_eval/plots/{plot_name}.png')
+    plt.savefig(f'large_HG_eval/plots/{plot_name}.png') 
     plt.close()
 
 

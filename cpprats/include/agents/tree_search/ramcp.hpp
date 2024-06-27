@@ -175,7 +175,7 @@ public:
         // The choice of the action is stochastic to balance penalty and reward. The solver remembers
         // the alternative action and other relevant information to update the risk threshold.
         size_t a_idx = solver.get_action(root.get(), risk_thd);
-	A a = root->actions[a_idx];
+	    A a = root->actions[a_idx];
 
         // Plot the tree
         if (graphviz_depth > 0) {

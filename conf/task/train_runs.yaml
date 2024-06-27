@@ -1,5 +1,0 @@
-_target_: tasks.run_experiment
-agent: ${agent}
-env: ${env}
-num_episodes: 10
-independent_runs: False

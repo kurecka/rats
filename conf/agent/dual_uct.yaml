@@ -1,5 +1,0 @@
-defaults:
-  - ts
-
-class: DualUCT
-

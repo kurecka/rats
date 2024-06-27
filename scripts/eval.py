@@ -195,12 +195,6 @@ async def eval_solvers(
 
     print("All configurations evaluated.")
 
-    if futures:
-        await process_futures(futures, output_dir)
-
-    print("All configurations evaluated.")
-
-
 def prepare_output_dir(output_dir: Path, metadata: dict):
     output_dir.mkdir(parents=True, exist_ok=True)
     with open(output_dir / "metadata.yaml", "w") as f:

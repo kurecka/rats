@@ -144,7 +144,7 @@ for i in range(1):
 
     a = agents.ParetoUCT(
         h,
-        max_depth=500, num_sim=1000, sim_time_limit=10000, risk_thd=10.0, gamma=0.999,
+        max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=10.0, gamma=0.999,
         exploration_constant=5
     )
 

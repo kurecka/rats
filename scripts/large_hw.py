@@ -33,15 +33,15 @@ if __name__ == "__main__":
     ray.init(address="auto")
 
     agents = [
-        rats.agents.ParetoUCT, RolloutParetoUCT,
-        rats.agents.RAMCP, RolloutRAMCP,
-        rats.agents.DualUCT, RolloutDualUCT,
+        RolloutParetoUCT,
+        RolloutRAMCP,
+        RolloutDualUCT,
     ]
-    agent_repetitions = 200
-    max_depth = 500
+    agent_repetitions = 500
+    max_depth = 200
     time_limits = [25, 50, 100]
     dataset_paths = [
-        'gridworld_generator/HW_LARGE.txt',
+        '/work/rats/scripts/gridworld_generator/HW_LARGE.txt',
     ]
     instances = []
     for dataset_path in dataset_paths:
@@ -49,15 +49,15 @@ if __name__ == "__main__":
     grid_desc = [
         {
             'env': [rats.envs.Hallway],
-            'c': [0, 0.2, 0.5],
-            'trap_prob': [0.05],
+            'c': [0, 0.3, 0.6],
+            'trap_prob': [0.02],
             'slide_prob': [0, 0.2],
             'instance': instances,
         }, 
         {
             'env': [rats.envs.ContHallway],
-            'c': [0.2, 0.5, 0.8],
-            'trap_prob': [0.05],
+            'c': [0, 0.3, 0.6],
+            'trap_prob': [0.02],
             'slide_prob': [0, 0.2],
             'instance': instances,
         }
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     params_grid = desc2grid(grid_desc)
 
-    tag = 'HWLarge_Fast'
+    tag = 'HWLarge'
 
     output_dir = Path("/work/rats/outputs/" + time.strftime("%Y%m%d-%H%M%S") + tag)
     metadata = {
@@ -86,5 +86,6 @@ if __name__ == "__main__":
         params_grid=params_grid,
         agent_repetitions=agent_repetitions,
         output_dir=output_dir,
+        run_lp=False,
     ))
     ray.shutdown()

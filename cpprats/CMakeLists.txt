@@ -103,7 +103,7 @@ endforeach()
 
 # Set the properties you require, e.g. what C++ standard to use.
 set_target_properties(
-    ${LIBRARY_NAME} ${MAIN_TESTS_NAME}
+    ${LIBRARY_NAME} ${MAIN_TESTS_NAME} ${MAIN_MODULE_NAME}
       PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES

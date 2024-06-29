@@ -86,18 +86,16 @@ reloads = ['42431659','42430367','1061531810',
            '42443056','1061531448','42448735',
            '596775930','42435275','42429690',
             '42446036','42442528','42440966',
-            '42431186','42438503','42442977', 
+            '42431186','42438503','42442977',
             '42440966','1061531802','42455666']
 
 # targets = ['42440465','42445916']
-init_state = "42434894"
-targets = ["42443056", "42448735", "42446036", "42438503", "42429690",
-	  "42442977", "42431659", "42455666","596775930", "42430367"]
-
+init_state = '42436484'
+targets = '42431678', '42455666', '42431677', '42438798'
 period = 50
 
 capacity = 10000
-e = envs.Manhattan(targets, init_state, period, capacity, cons_thd=50.0, radius=1.0)
+e = envs.Manhattan(targets, init_state, period, capacity, cons_thd=20.0, radius=0.5)
 
 total_rew = 0
 total_pen = 0
@@ -136,7 +134,7 @@ e.reset()
 
 for i in range(1):
     # e = envs.InvestorEnv(2, 20)
-    h = envs.EnvironmentHandler(e, 500)
+    h = envs.EnvironmentHandler(e, 100)
     e.reset()
 
     print(e.current_state())
@@ -144,13 +142,12 @@ for i in range(1):
 
     a = agents.ParetoUCT(
         h,
-        max_depth=500, num_sim=1000, sim_time_limit=500, risk_thd=10.0, gamma=0.999,
+        max_depth=100, num_sim=1000, sim_time_limit=500, risk_thd=3.0, gamma=0.999,
         exploration_constant=5
     )
 
     e.reset()
     a.reset()
-    print("bfore", a.get_handler().get_current_state())
     i = 0
     while not a.get_handler().is_over():
         print(f"{i}", a.get_handler().get_current_state())

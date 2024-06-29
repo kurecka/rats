@@ -30,6 +30,110 @@
   <key attr.name="created_with" attr.type="string" for="graph" id="d1" />
   <key attr.name="created_date" attr.type="string" for="graph" id="d0" />
   <graph edgedefault="directed">
+    <node id="1506445746">
+      <data key="d10">40.8048852</data>
+      <data key="d9">-73.9624527</data>
+      <data key="d5">1506445746</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="595703198">
+      <data key="d10">40.8033422</data>
+      <data key="d9">-73.9528035</data>
+      <data key="d5">595703198</data>
+    </node>
+    <node id="42445827">
+      <data key="d10">40.7922463</data>
+      <data key="d9">-73.9441827</data>
+      <data key="d5">42445827</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42443320">
+      <data key="d10">40.7730017</data>
+      <data key="d9">-73.9820637</data>
+      <data key="d5">42443320</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435388">
+      <data key="d10">40.7992849</data>
+      <data key="d9">-73.9453606</data>
+      <data key="d5">42435388</data>
+    </node>
+    <node id="42435335">
+      <data key="d10">40.7961147</data>
+      <data key="d9">-73.9614473</data>
+      <data key="d5">42435335</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435312">
+      <data key="d10">40.7866014</data>
+      <data key="d9">-73.9683983</data>
+      <data key="d5">42435312</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435310">
+      <data key="d10">40.7853033</data>
+      <data key="d9">-73.9693488</data>
+      <data key="d5">42435310</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435269">
+      <data key="d10">40.7749158</data>
+      <data key="d9">-73.9769071</data>
+      <data key="d5">42435269</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435266">
+      <data key="d10">40.774281</data>
+      <data key="d9">-73.97737</data>
+      <data key="d5">42435266</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435265">
+      <data key="d10">40.773656</data>
+      <data key="d9">-73.977827</data>
+      <data key="d5">42435265</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435264">
+      <data key="d10">40.772417</data>
+      <data key="d9">-73.978728</data>
+      <data key="d5">42435264</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435261">
+      <data key="d10">40.771782</data>
+      <data key="d9">-73.979193</data>
+      <data key="d5">42435261</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42435250">
+      <data key="d10">40.7699112</data>
+      <data key="d9">-73.9805755</data>
+      <data key="d5">42435250</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42434156">
+      <data key="d10">40.7859744</data>
+      <data key="d9">-73.9688609</data>
+      <data key="d5">42434156</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="42424427">
+      <data key="d10">40.773031</data>
+      <data key="d9">-73.978281</data>
+      <data key="d5">42424427</data>
+      <data key="d6">traffic_signals</data>
+    </node>
+    <node id="4081416473">
+      <data key="d10">40.7722879</data>
+      <data key="d9">-73.9862438</data>
+      <data key="d5">4081416473</data>
+    </node>
+    <node id="1825841700">
+      <data key="d10">40.7676883</data>
+      <data key="d9">-73.9819972</data>
+      <data key="d5">1825841700</data>
+    </node>
     <node id="42421728">
       <data key="d5">4516859.090086696</data>
       <data key="d6">587729.043732803</data>

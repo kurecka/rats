@@ -72,6 +72,9 @@ class ManhattanEnv:
 
         self.targets = targets
         self.period = period
+
+        # multiplier to the period, once the order is finished
+        self.cooldown = 5
         self.radius = radius
 
         # decision node -> special part of state (flag) - signals that orders
@@ -287,7 +290,7 @@ class ManhattanEnv:
         reward = 0
         if (self.position in self.targets) and (self.state_of_targets[self.position] == -1):
             reward = 1
-            self.state_of_targets[self.position] = self.period
+            self.state_of_targets[self.position] = self.period * self.cooldown
 
             # if this was the only order, set order delay back to zero
             if not self.currently_delivering():

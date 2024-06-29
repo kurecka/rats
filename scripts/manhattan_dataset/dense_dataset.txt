@@ -1,0 +1,9 @@
+Instance 1
+Name Morningside
+init_state = 42442561
+targets = 42442565, 42421737, 42431186, 42437222, 42421728
+
+Instance 2
+Name Lexington
+init_state = 42436484
+targets = 42431678, 42455666, 42431677, 42438798

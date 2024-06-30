@@ -236,15 +236,17 @@ class ManhattanEnv:
     def play_action(self, action):
         # if in decision node, handle (potential) orders
         if self.decision_node:
+            reward = 0
             self.decision_node = False
 
             # action is an index to targets
             if action != -1:
+                reward = -1e-6
                 # accept target
                 self.state_of_targets[self.targets[action]] = -1
             self.reload_ctrs()
 
-            return (self.position, self.state_of_targets, self.decision_node), 0, 0, self.is_over()
+            return (self.position, self.state_of_targets, self.decision_node), reward, 0, self.is_over()
 
         # otherwise, proceed by moving in the underlying cmdp, recording
         # reward/penalty and adjusting periods of orders, record the state into

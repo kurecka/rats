@@ -188,7 +188,7 @@ async def eval_solvers(
 
         # Use time adjustment heuristic for RAMCP if enabled
         if use_ramcp_heuristic and (agent.__name__ == "RAMCP" or agent.__name__ == "RolloutRAMCP"):
-            time_limit = int(time_limit ** (7/10))
+            time_limit = int(time_limit ** (8/10))
 
         futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
         if len(futures) >= 8000 / agent_repetitions:

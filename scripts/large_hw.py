@@ -88,5 +88,6 @@ if __name__ == "__main__":
         output_dir=output_dir,
         run_lp=False,
         max_depth=max_depth,
+        use_ramcp_heuristic=True,
     ))
     ray.shutdown()

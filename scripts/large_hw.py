@@ -87,5 +87,6 @@ if __name__ == "__main__":
         agent_repetitions=agent_repetitions,
         output_dir=output_dir,
         run_lp=False,
+        max_depth=max_depth,
     ))
     ray.shutdown()

@@ -45,10 +45,4 @@ class ManhattanDataset:
             name = self.names[i]
             targets = map['targets']
             init_state = map['init_state']
-            plot_manhattan_map(mapfile, "manhattan_dataset/manhattan_maps/" + name + '.html', init_state, targets)
-
-
-if __name__ == "__main__":
-    data = ManhattanDataset("manhattan_dataset/dense_dataset.txt")
-    data.visualize_maps()
-
+            plot_manhattan_map(mapfile, "manhattan_dataset/" + name + '.html', init_state, targets)

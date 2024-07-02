@@ -359,7 +359,7 @@ private:
 public:
     pareto_uct(
         environment_handler<S, A> _handler,
-        int _max_depth, float _risk_thd, float _gamma, float _gammap = 1, float _max_disc_penalty = 1,
+        int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, 
         bool _rollout = true,
@@ -373,10 +373,14 @@ public:
     , risk_thd(_risk_thd)
     , use_rollout(_rollout)
     , lambda(_lambda)
-    , common_data({_risk_thd, _risk_thd, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, {}, lambda, _max_disc_penalty})
+    , common_data({_risk_thd, _risk_thd, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, {}, lambda, 0})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
+        // Set bound on achievable penalty
+        float max_action_penalty = std::get<1>(agent<S,A>::handler.penalty_range());
+        common_data->max_disc_penalty = max_action_penalty / (1 - gammap);
+
         reset();
     }
 

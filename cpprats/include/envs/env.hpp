@@ -63,6 +63,13 @@ public:
     virtual std::pair<float, float> reward_range() const = 0;
 
     /**
+     * @brief Get the bounds on the penalty
+     * 
+     * @return std::pair<float, float> minimal and maximal penalty
+     */
+    virtual std::pair<float, float> penalty_range() const = 0;
+
+    /**
      * @brief Get current state of the environment
      * 
      * @return S 
@@ -243,6 +250,16 @@ public:
     std::pair<float, float> reward_range() const {
         return env->reward_range();
     }
+
+    /**
+     * @brief Get the bounds on the reward
+     * 
+     * @return std::pair<float, float> minimal and maximal reward
+     */
+    std::pair<float, float> penalty_range() const {
+        return env->penalty_range();
+    }
+
 
     /**
      * @brief Get the number of possible actions

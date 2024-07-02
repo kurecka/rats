@@ -87,6 +87,10 @@ std::pair< float, float > manhattan::reward_range() const {
     return {0, 1};
 }
 
+std::pair< float, float > manhattan::penalty_range() const {
+    return {0, 1};
+}
+
 size_t manhattan::num_actions() const{
     return python_env.attr("num_actions")().cast<size_t>();
 }

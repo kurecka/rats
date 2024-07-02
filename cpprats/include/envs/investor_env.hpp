@@ -40,6 +40,7 @@ public:
     }
 
     std::pair<float, float> reward_range() const override { return {-2, 12}; }
+    std::pair<float, float> penalty_range() const override { return {0, 1}; }
     size_t num_actions() const override { return 2; }
     std::vector<size_t> possible_actions(int = {}) const override { return {RISKY, SAFE}; }
     size_t get_action(size_t i) const override { return i; }

@@ -83,9 +83,8 @@ std::string manhattan::name() const {
     return python_env.attr("name")().cast<std::string>();
 }
 
-// TODO: not supported 
 std::pair< float, float > manhattan::reward_range() const {
-    return {0, 0};
+    return {0, 1};
 }
 
 size_t manhattan::num_actions() const{

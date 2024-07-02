@@ -1,3 +1,5 @@
+from manhattan_visualize import plot_manhattan_map
+
 class ManhattanDataset:
     def __init__(self, path='manhattan_dataset/test_dataset.txt'):
         self.names, self.maps = self.parse_maps(path)
@@ -36,3 +38,11 @@ class ManhattanDataset:
 
     def get_maps(self):
         return list(zip(self.names, [{"targets" : map['targets'], "init_state" : map['init_state']} for map in self.maps]))
+
+    def visualize_maps(self, mapfile="../rats/manhattan_res/NYC.graphml"):
+        for i in range(len(self.maps)):
+            map = self.maps[i]
+            name = self.names[i]
+            targets = map['targets']
+            init_state = map['init_state']
+            plot_manhattan_map(mapfile, "manhattan_dataset/" + name + '.html', init_state, targets)

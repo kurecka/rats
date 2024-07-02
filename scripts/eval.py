@@ -160,7 +160,8 @@ async def eval_solvers(
         agent_repetitions=100,
         max_depth=100,
         output_dir="/work/rats/rats",
-        run_lp=True
+        run_lp=True,
+        use_ramcp_heuristic=False,
     ):
     output_dir = Path(output_dir)
 
@@ -184,6 +185,16 @@ async def eval_solvers(
 
 
     for agent, time_limit, params in iterate_configs():
+
+        # Use time adjustment heuristic for RAMCP if enabled
+        if use_ramcp_heuristic and (agent.__name__ == "RAMCP" or agent.__name__ == "RolloutRAMCP"):
+            # More relaxed when thd is 0
+            if params['c'] == 0:
+                scaling_power = 8/10
+            else:
+                scaling_power = 6/10
+            time_limit = int(time_limit ** (scaling_power))
+
         futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
         if len(futures) >= 8000 / agent_repetitions:
             done_configs += len(futures)

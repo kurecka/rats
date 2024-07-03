@@ -25,7 +25,7 @@ if __name__ == "__main__":
     agent_repetitions = 100
     max_depth = 300
     time_limits = [100, 200, 500] # 1000, 2000]
-    dataset_path = '/work/rats/scripts/manhattan_dataset/test_dataset.txt'
+    dataset_path = '/work/rats/scripts/manhattan_dataset/dense_dataset.txt'
     instances = ManhattanDataset(dataset_path).get_maps()
 
     grid_desc = {
@@ -33,8 +33,8 @@ if __name__ == "__main__":
         'c': [1.0, 5.0, 10.0],
         'capacity' : [ 3000, 5000 ],
         'period' : [ 30, 50, 100 ],
-        'cons_thd' : [ 50, 100, 200 ],
-        'radius' : [ 0.25, 0.5, 1.0, 2.0 ],
+        'cons_thd' : [ 10, 25, 40 ],
+        'radius' : [ 0.1, 0.25, 0.5, 1.0 ],
         'instance': instances,
     }
 

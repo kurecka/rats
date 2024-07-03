@@ -456,7 +456,6 @@ public:
 
     void play() override {
         spdlog::debug("Play: {}", name());
-        spdlog::debug("Max achievable penalty: {}", common_data.max_disc_penalty);
 
         // Perform simulations: Either based on number of simulations or time limit
         if (sim_time_limit > 0) {

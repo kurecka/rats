@@ -272,6 +272,7 @@ public:
     int get_max_steps() const {
         return max_num_steps;
     }
+
     /**
      * @brief Get the number of possible actions
      * 

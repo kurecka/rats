@@ -377,11 +377,32 @@ public:
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
-        // Set bound on achievable penalty
-        float max_action_penalty = std::get<1>(agent<S,A>::handler.penalty_range());
-        common_data->max_disc_penalty = max_action_penalty / (1 - gammap);
-
+        set_max_penalty();
         reset();
+    }
+
+    void set_max_penalty() {
+        float max_total_penalty = 0;
+        environment_handler<S,A> &handler = common_data.handler;
+        float max_action_penalty = std::get<1>(handler.penalty_range());
+        float gammap = common_data.gammap;
+
+        // Handle reachability objective
+        if (handler.name() == "Hallway"){
+            max_total_penalty = 1; 
+        }
+
+        // Handle undiscounted sum objective
+        else if (gammap == 1){
+            max_total_penalty = max_action_penalty * handler.get_max_steps();
+        }
+
+        // Handle discounted sum objective with finite horizon
+        else {
+            max_total_penalty = max_action_penalty * ( 1 - std::pow(gammap, handler.get_max_steps()) ) / ( 1 - gammap );
+        }
+
+        common_data.max_disc_penalty = max_total_penalty;
     }
 
     std::string get_graphviz() const {

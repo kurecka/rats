@@ -260,7 +260,18 @@ public:
         return env->penalty_range();
     }
 
+    /**
+     * @brief Get the environment name.
+     * 
+     * @return string - the environment name.
+     */
+    std::string name() const {
+        return env->name();
+    }
 
+    int get_max_steps() const {
+        return max_num_steps;
+    }
     /**
      * @brief Get the number of possible actions
      * 

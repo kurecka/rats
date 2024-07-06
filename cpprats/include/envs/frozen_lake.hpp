@@ -28,8 +28,10 @@ public:
     ~frozen_lake() override = default;
 
     std::string name() const override { return "FrozenLake 4x4"; }
+    ConstraintType get_constraint_type() const override { return ConstraintType::RISK; }
 
     std::pair<float, float> reward_range() const override { return {0, 1}; }
+    std::pair<float, float> penalty_range() const override { return {0, 1}; }
     size_t num_actions() const override { return 4; }
     std::vector<size_t> possible_actions(int = {}) const override { return {0, 1, 2, 3}; }
     size_t get_action(size_t i) const override { return i; }

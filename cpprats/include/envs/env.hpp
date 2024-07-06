@@ -14,8 +14,22 @@ namespace rats {
 template <typename S>
 using outcome_t = std::tuple<S, float, float, bool>; // state, reward, penalty, is_over
 
+/*
+ * @brief Used to signal the type of constraint used in the environment. 
+ *
+ * RISK - reachability probability of a subset of states <= threshold
+ * CUMULATIVE - discounted sum of accumulated penalties <= threshold
+ * 
+ * Used by EnvironmentHandler to calculate the bound on maximum achievable
+ * penalty.
+ */
+
+enum class ConstraintType { 
+    RISK, CUMULATIVE
+};
+
 /*************************************************************************
- * ENVIRONTMENT INTERFACE
+ * ENVIRONMENT INTERFACE
  *************************************************************************/
 
 /**
@@ -61,6 +75,13 @@ public:
      * @return std::pair<float, float> minimal and maximal reward
      */
     virtual std::pair<float, float> reward_range() const = 0;
+
+    /**
+     * @brief Get the bounds on the penalty
+     * 
+     * @return std::pair<float, float> minimal and maximal penalty
+     */
+    virtual std::pair<float, float> penalty_range() const = 0;
 
     /**
      * @brief Get current state of the environment
@@ -115,6 +136,13 @@ public:
      * 
      */
     virtual void reset() = 0;
+
+
+    /**
+     * @brief Get type of constraint solved in the environment.
+     *
+     */
+    virtual ConstraintType get_constraint_type() const = 0;
 };
 
 
@@ -236,12 +264,64 @@ public:
     }
 
     /**
-     * @brief Get the bounds on the reward
+     * @brief Get the bounds on the immediate reward
      * 
-     * @return std::pair<float, float> minimal and maximal reward
+     * @return std::pair<float, float> minimum and maximum immediate reward
      */
     std::pair<float, float> reward_range() const {
         return env->reward_range();
+    }
+
+    /**
+     * @brief Get the bounds on immediate penalty
+     * 
+     * @return std::pair<float, float> minimum and maximum immediate
+     */
+    std::pair<float, float> penalty_range() const {
+        return env->penalty_range();
+    }
+
+
+    /**
+     * @brief Get the bounds on total cumulative penalty of any run.
+     * 
+     * Uses the max_num_steps attribute of the handler as the length of
+     * horizon.
+     *
+     * @param gammap - discount factor of the penalty
+     * @return std::pair<float, float> minimum and maximum achievable penalty
+     */
+    std::pair<float, float> penalty_bound(float gammap=1) const {
+        // Handle reachability constraint
+        if (env->get_constraint_type() == ConstraintType::RISK){
+            return {0, 1};
+        }
+
+        int max_steps = get_max_steps();
+        auto [min_p, max_p] = penalty_range();
+
+        // Handle undiscounted sum objective
+        if (gammap == 1){
+            return {min_p * max_steps, max_p * max_steps};
+        }
+
+        // Handle discounted sum objective
+        // calculate finite geometric sum with a=1, q=gammap, n=max_steps
+        float geom_sum = (1 - std::pow(gammap, max_steps))/(1 - gammap);
+        return {min_p * geom_sum, max_p * geom_sum};
+    }
+
+    /**
+     * @brief Get the environment name.
+     * 
+     * @return string - the environment name.
+     */
+    std::string name() const {
+        return env->name();
+    }
+
+    int get_max_steps() const {
+        return max_num_steps;
     }
 
     /**

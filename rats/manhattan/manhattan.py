@@ -164,7 +164,7 @@ class ManhattanEnv:
 
 
     def get_action(self, idx):
-        return possible_actions()[idx]
+        return self.possible_actions()[idx]
 
     # TODO: not implemented
     def outcome_probabilities(self, name, action):
@@ -320,7 +320,7 @@ class ManhattanEnv:
         self.position = self.init_state
         self.state_of_targets = { t : self.period for t in self.targets }
         self.decision_node = False
-        
+
         self.checkpoints.clear()
         self.history = []
 

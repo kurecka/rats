@@ -41,6 +41,7 @@ public:
                 float radius );
 
     std::string name() const override;
+    ConstraintType get_constraint_type() const override;
 
     std::pair<float, float> reward_range() const override;
     std::pair<float, float> penalty_range() const override;
@@ -82,6 +83,10 @@ outcome_t<manhattan::state_t> manhattan::play_action(int action) {
 
 std::string manhattan::name() const {
     return python_env.attr("name")().cast<std::string>();
+}
+
+ConstraintType manhattan::get_constraint_type() const {
+    return ConstraintType::CUMULATIVE;
 }
 
 std::pair< float, float > manhattan::reward_range() const {

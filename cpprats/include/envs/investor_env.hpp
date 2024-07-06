@@ -31,7 +31,7 @@ public:
     ~investor_env() override = default;
 
     std::string name() const override { return "InvestorEnv"; }
-
+    ConstraintType get_constraint_type() const override { return ConstraintType::RISK; }
 
     // TODO: not supported for now
     std::pair<float, float> get_expected_reward( int, size_t, int ) const override { return {0, 0}; }

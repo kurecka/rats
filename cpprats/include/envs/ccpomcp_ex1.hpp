@@ -28,6 +28,7 @@ public:
     ~ccpomcp_ex1() override = default;
 
     std::string name() const override { return "CC-POMCP Ex1"; }
+    ConstraintType get_constraint_type() const override { return ConstraintType::CUMULATIVE; }
 
     std::pair<float, float> reward_range() const override { return {0, 1}; }
     std::pair<float, float> penalty_range() const override { return {0, 10}; }

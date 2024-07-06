@@ -31,6 +31,8 @@ public:
     continuing_hallway(std::string, float trap_prob = 0.2f, float slide_prob=0.f);
 
     std::string name() const override { return "ContHallway"; }
+    ConstraintType get_constraint_type() const override { return ConstraintType::CUMULATIVE; }
+
     std::string to_string(state_t s) const { return fmt::format("({}, {}; {})", s.first % m.width, s.first / m.width, s.second); }
     int get_width() const { return m.width; }
 

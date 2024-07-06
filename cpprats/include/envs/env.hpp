@@ -294,7 +294,7 @@ public:
     std::pair<float, float> penalty_bound(float gammap=1) const {
         // Handle reachability constraint
         if (env->get_constraint_type() == ConstraintType::RISK){
-            return { 0, 1 };
+            return {0, 1};
         }
 
         int max_steps = get_max_steps();
@@ -307,8 +307,8 @@ public:
 
         // Handle discounted sum objective
         // calculate finite geometric sum with a=1, q=gammap, n=max_steps
-        float geom_sum = ( 1 - std::pow(gammap, max_steps) ) / ( 1 - gammap );
-        return { min_p * geom_sum, max_p * geom_sum };
+        float geom_sum = (1 - std::pow(gammap, max_steps))/(1 - gammap);
+        return {min_p * geom_sum, max_p * geom_sum};
     }
 
     /**

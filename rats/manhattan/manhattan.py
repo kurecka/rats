@@ -72,6 +72,9 @@ class ManhattanEnv:
 
         self.targets = targets
         self.period = period
+
+        # multiplier to the period, once the order is finished
+        self.cooldown = 5
         self.radius = radius
 
         # decision node -> special part of state (flag) - signals that orders
@@ -161,7 +164,7 @@ class ManhattanEnv:
 
 
     def get_action(self, idx):
-        return possible_actions()[idx]
+        return self.possible_actions()[idx]
 
     # TODO: not implemented
     def outcome_probabilities(self, name, action):
@@ -233,15 +236,17 @@ class ManhattanEnv:
     def play_action(self, action):
         # if in decision node, handle (potential) orders
         if self.decision_node:
+            reward = 0
             self.decision_node = False
 
             # action is an index to targets
             if action != -1:
+                reward = -1e-6
                 # accept target
                 self.state_of_targets[self.targets[action]] = -1
             self.reload_ctrs()
 
-            return (self.position, self.state_of_targets, self.decision_node), 0, 0, self.is_over()
+            return (self.position, self.state_of_targets, self.decision_node), reward, 0, self.is_over()
 
         # otherwise, proceed by moving in the underlying cmdp, recording
         # reward/penalty and adjusting periods of orders, record the state into
@@ -287,7 +292,7 @@ class ManhattanEnv:
         reward = 0
         if (self.position in self.targets) and (self.state_of_targets[self.position] == -1):
             reward = 1
-            self.state_of_targets[self.position] = self.period
+            self.state_of_targets[self.position] = self.period * self.cooldown
 
             # if this was the only order, set order delay back to zero
             if not self.currently_delivering():
@@ -315,7 +320,7 @@ class ManhattanEnv:
         self.position = self.init_state
         self.state_of_targets = { t : self.period for t in self.targets }
         self.decision_node = False
-        
+
         self.checkpoints.clear()
         self.history = []
 

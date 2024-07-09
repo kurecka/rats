@@ -17,7 +17,7 @@ namespace rats {
  *  map, can use play_action, possible_actions, etc. to interact
  *
  *  not implemented - methods used for LP, i.e. getting reward, terminal
- *  state and reward_range()
+ *  state
  *
  *  TODO: should prob adjust states to pos + energy + positions of orders for learning
  *  later, is_terminal() will then simply return whether a given state has <= 0 energy
@@ -41,8 +41,10 @@ public:
                 float radius );
 
     std::string name() const override;
+    ConstraintType get_constraint_type() const override;
 
     std::pair<float, float> reward_range() const override;
+    std::pair<float, float> penalty_range() const override;
     size_t num_actions() const override;
     std::vector<int> possible_actions(state_t state) const override; 
     int get_action(size_t i) const override;
@@ -83,9 +85,16 @@ std::string manhattan::name() const {
     return python_env.attr("name")().cast<std::string>();
 }
 
-// TODO: not supported 
+ConstraintType manhattan::get_constraint_type() const {
+    return ConstraintType::CUMULATIVE;
+}
+
 std::pair< float, float > manhattan::reward_range() const {
-    return {0, 0};
+    return {0, 1};
+}
+
+std::pair< float, float > manhattan::penalty_range() const {
+    return {0, 1};
 }
 
 size_t manhattan::num_actions() const{

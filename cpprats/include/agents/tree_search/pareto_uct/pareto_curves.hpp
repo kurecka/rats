@@ -40,7 +40,9 @@ std::vector<std::tuple<float, float, T>> upper_hull(std::vector<std::tuple<float
                 break;
             }
         }
-        if (std::get<0>(points[i]) > std::get<0>(hull.back())) {
+
+        const float eps = 1e-6;
+        if (std::get<0>(points[i]) > std::get<0>(hull.back()) + eps) {
             hull.push_back(points[i]);
         }
     }

@@ -2,6 +2,23 @@
 #include "unittest.hpp"
 #include "agents/tree_search/pareto_uct/pareto_curves.hpp"
 
+#include <algorithm>
+
+
+rats::ts::EPC get_curve(std::vector<std::pair<float, float>>&& points) {
+    std::vector<rats::ts::EPC> leaves;
+    for (auto& [r, p] : points) {
+        rats::ts::EPC leaf;
+        leaf += {r, p};
+        leaves.push_back(leaf);
+    }
+    std::vector<rats::ts::EPC*> lead_ptrs;
+    for (auto& leaf : leaves) {
+        lead_ptrs.push_back(&leaf);
+    }
+    return convex_hull_merge(lead_ptrs);
+}
+
 
 UTest(convex_merge, simple) {
     rats::ts::EPC leaf1;
@@ -180,19 +197,29 @@ UTest(convex_merge, single_point) {
     }
 }
 
-rats::ts::EPC get_curve(std::vector<std::pair<float, float>>&& points) {
-    std::vector<rats::ts::EPC> leaves;
-    for (auto& [r, p] : points) {
-        rats::ts::EPC leaf;
-        leaf += {r, p};
-        leaves.push_back(leaf);
+
+UTest(upper_hull, error_in_manhattan) {
+    std::vector<std::tuple<float, float, size_t>> points = {{0, 0, 0}, {0, 0, 1}, {0.999, 1, 2}, {0.999, 1, 3}};
+    std::vector<int> perm = {0, 1, 2, 3};
+
+    while (std::next_permutation(perm.begin(), perm.end())) {
+        std::vector<std::tuple<float, float, size_t>> perm_points(4);
+        for (int i = 0; i < 4; i++) {
+            perm_points[i] = points[perm[i]];
+        }
+
+        std::vector<std::tuple<float, float, size_t>> hull = rats::ts::upper_hull(perm_points);
+        std::vector<std::pair<float, float>> expected_vals = {{0, 0}, {0.999, 1}};
+
+        ExpectEQ(hull.size(), expected_vals.size());
+        for (int i = 0; i < expected_vals.size(); i++) {
+            auto& [r, p, _] = hull[i];
+            AreClose(r, expected_vals[i].first);
+            AreClose(p, expected_vals[i].second);
+        }
     }
-    std::vector<rats::ts::EPC*> lead_ptrs;
-    for (auto& leaf : leaves) {
-        lead_ptrs.push_back(&leaf);
-    }
-    return convex_hull_merge(lead_ptrs);
 }
+
 
 
 
@@ -289,8 +316,10 @@ void register_pareto_curves_tests() {
     RegisterTest(convex_merge, reduce_three_points_to_one);
     RegisterTest(convex_merge, merge_complex_curves);
     RegisterTest(convex_merge, remove_duplicate_point);
+    RegisterTest(upper_hull, error_in_manhattan);
 
     RegisterTest(weighted_merge, simple);
     RegisterTest(weighted_merge, single_points);
     RegisterTest(weighted_merge, complex_curves);
+
 }

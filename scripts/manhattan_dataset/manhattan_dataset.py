@@ -1,4 +1,4 @@
-from manhattan_visualize import plot_manhattan_map
+from manhattan_dataset.manhattan_visualize import plot_manhattan_map
 
 class ManhattanDataset:
     def __init__(self, path='manhattan_dataset/test_dataset.txt'):

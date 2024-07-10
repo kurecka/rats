@@ -23,18 +23,18 @@ if __name__ == "__main__":
 
     agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
     agent_repetitions = 100
-    max_depth = 300
+    max_depth = 200
     time_limits = [100, 200, 500] # 1000, 2000]
     dataset_path = '/work/rats/scripts/manhattan_dataset/dense_dataset.txt'
     instances = ManhattanDataset(dataset_path).get_maps()
 
     grid_desc = {
         'env': [ envs.Manhattan ],
-        'c': [1.0, 5.0, 10.0],
-        'capacity' : [ 3000, 5000 ],
+        'c': [3.0, 5.0, 10.0],
+        'capacity' : [ 3000, 10000 ],
         'period' : [ 30, 50, 100 ],
-        'cons_thd' : [ 10, 25, 40 ],
-        'radius' : [ 0.1, 0.25, 0.5, 1.0 ],
+        'cons_thd' : [ 20, 40 ],
+        'radius' : [ 0.25, 0.5 ],
         'instance': instances,
     }
 
@@ -63,6 +63,7 @@ if __name__ == "__main__":
     asyncio.run(eval_solvers(
         agent_list=agents,
         time_limits=time_limits,
+        max_depth=max_depth,
         params_grid=params_grid,
         agent_repetitions=agent_repetitions,
         output_dir=output_dir,

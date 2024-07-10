@@ -220,8 +220,8 @@ public:
         auto states_distr = common_data->predictor.predict_probs(root_state, a);
         float transition_prob = policy[a]->solution_value() * states_distr[s];
 
-        double descendent_budget = (branch_budget / transition_prob - received_penalty) / common_data->gammap;
-        return std::clamp(descendent_budget, 0., common_data->max_disc_penalty);
+        float descendent_budget = (branch_budget / transition_prob - received_penalty) / common_data->gammap;
+        return std::clamp(descendent_budget, 0.0f, common_data->max_disc_penalty);
     }
 };
 

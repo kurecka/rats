@@ -5,6 +5,7 @@
 #include "rand.hpp"
 #include "ortools/linear_solver/linear_solver.h"
 #include "ortools/linear_solver/linear_expr.h"
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <map>
@@ -220,7 +221,7 @@ public:
         float transition_prob = policy[a]->solution_value() * states_distr[s];
 
         double descendent_budget = (branch_budget / transition_prob - received_penalty) / common_data->gammap;
-        return std::max(0., descendent_budget);
+        return std::clamp(descendent_budget, 0., common_data->max_disc_penalty);
     }
 };
 

@@ -17,6 +17,7 @@ struct dual_uct_data {
     float exploration_constant;
     float gamma;
     float gammap;
+    float max_disc_penalty;
     int num_steps;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
@@ -155,11 +156,17 @@ public:
     , lr(_lr)
     , use_rollout(_rollout)
     , initial_lambda(_initial_lambda)
-    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, 0, agent<S, A>::handler})
+    , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, 0., 0, agent<S, A>::handler})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
+        set_max_penalty();
         reset();
+    }
+
+    void set_max_penalty() {
+        float max_penalty = std::get<1>(common_data.handler.penalty_bound(common_data.gammap));
+        common_data.max_disc_penalty = max_penalty;
     }
 
     std::string get_graphviz() const {

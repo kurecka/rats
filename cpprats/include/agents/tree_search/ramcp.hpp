@@ -16,6 +16,7 @@ struct ramcp_data {
     float exploration_constant;
     float gamma;
     float gammap;
+    float max_disc_penalty;
     environment_handler<S, A>& handler;
     predictor_manager<S, A> predictor;
 };
@@ -122,11 +123,17 @@ public:
     , sim_time_limit(_sim_time_limit)
     , risk_thd(_risk_thd)
     , use_rollout(_rollout)
-    , common_data({_risk_thd, _exploration_constant, _gamma, _gammap, agent<S, A>::handler, {}})
+    , common_data({_risk_thd, _exploration_constant, _gamma, _gammap, 0., agent<S, A>::handler, {}})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
     {
+        set_max_penalty();
         reset();
+    }
+
+    void set_max_penalty() {
+        float max_penalty = std::get<1>(common_data.handler.penalty_bound(common_data.gammap));
+        common_data.max_disc_penalty = max_penalty;
     }
 
     std::string get_graphviz() const {

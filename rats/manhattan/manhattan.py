@@ -74,7 +74,7 @@ class ManhattanEnv:
         self.period = period
 
         # multiplier to the period, once the order is finished
-        self.cooldown = 5
+        self.cooldown = 1
         self.radius = radius
 
         # decision node -> special part of state (flag) - signals that orders

@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
     agent_repetitions = 100
-    max_depth = 100
+    max_depth = 200
     time_limits = [500] # 1000, 2000]
     dataset_path = '/work/rats/scripts/manhattan_dataset/dense_dataset.txt'
     instances = ManhattanDataset(dataset_path).get_maps()
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     params_tuples = product(*[grid_desc[key] for key in grid_desc])
     params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
 
-    tag = "ManhattanTestLong"
+    tag = "ManhattanNoCooldowns"
     if tag:
         tag = '-' + tag
 

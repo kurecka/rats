@@ -33,15 +33,16 @@ if __name__ == "__main__":
     ray.init(address="auto")
 
     agents = [
-        # rats.agents.ParetoUCT, RolloutParetoUCT,
-        # rats.agents.RAMCP, RolloutRAMCP,
-        # rats.agents.DualUCT, RolloutDualUCT,
+        RolloutParetoUCT,
+        RolloutRAMCP,
+        RolloutDualUCT,
     ]
-    agent_repetitions = 500
+    agent_repetitions = 300
     max_depth = 100
     time_limits = [5, 10, 25]
     dataset_paths = [
-        'gridworld_generator/HW_OLD.txt',
+        '/work/rats/scripts/gridworld_generator/HW_SMALL.txt',
+        '/work/rats/scripts/gridworld_generator/HW_OLD.txt',
     ]
     instances = []
     for dataset_path in dataset_paths:
@@ -49,14 +50,14 @@ if __name__ == "__main__":
     grid_desc = [
         {
             'env': [rats.envs.Hallway],
-            'c': [0, 0.1, 0.2, 0.35, 0.5],
-            'trap_prob': [0.2, 0.7],
+            'c': [0, 0.15, 0.35],
+            'trap_prob': [0.2, 0.5],
             'slide_prob': [0, 0.2],
             'instance': instances,
         }, {
             'env': [rats.envs.ContHallway],
-            'c': [0, 0.1, 0.2, 0.35, 0.5, 0.65, 0.8],
-            'trap_prob': [0.1],
+            'c': [0, 0.15, 0.3, 0.45, 0.6, 0.75],
+            'trap_prob': [0.2],
             'slide_prob': [0, 0.2],
             'instance': instances,
         }
@@ -67,12 +68,12 @@ if __name__ == "__main__":
     # tag = ask_tag()
     # if tag:
     #     tag = '-' + tag
-    tag = 'HWLegacy_Rollout_Fast'
+    tag = 'HWSmall_Adjusted_Rollouts'
 
     output_dir = Path("/work/rats/outputs/" + time.strftime("%Y%m%d-%H%M%S") + tag)
     metadata = {
-        'agents': agents,
-        'agent_repetitions': agent_repetitions,
+            'agents': agents,
+            'agent_repetitions': agent_repetitions,
         'max_depth': max_depth,
         'time_limits': time_limits,
         'params_grid': desc2metadata(grid_desc),
@@ -89,5 +90,6 @@ if __name__ == "__main__":
         agent_repetitions=agent_repetitions,
         output_dir=output_dir,
         max_depth=max_depth,
+        gamma=0.99,
     ))
     ray.shutdown()

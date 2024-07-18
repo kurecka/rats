@@ -39,7 +39,7 @@ if __name__ == "__main__":
     ]
     agent_repetitions = 500
     max_depth = 200
-    time_limits = [25, 50, 100]
+    time_limits = [100]
     dataset_paths = [
         '/work/rats/scripts/gridworld_generator/HW_LARGE.txt',
     ]
@@ -49,14 +49,14 @@ if __name__ == "__main__":
     grid_desc = [
         {
             'env': [rats.envs.Hallway],
-            'c': [0, 0.3, 0.6],
+            'c': [0, 0.2, 0.4],
             'trap_prob': [0.02],
             'slide_prob': [0, 0.2],
             'instance': instances,
-        }, 
+        },
         {
             'env': [rats.envs.ContHallway],
-            'c': [0, 0.3, 0.6],
+            'c': [0, 0.2, 0.4],
             'trap_prob': [0.02],
             'slide_prob': [0, 0.2],
             'instance': instances,

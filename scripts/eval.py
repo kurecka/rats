@@ -127,7 +127,7 @@ def aggregate_results(results):
     return aggregated
 
 
-def eval_config(agent, time_limit, params, agent_repetitions=1, max_depth=100):
+def eval_config(agent, time_limit, params, gamma=0.99, agent_repetitions=1, max_depth=100):
     """
     Evaluate a single solver on the given configurations
     """
@@ -162,6 +162,7 @@ async def eval_solvers(
         output_dir="/work/rats/rats",
         run_lp=True,
         use_ramcp_heuristic=False,
+        gamma=0.99,
     ):
     output_dir = Path(output_dir)
 
@@ -175,7 +176,7 @@ async def eval_solvers(
     # Run LP solver
     if run_lp:
         for params in params_grid:
-            futures.append(eval_config('LP', None, params))
+            futures.append(eval_config('LP', None, params, gamma=gamma))
         await process_futures(futures, output_dir)
 
     # Run agent solvers
@@ -195,7 +196,7 @@ async def eval_solvers(
                 scaling_power = 6/10
             time_limit = int(time_limit ** (scaling_power))
 
-        futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
+        futures.append(eval_config(agent, time_limit, params, gamma=gamma, agent_repetitions=agent_repetitions, max_depth=max_depth))
         if len(futures) >= 8000 / agent_repetitions:
             done_configs += len(futures)
             await process_futures(futures, output_dir)

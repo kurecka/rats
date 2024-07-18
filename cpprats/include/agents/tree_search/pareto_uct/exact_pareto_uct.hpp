@@ -70,8 +70,9 @@ struct select_action_pareto {
                 h_reward = std::max(h_reward, h);
             }
             // If the range of rewards is large enough, rescale the exploration constant
+            float reward_c = c;
             if (h_reward >= l_reward + 1) {
-                c *= (h_reward - l_reward);
+                reward_c *= (h_reward - l_reward);
             }
 
             // Find least penalty on a pareto curve
@@ -90,10 +91,8 @@ struct select_action_pareto {
                 if (child.q.curve.num_samples == 0) {
                     r_uct = std::numeric_limits<float>::infinity();
                 } else {
-                    r_uct = c * sqrt(log(node->num_visits + 1) / (child.num_visits + 0.0001));
-                    if (use_lambda || min_penalty >= risk_thd) {
-                        p_uct = - c * sqrt(log(node->num_visits + 1) / (child.num_visits + 0.0001));
-                    }
+                    r_uct = reward_c * sqrt(log(node->num_visits + 1) / (child.num_visits + 0.0001));
+                    p_uct = - c * sqrt(log(node->num_visits + 1) / (child.num_visits + 0.0001));
                 }
                 // Add the uct bonuses to the action curve
                 // If the resulting penalty is negative, set it to zero
@@ -193,7 +192,7 @@ struct descend_callback {
                 common_data->sample_risk_thd = state_penalty0 - (point_penalty0 - action_thd) / (common_data->gammap * outcome_prob);
                 common_data->sample_risk_thd = std::max(common_data->sample_risk_thd, 0.0f);
             } else {
-                // If the minimum playable penalty is less than the action threshold, distribute the remaining budget to all branches
+                // If the maximum playable penalty is less than the action threshold, distribute the remaining budget to all branches
                 // so that the maximum penalty is never exceeded
                 float overflow_ratio = 0;
                 if (point_penalty1 < action_thd) {

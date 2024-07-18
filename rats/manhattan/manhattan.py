@@ -68,13 +68,10 @@ class ManhattanEnv:
         self.capacity = capacity
 
         self.cons_thd = cons_thd
-        self.order_delay = 0
 
         self.targets = targets
         self.period = period
 
-        # multiplier to the period, once the order is finished
-        self.cooldown = 1
         self.radius = radius
 
         # decision node -> special part of state (flag) - signals that orders
@@ -83,6 +80,10 @@ class ManhattanEnv:
 
         # ctr for each target, -1 is active target (accepted order)
         self.state_of_targets = { t : period for t in self.targets }
+
+        # ctr for each target, how much time has passed since accepting the
+        # order, once the delay exceeds cons_thd, receive unit penalty
+        self.delay_of_targets { t : 0 for t in self.targets }
 
         # history of positions, used to animate the trajectory of the agent
         self.history = []
@@ -209,6 +210,27 @@ class ManhattanEnv:
                 self.state_of_targets[t] = self.period
 
 
+    """
+        Increases the delay on all active orders by cons, returns the number of
+        orders that hit cons_thd in this call (i.e. the number of delayed
+        orders that were penalized)
+    """
+    def increase_delay(self, cons):
+        delayed_orders = 0
+        for t in self.targets:
+            # active order that was not delayed yet
+            if self.target_active(t) and self.delay_of_targets[t] < self.cons_thd:
+                self.delay_of_targets[t] += cons
+
+                # if delay is > threshold, cap it and receive penalty
+                if ( self.delay_of_targets[t] >= self.cons_thd )
+                    delayed_orders += 1
+                    self.delay_of_targets[t] = self.cons_thd
+        return delayed_orders
+
+
+
+
     def distance_to_target(self, target):
         # some states do not have longitude and latitude information in the
         # graph file, need to work around this
@@ -279,43 +301,39 @@ class ManhattanEnv:
         if self.capacity > 0:
             self.energy -= action_data.cons
 
-        # if an order is active, add to delay
-        if self.currently_delivering():
-            self.order_delay += action_data.cons
+        for t in self.targets:
+            if self.target_active(t):
+                self.delay
 
         # decrease counters for targets
         self.decision_node = self.decrease_ctrs(action_data.cons)
-
-        penalty = 0
-        # penalize for delay
-        if self.order_delay > self.cons_thd:
-            penalty = 1
-            self.order_delay = 0
 
         # reward if order is delivered
         reward = 0
         if (self.position in self.targets) and (self.state_of_targets[self.position] == -1):
             reward = 1
-            self.state_of_targets[self.position] = self.period * self.cooldown
+            self.state_of_targets[self.position] = self.period
 
-            # if this was the only order, set order delay back to zero
-            if not self.currently_delivering():
-                self.order_delay = 0
+        # add delay (consumption of last action) to orders that are unfinished
+        # receive penalty for each delayed order
+        penalty = self.increase_delay(action_data.cons)
 
         return (self.position, self.state_of_targets, self.decision_node), float(reward), float(penalty), self.is_over()
 
 
-    # if capacity is zero the environment does not terminate
+    # if capacity is ==0 the environment does not terminate
     def is_over(self):
         return self.capacity > 0 and self.energy <= 0
 
     def make_checkpoint(self, checkpoint_id):
         counter_copy = copy.deepcopy(self.state_of_targets)
-        self.checkpoints[checkpoint_id] = (self.position, self.last_gps, self.energy, self.order_delay, counter_copy, self.decision_node)
+        delay_copy = copy.deepcopy(self.delay_of_targets)
+
+        self.checkpoints[checkpoint_id] = (self.position, self.last_gps, self.energy, delay_copy, counter_copy, self.decision_node)
         self.histories[checkpoint_id] = len(self.history)
 
     def restore_checkpoint(self, checkpoint_id):
-        self.position, self.last_gps, self.energy, self.order_delay, self.state_of_targets, self.decision_node = self.checkpoints[checkpoint_id]
+        self.position, self.last_gps, self.energy, self.delay_of_targets, self.state_of_targets, self.decision_node = self.checkpoints[checkpoint_id]
         history_id = self.histories[checkpoint_id]
         self.history = self.history[:history_id]
 
@@ -323,6 +341,7 @@ class ManhattanEnv:
         self.energy = self.capacity
         self.position = self.init_state
         self.state_of_targets = { t : self.period for t in self.targets }
+        self.delay_of_targets = { t : 0 for t in self.targets }
         self.decision_node = False
         self.history = []
 

@@ -74,7 +74,7 @@ class ManhattanEnv:
         self.period = period
 
         # multiplier to the period, once the order is finished
-        self.cooldown = 5
+        self.cooldown = 1
         self.radius = radius
 
         # decision node -> special part of state (flag) - signals that orders
@@ -199,6 +199,10 @@ class ManhattanEnv:
         return orders_available
 
 
+    """
+        Reloads all orders that have not been accepted (have state=0) to
+        period.
+    """
     def reload_ctrs(self):
         for t in self.targets:
             if self.state_of_targets[t] == 0:
@@ -241,7 +245,7 @@ class ManhattanEnv:
 
             # action is an index to targets
             if action != -1:
-                reward = -1e-6
+                reward = -1e-4
                 # accept target
                 self.state_of_targets[self.targets[action]] = -1
             self.reload_ctrs()
@@ -320,8 +324,6 @@ class ManhattanEnv:
         self.position = self.init_state
         self.state_of_targets = { t : self.period for t in self.targets }
         self.decision_node = False
-
-        self.checkpoints.clear()
         self.history = []
 
     """

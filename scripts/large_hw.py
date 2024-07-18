@@ -37,9 +37,9 @@ if __name__ == "__main__":
         RolloutRAMCP,
         RolloutDualUCT,
     ]
-    agent_repetitions = 500
+    agent_repetitions = 300
     max_depth = 200
-    time_limits = [100]
+    time_limits = [10, 25, 50]
     dataset_paths = [
         '/work/rats/scripts/gridworld_generator/HW_LARGE.txt',
     ]
@@ -49,14 +49,14 @@ if __name__ == "__main__":
     grid_desc = [
         {
             'env': [rats.envs.Hallway],
-            'c': [0, 0.2, 0.4],
+            'c': [0, 0.15, 0.3],
             'trap_prob': [0.02],
             'slide_prob': [0, 0.2],
             'instance': instances,
         },
         {
             'env': [rats.envs.ContHallway],
-            'c': [0, 0.2, 0.4],
+            'c': [0, 0.15, 0.3],
             'trap_prob': [0.02],
             'slide_prob': [0, 0.2],
             'instance': instances,

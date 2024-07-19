@@ -302,9 +302,6 @@ class ManhattanEnv:
         if self.capacity > 0:
             self.energy -= action_data.cons
 
-        for t in self.targets:
-            if self.target_active(t):
-                self.delay
 
         # decrease counters for targets
         self.decision_node = self.decrease_ctrs(action_data.cons)

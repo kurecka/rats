@@ -83,7 +83,7 @@ class ManhattanEnv:
 
         # ctr for each target, how much time has passed since accepting the
         # order, once the delay exceeds cons_thd, receive unit penalty
-        self.delay_of_targets { t : 0 for t in self.targets }
+        self.delay_of_targets = { t : 0 for t in self.targets }
 
         # history of positions, used to animate the trajectory of the agent
         self.history = []
@@ -126,10 +126,10 @@ class ManhattanEnv:
             if self.target_active(t):
                 return True
         return False
+    
     """
         env interface methods
     """
-
     def name(self):
         return "ManhattanEnv"
 
@@ -223,12 +223,10 @@ class ManhattanEnv:
                 self.delay_of_targets[t] += cons
 
                 # if delay is > threshold, cap it and receive penalty
-                if ( self.delay_of_targets[t] >= self.cons_thd )
+                if ( self.delay_of_targets[t] >= self.cons_thd ):
                     delayed_orders += 1
                     self.delay_of_targets[t] = self.cons_thd
         return delayed_orders
-
-
 
 
     def distance_to_target(self, target):
@@ -267,7 +265,10 @@ class ManhattanEnv:
 
             # action is an index to targets
             if action != -1:
-                reward = -1e-4
+
+                # incurs small negative reward for accepting order
+                # reward = -1e-4
+
                 # accept target
                 self.state_of_targets[self.targets[action]] = -1
             self.reload_ctrs()

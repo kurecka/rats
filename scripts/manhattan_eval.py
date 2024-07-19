@@ -1,8 +1,7 @@
 from eval import print_time_estimation, eval_solvers, ask_tag, prepare_output_dir
 
-from rats import envs
+import rats
 import ray
-from rats import agents
 import pprint
 import yaml
 import json
@@ -18,10 +17,22 @@ from rats.utils import set_log_level
 from manhattan_dataset.manhattan_dataset import ManhattanDataset
 import asyncio
 
+def RolloutParetoUCT(*args, **kwargs):
+    return rats.agents.ParetoUCT(*args, **kwargs, rollout=True)
+
+
+def RolloutRAMCP(*args, **kwargs):
+    return rats.agents.RAMCP(*args, **kwargs, rollout=True)
+
+
+def RolloutDualUCT(*args, **kwargs):
+    return rats.agents.DualUCT(*args, **kwargs, rollout=True)
+
+
 if __name__ == "__main__":
     ray.init(address="auto")
 
-    agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
+    agents = [RolloutParetoUCT, RolloutRAMCP, RolloutDualUCT]
     agent_repetitions = 100
     max_depth = 200
     time_limits = [500] # 1000, 2000]
@@ -29,8 +40,8 @@ if __name__ == "__main__":
     instances = ManhattanDataset(dataset_path).get_maps()
 
     grid_desc = {
-        'env': [ envs.Manhattan ],
-        'c': [5.0, 10.0, 15.0],
+        'env': [ rats.envs.Manhattan ],
+        'c': [0, 2.0, 4.0, 8.0],
         'capacity' : [ 10000 ],
         'period' : [ 50, 100 ],
         'cons_thd' : [ 10, 20 ],
@@ -41,7 +52,7 @@ if __name__ == "__main__":
     params_tuples = product(*[grid_desc[key] for key in grid_desc])
     params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
 
-    tag = "ManhattanNoCooldowns"
+    tag = "ManhattanInstantaneousPenalties"
     if tag:
         tag = '-' + tag
 

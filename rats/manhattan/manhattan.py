@@ -37,11 +37,13 @@ class ManhattanEnv:
                    taken from the original AEVEnv benchmark. See https://arxiv.org/abs/2005.07227 - section 7.1.
                    This consumption is then subtracted from the agents capacity as well as from the periods.
                    Once the agent reaches an energy level of zero, the
-                   environment terminates, passing capacity = 0 results in a
+                   environment terminates. Passing capacity = 0 results in a
                    non-terminating environment
 
-        cons_thd - the delay threshold on the orders, each cons_thd fuel consumed during an active order incurs a penalty of 1
-                   on the agent.
+        cons_thd - the delay threshold on the orders, whenever an order is
+                    accepted and the agent accumulates a penalty of >= cons_thd
+                    in the process of finishing the order, unit penalty is
+                    received
 
         radius - the distance limit on accepting orders in kilometers
     """
@@ -53,11 +55,7 @@ class ManhattanEnv:
         # maps checkpoint ids to state and history information
         self.checkpoints = dict()
 
-        if not init_state:
-            # randomize starting state
-            self.init_state = self.random_state()
-        else:
-            self.init_state = init_state
+        self.init_state = init_state
 
         self.position = self.init_state
 
@@ -112,21 +110,12 @@ class ManhattanEnv:
     def state_to_name(self, state):
         return self.env.state_to_name[state]
 
-    # generate a random state
-    # TODO: can generate dummy states this way, which results in unwanted behavior
-    # however, we do not use this method in any benchmarks as of now.
-    def random_state(self):
-        return self.state_to_name(np.random.choice(self.env.consmdp.num_states))
-
     def target_active(self, target):
         return self.state_of_targets[target] == -1
 
-    def currently_delivering(self):
-        for t in self.targets:
-            if self.target_active(t):
-                return True
-        return False
-    
+    def can_accept_target(self, target):
+        return self.state_of_targets[target] == 0
+
     """
         env interface methods
     """
@@ -145,7 +134,7 @@ class ManhattanEnv:
     def get_actions_for_state(self, name):
         # able to accept orders
         if ( self.decision_node ):
-            return [ -1 ] + [ i for i, t in enumerate(self.targets) if self.state_of_targets[t] == 0 ]
+            return [ -1 ] + [ i for i, t in enumerate(self.targets) if self.can_accept_target(t) ]
 
         state_id = self.name_to_state(name)
         action_count = len(self.env.consmdp.actions_for_state(state_id))
@@ -206,7 +195,7 @@ class ManhattanEnv:
     """
     def reload_ctrs(self):
         for t in self.targets:
-            if self.state_of_targets[t] == 0:
+            if self.can_accept_target(t):
                 self.state_of_targets[t] = self.period
 
 
@@ -291,7 +280,7 @@ class ManhattanEnv:
         next_state = np.random.choice(list(action_data.distr.keys()),
                                       p=list(action_data.distr.values()))
 
-        # skip dummy state, record penalty
+        # skip dummy state representing stochastic consumption, record it
         action_iterator = self.env.consmdp.actions_for_state(next_state)
         action_data = next(islice(action_iterator, 0, None))
 
@@ -302,13 +291,12 @@ class ManhattanEnv:
         if self.capacity > 0:
             self.energy -= action_data.cons
 
-
         # decrease counters for targets
         self.decision_node = self.decrease_ctrs(action_data.cons)
 
         # reward if order is delivered
         reward = 0
-        if (self.position in self.targets) and (self.state_of_targets[self.position] == -1):
+        if (self.position in self.targets) and self.target_active(self.position):
             reward = 1
             self.state_of_targets[self.position] = self.period
 
@@ -316,7 +304,7 @@ class ManhattanEnv:
         # receive penalty for each delayed order
         penalty = self.increase_delay(action_data.cons)
 
-        return (self.position, self.state_of_targets, self.decision_node), float(reward), float(penalty), self.is_over()
+        return (self.position, self.state_of_targets, self.decision_node), reward, penalty, self.is_over()
 
 
     # if capacity is ==0 the environment does not terminate

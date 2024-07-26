@@ -1,4 +1,3 @@
-
 import copy
 from fimdpenv import AEVEnv
 import folium
@@ -266,8 +265,8 @@ class ManhattanEnv:
 
         # otherwise, proceed by moving in the underlying cmdp, recording
         # reward/penalty and adjusting periods of orders, record the state into
-        # history as well
-        self.history.append( self.position )
+        # history as well as information about active orders
+        self.history.append( (self.position, [self.target_active(t) for t in self.targets ] ) )
 
         # get linked list of actions from cmdp
         state_id = self.name_to_state(self.position)
@@ -333,15 +332,15 @@ class ManhattanEnv:
 
     """
         Visualizes the positions in self.history on the map of manhattan.
-        Taken directly from AEVEnv
+        Taken directly from AEVEnv.
+
+        Duration signals the maximum number of transitions visible on the map,
+        i.e. 20 means that only the 20 most recent transitions will be shown.
+        0 -> transitions should persist
     """
-    # interval signals number of frames between each animation plot
-    def animate_simulation(self, interval=100, filename="map.html"):
-        """
-        Obtain the animation of a simulation instance where the agent reaches
-        the target state from the initial state using assigned counterstrategy
-        """
+    def animate_simulation(self, duration=0, filename="map.html"):
         targets = self.targets
+
         init_state = self.init_state
 
         def is_int(s):
@@ -352,115 +351,142 @@ class ManhattanEnv:
                 return False
 
 
-        # Load NYC Geodata
-        for _, _, data in self.G.edges(data=True, keys=False):
-            data['time_mean'] = float(data['time_mean'])
         for _, data in self.geo_data:
             data['lat'] = float(data['lat'])
             data['lon'] = float(data['lon'])
 
+        # remove targets and trajectory states that are not present
+        # in the geo json data, populate trajectory list
         for target in targets:
             if target not in list(self.G.nodes):
                 targets.remove(target)
 
         trajectory = []
 
-        # filter dummy states
-        for position  in self.history:
+        for position, orders in self.history:
             if position not in list(self.G.nodes):
                 pass
             else:
-                trajectory.append( position )
+                trajectory.append((position, orders))
 
-        # create baseline map
-        nodes_all = {}
+        # create map and fit its bounds to min/max longitude and latitude of visited states
+        global_lat = []
+        global_lon = []
         for node in self.G.nodes.data():
-            name = str(node[0])
             point = [node[1]['lat'], node[1]['lon']]
-            nodes_all[name] = point
-        global_lat = []; global_lon = []
-        for name, point in nodes_all.items():
             global_lat.append(point[0])
             global_lon.append(point[1])
+
         min_point = [min(global_lat), min(global_lon)]
         max_point =[max(global_lat), max(global_lon)]
         m = folium.Map(zoom_start=1, tiles='cartodbpositron')
         m.fit_bounds([min_point, max_point])
 
-        # add initial state, reload states and target states
+        # add initial state as a permanent marker on the map
         folium.CircleMarker(location=[self.G.nodes[init_state]['lat'], self.G.nodes[init_state]['lon']],
                         radius= 3,
                         popup = 'initial state',
-                        color='green',
-                        fill_color = 'green',
+                        color='black',
+                        fill_color = 'black',
                         fill_opacity=1,
                         fill=True).add_to(m)
 
-        for node in targets:
-            folium.CircleMarker(location=[self.G.nodes[node]['lat'], self.G.nodes[node]['lon']],
-                        radius= 3,
-                        popup = 'target state',
-                        color="red",
-                        fill_color = "red",
-                        fill_opacity=1,
-                        fill=True).add_to(m)
-        # Baseline time
 
+        # animate trajectory of the agent
         t = time.time()
         path = list(zip(trajectory[:-1], trajectory[1:]))
+
+        # contains geo json data pertaining to the transitions (coords of both pts, timestamp and color of edge)
         lines = []
-        current_positions = []
+
+        # contains geo json data pertaining to the orders - their positions, status, etc.
+        order_data = []
+
+        # time difference in seconds between two lines (moves of the agent)
+        # used by folium to control when the line appears/disappears
+        t_edge = 1
+
         for pair in path:
+            data1, data2 = pair
 
-            # pull out positions from the history tuple
-            pos1, pos2 = pair
+            pos1, orders1 = data1
+            pos2, orders2 = data2
 
-            t_edge = 1
+
+            # prepare metadata for each transition of the agent
+            # for both points on the transition get longitude and latitude from json and timestamp them
             lines.append(dict({'coordinates':
                 [[self.G.nodes[pos1]['lon'], self.G.nodes[pos1]['lat']],
                 [self.G.nodes[pos2]['lon'], self.G.nodes[pos2]['lat']]],
                 'dates': [time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(t)),
                            time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(t+t_edge))],
                            'color':'black'}))
-            current_positions.append(dict({'coordinates':[self.G.nodes[pos2]['lon'], self.G.nodes[pos2]['lat']],
-                        'dates': [time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(t+t_edge))]}))
+
+            # add metadata for each target, change colors based on its status
+            i = 0
+            for target in targets:
+                color = 'red'
+
+                # order accepted in next step
+                if orders2[i]:
+                    color = 'yellow'
+
+                # order finished in next step
+                elif orders1[i]:
+                    color = 'green'
+
+                order_data.append(dict({'coordinates':
+                                       [self.G.nodes[target]['lon'], self.G.nodes[target]['lat']],
+                                   'dates':
+                                        [time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(t+t_edge))],
+                               'color': color }))
+                i += 1
+
             t = t+t_edge
 
+        # geojson feature for each of the agent transitions
         features = [{'type': 'Feature',
                      'geometry': {
                                 'type': 'LineString',
                                 'coordinates': line['coordinates'],
                                  },
                      'properties': {'times': line['dates'],
-                                    'style': {'color': line['color'],
-                                              'weight': line['weight'] if 'weight' in line else 2
-                                             }
+                                    'style': {'color': line['color'] }
                                     }
                      }
                 for line in lines]
 
+        # geojson features for all orders
         positions = [{
-            'type': 'Feature',
-            'geometry': {
-                        'type':'Point',
-                        'coordinates':position['coordinates']
-                        },
-            'properties': {
-                'times': position['dates'],
-                'style': {'color' : 'white'},
-                'icon': 'circle',
-                'iconstyle':{
-                    'fillColor': 'white',
-                    'fillOpacity': 1,
-                    'stroke': 'true',
-                    'radius': 2
+                'type': 'Feature',
+                'geometry': {
+                            'type':'Point',
+                            'coordinates': position['coordinates']
+                            },
+                'properties': {
+                    'times': position['dates'],
+                    'style': {'color' : position['color'] },
+                    'icon': 'circle',
+                    'iconstyle':{
+                        'fillColor': position['color'],
+                        'fillOpacity': 1,
+                        'stroke': 'true',
+                        'radius': 2
+                    }
                 }
             }
-        }
-         for position in current_positions]
-        data_lines = {'type': 'FeatureCollection', 'features': features}
-        data_positions = {'type': 'FeatureCollection', 'features': positions}
-        folium.plugins.TimestampedGeoJson(data_lines,  transition_time=interval,
-                               period='PT1S', add_last_point=False, date_options='mm:ss', duration=None).add_to(m)
+         for position in order_data]
+
+
+        data_lines = {'type': 'FeatureCollection', 'features': features + positions }
+
+        # convert the seconds into an ISO timestring
+        if duration != 0:
+            iso_duration = f"PT{duration}S"
+        else:
+            iso_duration = None
+
+        folium.plugins.TimestampedGeoJson(data_lines, period='PT1S', transition_time=400, add_last_point=False, duration=iso_duration).add_to(m)
 
         m.save(filename)
+

@@ -1,5 +1,6 @@
 
 from rats import envs
+from manhattan_dataset.manhattan_dataset import ManhattanDataset
 from rats import agents
 from rats import utils
 import numpy as np
@@ -90,59 +91,23 @@ reloads = ['42431659','42430367','1061531810',
             '42440966','1061531802','42455666']
 
 # targets = ['42440465','42445916']
-init_state = '42436484'
-targets = '42431678', '42455666', '42431677', '42438798'
-period = 50
-
+init_state = "42427762"
+targets = "42435261","42456683","42440022","42435250","42430378","1241742563","42457788","42435716","596775946"
+period = 100
 capacity = 10000
-e = envs.Manhattan(targets, init_state, period, capacity, cons_thd=20.0, radius=0.5)
 
-total_rew = 0
-total_pen = 0
 
-"""
-for i in range(10):
-    s = e.current_state()
-    print(i, s)
-    if i == 2:
-        e.make_checkpoint(0)
-    # print(e.possible_actions(s))
-    # print(e.current_state())
-    a = np.random.choice(e.possible_actions(s))
-    # print("played", a)
-    prev_s = s
-    s, r, p, o = e.play_action(a)
+data = ManhattanDataset("manhattan_dataset/dense_dataset.txt")
 
-    if ( r > 0 ):
-        print(prev_s, "into", s)
-
-    total_rew += r
-    total_pen += p
-    e.animate_simulation()
-
-e.restore_checkpoint(0)
-print(e.current_state())
-e.reset()
-
-"""
-r = 0
-p = 0
-sr = 0
-sp = 0
-
-e.reset()
-
-for i in range(1):
-    # e = envs.InvestorEnv(2, 20)
+for name, env in data.get_maps():
+    e = envs.Manhattan(**env, period=period, capacity=capacity, cons_thd=20.0, radius=0.5)
     h = envs.EnvironmentHandler(e, 100)
     e.reset()
 
-    print(e.current_state())
-    print(h.get_current_state())
 
     a = agents.ParetoUCT(
         h,
-        max_depth=100, num_sim=1000, sim_time_limit=500, risk_thd=3.0, gamma=0.999,
+        max_depth=100, num_sim=1000, sim_time_limit=100, risk_thd=3.0, gamma=0.999,
         exploration_constant=5
     )
 
@@ -155,14 +120,10 @@ for i in range(1):
         a.play()
         #print("Step:", a.get_handler().get_num_steps(), "State: (", s, ")", "Reward:", a.get_handler().get_reward(), "Penalty:", a.get_handler().get_penalty())
         # print()
-    h = a.get_handler()
-    print(h.get_reward())
-    r += (h.get_reward() - r) / (i+1)
-    sr += h.get_reward()
-    p += (h.get_penalty() - p) / (i+1)
-    sp += h.get_penalty()
-    print(f'{i}: {r} {p}')
-    print(a.get_graphviz())
-    e.animate_simulation(100, "/work/rats/outputs/ahoj.html")
+    e.animate_simulation(duration=5, filename=f"/work/rats/outputs/{name}.html")
 
+
+
+
+total_rew = 0
 

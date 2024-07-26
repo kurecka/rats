@@ -33,16 +33,16 @@ if __name__ == "__main__":
     ray.init(address="auto")
 
     agents = [RolloutParetoUCT, RolloutRAMCP, RolloutDualUCT]
-    agent_repetitions = 100
+    agent_repetitions = 300
     max_depth = 200
-    time_limits = [500] # 1000, 2000]
+    time_limits = [100, 200, 500] # 1000, 2000]
     dataset_path = '/work/rats/scripts/manhattan_dataset/dense_dataset.txt'
     instances = ManhattanDataset(dataset_path).get_maps()
 
     grid_desc = {
         'env': [ rats.envs.Manhattan ],
-        'c': [0, 2.0, 4.0, 8.0],
-        'capacity' : [ 10000 ],
+        'c': [0, 1.5, 3.0, 4.5, 6.0],
+        'capacity' : [ 0 ],
         'period' : [ 50, 100 ],
         'cons_thd' : [ 10, 20 ],
         'radius' : [ 0.2, 0.4 ],
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     params_tuples = product(*[grid_desc[key] for key in grid_desc])
     params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
 
-    tag = "ManhattanInstantaneousPenalties"
+    tag = "ManhattanFinalEval"
     if tag:
         tag = '-' + tag
 

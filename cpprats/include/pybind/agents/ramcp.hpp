@@ -13,7 +13,8 @@ void register_ramcp(py::module &m, const T& agent_type, std::string name) {
         "exploration_constant"_a = 5.0,
         "rollout"_a = false,
         "graphviz_depth"_a = -1)
-        .def("get_graphviz", &ts::ramcp<S, A>::get_graphviz);
+        .def("get_graphviz", &ts::ramcp<S, A>::get_graphviz)
+        .def("get_simulations_ran", &ts::ramcp<S, A>::get_simulations_ran);
 }
 
 } // end namespace rats::py

@@ -13,7 +13,8 @@ void register_dual_uct(py::module &m, const T& agent_type, std::string name) {
         "exploration_constant"_a = 5.0, "initial_lambda"_a = 0, "lr"_a = -1,
         "rollout"_a = false,
         "graphviz_depth"_a = -1)
-        .def("get_graphviz", &ts::dual_uct<S, A>::get_graphviz);
+        .def("get_graphviz", &ts::dual_uct<S, A>::get_graphviz)
+        .def("get_simulations_ran", &ts::dual_uct<S, A>::get_graphviz);
 }
 
 } // end namespace rats::py

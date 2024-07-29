@@ -13,7 +13,8 @@ void register_pareto_uct(py::module &m, const T& agent_type, std::string name) {
         "exploration_constant"_a = 5.0, "risk_exploration_ratio"_a = 1,
         "rollout"_a = false, "graphviz_depth"_a = -1)
         .def("get_graphviz", &ts::pareto_uct<S, A>::get_graphviz)
-        .def("get_state_curve", &ts::pareto_uct<S, A>::get_state_curve);
+        .def("get_state_curve", &ts::pareto_uct<S, A>::get_state_curve)
+        .def("get_simulations_ran", &ts::pareto_uct<S, A>::get_simulations_ran);
 }
 
 } // end namespace rats::py

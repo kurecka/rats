@@ -343,6 +343,7 @@ private:
     int max_depth;
     int num_sim;
     int sim_time_limit;
+    int simulations_ran;
     float risk_thd;
     bool use_rollout;
     float lambda;
@@ -369,6 +370,7 @@ public:
     , max_depth(_max_depth)
     , num_sim(_num_sim)
     , sim_time_limit(_sim_time_limit)
+    , simulations_ran(0)
     , risk_thd(_risk_thd)
     , use_rollout(_rollout)
     , lambda(_lambda)
@@ -405,6 +407,13 @@ public:
             curve_str += fmt::format("{} ", common_data.predictor.predict_value(t, s));
         }
         return curve_str;
+    }
+
+    /**
+     * @brief Return number of executed simulations in last play() call.
+     */
+    int get_simulations_ran() const {
+        return simulations_ran;
     }
 
     /**
@@ -454,11 +463,12 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
-   	        spdlog::debug("Number of simulations: {}", i);
+            simulations_ran = i;
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);
             }
+            simulations_ran = num_sim;
         }
 
         // Sample risk action is modified during the simulations -> reset it

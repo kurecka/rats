@@ -125,6 +125,7 @@ private:
     int max_depth;
     int num_sim;
     int sim_time_limit;
+    int simulations_ran;
     float risk_thd;
     float lr;
     bool use_rollout;
@@ -152,6 +153,7 @@ public:
     , max_depth(_max_depth)
     , num_sim(_num_sim)
     , sim_time_limit(_sim_time_limit)
+    , simulations_ran(0)
     , risk_thd(_risk_thd)
     , lr(_lr)
     , use_rollout(_rollout)
@@ -184,6 +186,13 @@ public:
         }
 
         return immediate_penalty;
+    }
+
+    /**
+     * @brief Return number of executed simulations in last play() call.
+     */
+    int get_simulations_ran() const {
+        return simulations_ran;
     }
 
     /**
@@ -233,10 +242,12 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
+            simulations_ran = i;
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);
             }
+            simulations_ran = num_sim;
         }
 
         // Plot the tree

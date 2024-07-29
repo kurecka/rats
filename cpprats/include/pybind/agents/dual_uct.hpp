@@ -14,7 +14,7 @@ void register_dual_uct(py::module &m, const T& agent_type, std::string name) {
         "rollout"_a = false,
         "graphviz_depth"_a = -1)
         .def("get_graphviz", &ts::dual_uct<S, A>::get_graphviz)
-        .def("get_simulations_ran", &ts::dual_uct<S, A>::get_graphviz);
+        .def("get_simulations_ran", &ts::dual_uct<S, A>::get_simulations_ran);
 }
 
 } // end namespace rats::py

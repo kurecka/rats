@@ -35,12 +35,16 @@ def eval_agent_config(agent, time_limit, params, max_depth=100, gamma=0.99, expl
     )
 
     a.reset()
-
+    average_simulations = 0
     steps = 0
     start_time = time.time()
     while not a.get_handler().is_over():
         a.play()
+        average_simulations += a.get_simulations_ran()
         steps += 1
+
+    # average simulations per step
+    average_simulations /= steps
 
     h = a.get_handler()
     rew = h.get_reward()
@@ -56,6 +60,7 @@ def eval_agent_config(agent, time_limit, params, max_depth=100, gamma=0.99, expl
         'penalty': p,
         'time': total_time,
         'steps': steps,
+        'simulations' : average_simulations,
     }
     res.update(params)
     return res
@@ -98,6 +103,7 @@ def eval_lp_config(params, gamma=0.99):
         'penalty': p,
         'time': total_time,
         'steps': 0,
+        'simulations' : 0,
     }
     res.update(params)
     return res
@@ -114,6 +120,7 @@ def aggregate_results(results):
         'penalty': ['mean', 'std'],
         'time': ['mean', 'std', 'min', 'max'],
         'steps': ['mean', 'std', 'min', 'max'],
+        'simulations' ['mean', 'std', 'min', 'max']
     }
     static_cols = [col for col in results.columns if col not in aggregate_by and col not in aggrgate_on]
 

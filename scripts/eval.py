@@ -120,7 +120,7 @@ def aggregate_results(results):
         'penalty': ['mean', 'std'],
         'time': ['mean', 'std', 'min', 'max'],
         'steps': ['mean', 'std', 'min', 'max'],
-        'simulations' ['mean', 'std', 'min', 'max']
+        'simulations' : ['mean', 'std', 'min', 'max'],
     }
     static_cols = [col for col in results.columns if col not in aggregate_by and col not in aggrgate_on]
 

@@ -117,7 +117,7 @@ public:
         float _gammap = 1, int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0,
         bool _rollout = true,
-        int _num_rollouts,
+        int _num_rollouts = 10,
         int _graphviz_depth = -1
     )
     : agent<S, A>(_handler)

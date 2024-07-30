@@ -363,7 +363,7 @@ public:
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, 
-        bool _rollout = true, int _num_rollouts,
+        bool _rollout = true, int _num_rollouts = 10,
         int _graphviz_depth = -1,
         float _lambda = -1
     )

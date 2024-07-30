@@ -18,15 +18,15 @@ from manhattan_dataset.manhattan_dataset import ManhattanDataset
 import asyncio
 
 def RolloutParetoUCT(*args, **kwargs):
-    return rats.agents.ParetoUCT(*args, **kwargs, rollout=True)
+    return rats.agents.ParetoUCT(*args, **kwargs, rollout=True, num_rollouts=1)
 
 
 def RolloutRAMCP(*args, **kwargs):
-    return rats.agents.RAMCP(*args, **kwargs, rollout=True)
+    return rats.agents.RAMCP(*args, **kwargs, rollout=True, num_rollouts=1)
 
 
 def RolloutDualUCT(*args, **kwargs):
-    return rats.agents.DualUCT(*args, **kwargs, rollout=True)
+    return rats.agents.DualUCT(*args, **kwargs, rollout=True, num_rollouts=1)
 
 
 if __name__ == "__main__":

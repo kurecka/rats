@@ -71,6 +71,9 @@ class ManhattanEnv:
 
         self.radius = radius
 
+        # multiplicative factor to period of order after completing it
+        self.cooldown = 5
+
         # decision node -> special part of state (flag) - signals that orders
         # can be accepted at this step
         self.decision_node = False
@@ -297,7 +300,7 @@ class ManhattanEnv:
         reward = 0
         if (self.position in self.targets) and self.target_active(self.position):
             reward = 1
-            self.state_of_targets[self.position] = self.period
+            self.state_of_targets[self.position] = self.period * self.cooldown
 
         # add delay (consumption of last action) to orders that are unfinished
         # receive penalty for each delayed order

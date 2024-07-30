@@ -129,6 +129,7 @@ private:
     float risk_thd;
     float lr;
     bool use_rollout;
+    int num_rollouts;
     float initial_lambda;
     float lambda_max = 1e9;
 
@@ -146,7 +147,7 @@ public:
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _initial_lambda = 2, float _lr = -1,
-        bool _rollout = true,
+        bool _rollout = true, int _num_rollouts,
         int _graphviz_depth = 0
     )
     : agent<S, A>(_handler)
@@ -157,6 +158,7 @@ public:
     , risk_thd(_risk_thd)
     , lr(_lr)
     , use_rollout(_rollout)
+    , num_rollouts(_num_rollouts)
     , initial_lambda(_initial_lambda)
     , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, 0., 0, agent<S, A>::handler})
     , graphviz_depth(_graphviz_depth)
@@ -212,7 +214,7 @@ public:
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
         if (use_rollout) {
-            rollout(leaf, true);
+            rollout(leaf, num_rollouts, true);
         }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();

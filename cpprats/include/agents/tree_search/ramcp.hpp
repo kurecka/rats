@@ -101,6 +101,7 @@ private:
     int simulations_ran;
     float risk_thd;
     bool use_rollout;
+    int num_rollouts;
 
     data_t common_data;
 
@@ -116,6 +117,7 @@ public:
         float _gammap = 1, int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0,
         bool _rollout = true,
+        int _num_rollouts,
         int _graphviz_depth = -1
     )
     : agent<S, A>(_handler)
@@ -125,6 +127,7 @@ public:
     , simulations_ran(0)
     , risk_thd(_risk_thd)
     , use_rollout(_rollout)
+    , num_rollouts(_num_rollouts)
     , common_data({_risk_thd, _exploration_constant, _gamma, _gammap, 0., agent<S, A>::handler, {}})
     , graphviz_depth(_graphviz_depth)
     , root(std::make_unique<state_node_t>())
@@ -164,7 +167,8 @@ public:
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
         if (use_rollout) {
-            rollout(leaf);
+            // rollout num_rollouts times, do not count penalty
+            rollout(leaf, num_rollouts);
         }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();

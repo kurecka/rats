@@ -500,7 +500,7 @@ std::pair<float, float> v_rollout_sample(SN* sn) {
  * @param num_sim Number of simulations to perform
  */
 template<typename SN>
-void rollout(SN* sn, bool penalty = false, int num_sim = 10) {
+void rollout(SN* sn, int num_sim = 10, bool penalty = false) {
     float mean_r = 0;
     float mean_p = 0;
 

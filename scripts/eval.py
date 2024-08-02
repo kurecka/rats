@@ -35,12 +35,16 @@ def eval_agent_config(agent, time_limit, params, max_depth=100, gamma=0.99, expl
     )
 
     a.reset()
-
+    average_simulations = 0
     steps = 0
     start_time = time.time()
     while not a.get_handler().is_over():
         a.play()
+        average_simulations += a.get_simulations_ran()
         steps += 1
+
+    # average simulations per step
+    average_simulations /= steps
 
     h = a.get_handler()
     rew = h.get_reward()
@@ -56,6 +60,7 @@ def eval_agent_config(agent, time_limit, params, max_depth=100, gamma=0.99, expl
         'penalty': p,
         'time': total_time,
         'steps': steps,
+        'simulations' : average_simulations,
     }
     res.update(params)
     return res
@@ -98,6 +103,7 @@ def eval_lp_config(params, gamma=0.99):
         'penalty': p,
         'time': total_time,
         'steps': 0,
+        'simulations' : 0,
     }
     res.update(params)
     return res
@@ -114,6 +120,7 @@ def aggregate_results(results):
         'penalty': ['mean', 'std'],
         'time': ['mean', 'std', 'min', 'max'],
         'steps': ['mean', 'std', 'min', 'max'],
+        'simulations' : ['mean', 'std', 'min', 'max'],
     }
     static_cols = [col for col in results.columns if col not in aggregate_by and col not in aggrgate_on]
 
@@ -127,7 +134,7 @@ def aggregate_results(results):
     return aggregated
 
 
-def eval_config(agent, time_limit, params, agent_repetitions=1, max_depth=100):
+def eval_config(agent, time_limit, params, gamma=0.99, agent_repetitions=1, max_depth=100):
     """
     Evaluate a single solver on the given configurations
     """
@@ -162,6 +169,7 @@ async def eval_solvers(
         output_dir="/work/rats/rats",
         run_lp=True,
         use_ramcp_heuristic=False,
+        gamma=0.99,
     ):
     output_dir = Path(output_dir)
 
@@ -175,7 +183,7 @@ async def eval_solvers(
     # Run LP solver
     if run_lp:
         for params in params_grid:
-            futures.append(eval_config('LP', None, params))
+            futures.append(eval_config('LP', None, params, gamma=gamma))
         await process_futures(futures, output_dir)
 
     # Run agent solvers
@@ -195,7 +203,7 @@ async def eval_solvers(
                 scaling_power = 6/10
             time_limit = int(time_limit ** (scaling_power))
 
-        futures.append(eval_config(agent, time_limit, params, agent_repetitions=agent_repetitions, max_depth=max_depth))
+        futures.append(eval_config(agent, time_limit, params, gamma=gamma, agent_repetitions=agent_repetitions, max_depth=max_depth))
         if len(futures) >= 8000 / agent_repetitions:
             done_configs += len(futures)
             await process_futures(futures, output_dir)

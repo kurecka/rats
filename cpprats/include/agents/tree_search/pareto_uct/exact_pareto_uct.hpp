@@ -343,8 +343,10 @@ private:
     int max_depth;
     int num_sim;
     int sim_time_limit;
+    int simulations_ran;
     float risk_thd;
     bool use_rollout;
+    int num_rollouts;
     float lambda;
     float lambda_max = 100;
     double grad_buffer = 0;
@@ -361,7 +363,7 @@ public:
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _risk_exploration_ratio = 1, 
-        bool _rollout = true,
+        bool _rollout = true, int _num_rollouts = 10,
         int _graphviz_depth = -1,
         float _lambda = -1
     )
@@ -369,8 +371,10 @@ public:
     , max_depth(_max_depth)
     , num_sim(_num_sim)
     , sim_time_limit(_sim_time_limit)
+    , simulations_ran(0)
     , risk_thd(_risk_thd)
     , use_rollout(_rollout)
+    , num_rollouts(_num_rollouts)
     , lambda(_lambda)
     , common_data({_risk_thd, _risk_thd, _exploration_constant, _risk_exploration_ratio, _gamma, _gammap, 0, agent<S, A>::handler, {}, {}, lambda, 0})
     , graphviz_depth(_graphviz_depth)
@@ -408,6 +412,13 @@ public:
     }
 
     /**
+     * @brief Return number of executed simulations in last play() call.
+     */
+    int get_simulations_ran() const {
+        return simulations_ran;
+    }
+
+    /**
      * @brief Perform i-th simulation of the MCTS algorithm
      * 
      * @param i Simulation number
@@ -425,7 +436,7 @@ public:
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
         if (use_rollout) {
-            rollout(leaf, true);
+            rollout(leaf, num_rollouts, true);
         }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
@@ -454,11 +465,12 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
-   	        spdlog::debug("Number of simulations: {}", i);
+            simulations_ran = i;
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);
             }
+            simulations_ran = num_sim;
         }
 
         // Sample risk action is modified during the simulations -> reset it

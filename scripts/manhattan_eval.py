@@ -1,8 +1,7 @@
 from eval import print_time_estimation, eval_solvers, ask_tag, prepare_output_dir
 
-from rats import envs
+import rats
 import ray
-from rats import agents
 import pprint
 import yaml
 import json
@@ -18,20 +17,32 @@ from rats.utils import set_log_level
 from manhattan_dataset.manhattan_dataset import ManhattanDataset
 import asyncio
 
+def RolloutParetoUCT(*args, **kwargs):
+    return rats.agents.ParetoUCT(*args, **kwargs, rollout=True, num_rollouts=1)
+
+
+def RolloutRAMCP(*args, **kwargs):
+    return rats.agents.RAMCP(*args, **kwargs, rollout=True, num_rollouts=1)
+
+
+def RolloutDualUCT(*args, **kwargs):
+    return rats.agents.DualUCT(*args, **kwargs, rollout=True, num_rollouts=1)
+
+
 if __name__ == "__main__":
     ray.init(address="auto")
 
-    agents = [agents.ParetoUCT, agents.RAMCP, agents.DualUCT]
-    agent_repetitions = 100
+    agents = [RolloutParetoUCT, RolloutRAMCP, RolloutDualUCT]
+    agent_repetitions = 300
     max_depth = 200
-    time_limits = [500] # 1000, 2000]
+    time_limits = [100, 200, 500] # 1000, 2000]
     dataset_path = '/work/rats/scripts/manhattan_dataset/dense_dataset.txt'
     instances = ManhattanDataset(dataset_path).get_maps()
 
     grid_desc = {
-        'env': [ envs.Manhattan ],
-        'c': [5.0, 10.0, 15.0],
-        'capacity' : [ 10000 ],
+        'env': [ rats.envs.Manhattan ],
+        'c': [0, 1.5, 3.0, 4.5, 6.0],
+        'capacity' : [ 0 ],
         'period' : [ 50, 100 ],
         'cons_thd' : [ 10, 20 ],
         'radius' : [ 0.2, 0.4 ],
@@ -41,7 +52,7 @@ if __name__ == "__main__":
     params_tuples = product(*[grid_desc[key] for key in grid_desc])
     params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
 
-    tag = "ManhattanNoCooldowns"
+    tag = "ManhattanFinalEval"
     if tag:
         tag = '-' + tag
 

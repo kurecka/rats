@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(RATS VERSION 1.1 LANGUAGES CXX)
+project(RATS VERSION 1.24.7 LANGUAGES CXX)
 
 
 # Options: Things you can set via commandline options to cmake (e.g. -DENABLE_LTO=[ON|OFF])

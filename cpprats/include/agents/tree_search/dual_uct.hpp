@@ -125,9 +125,11 @@ private:
     int max_depth;
     int num_sim;
     int sim_time_limit;
+    int simulations_ran;
     float risk_thd;
     float lr;
     bool use_rollout;
+    int num_rollouts;
     float initial_lambda;
     float lambda_max = 1e9;
 
@@ -145,16 +147,18 @@ public:
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
         float _exploration_constant = 5.0, float _initial_lambda = 2, float _lr = -1,
-        bool _rollout = true,
+        bool _rollout = true, int _num_rollouts = 10,
         int _graphviz_depth = 0
     )
     : agent<S, A>(_handler)
     , max_depth(_max_depth)
     , num_sim(_num_sim)
     , sim_time_limit(_sim_time_limit)
+    , simulations_ran(0)
     , risk_thd(_risk_thd)
     , lr(_lr)
     , use_rollout(_rollout)
+    , num_rollouts(_num_rollouts)
     , initial_lambda(_initial_lambda)
     , common_data({_risk_thd, _initial_lambda, _exploration_constant, _gamma, _gammap, 0., 0, agent<S, A>::handler})
     , graphviz_depth(_graphviz_depth)
@@ -187,6 +191,13 @@ public:
     }
 
     /**
+     * @brief Return number of executed simulations in last play() call.
+     */
+    int get_simulations_ran() const {
+        return simulations_ran;
+    }
+
+    /**
      * @brief Perform i-th simulation of the MCTS algorithm
      *
      * @param i Simulation number
@@ -203,7 +214,7 @@ public:
         state_node_t* leaf = select_leaf_f(root.get(), true, max_depth);
         expand_state(leaf);
         if (use_rollout) {
-            rollout(leaf, true);
+            rollout(leaf, num_rollouts, true);
         }
         propagate_f(leaf);
         agent<S, A>::handler.end_sim();
@@ -233,10 +244,12 @@ public:
             while (std::chrono::high_resolution_clock::now() < end) {
                 simulate(i++);
             }
+            simulations_ran = i;
         } else {
             for (int i = 0; i < num_sim; i++) {
                 simulate(i);
             }
+            simulations_ran = num_sim;
         }
 
         // Plot the tree

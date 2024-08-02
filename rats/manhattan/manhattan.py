@@ -382,12 +382,20 @@ class ManhattanEnv:
 
         min_point = [min(global_lat), min(global_lon)]
         max_point =[max(global_lat), max(global_lon)]
-        m = folium.Map(zoom_start=1, tiles='cartodbpositron')
-        m.fit_bounds([min_point, max_point])
+        m = folium.Map(zoom_start=1)
+
+        # Add Stadia Stamen Terrain tiles to the map
+        folium.TileLayer(
+            tiles='https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+            attr='copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>.',
+            name='OpenStreetMap.HOT'
+        ).add_to(m)
+
+        folium.LayerControl().add_to(m)
 
         # add initial state as a permanent marker on the map
         folium.CircleMarker(location=[self.G.nodes[init_state]['lat'], self.G.nodes[init_state]['lon']],
-                        radius= 3,
+                        radius= 5,
                         popup = 'initial state',
                         color='black',
                         fill_color = 'black',
@@ -474,7 +482,7 @@ class ManhattanEnv:
                         'fillColor': position['color'],
                         'fillOpacity': 1,
                         'stroke': 'true',
-                        'radius': 2
+                        'radius': 5
                     }
                 }
             }

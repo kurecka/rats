@@ -392,6 +392,7 @@ class ManhattanEnv:
         ).add_to(m)
 
         folium.LayerControl().add_to(m)
+        m.fit_bounds([min_point, max_point])
 
         # add initial state as a permanent marker on the map
         folium.CircleMarker(location=[self.G.nodes[init_state]['lat'], self.G.nodes[init_state]['lon']],

@@ -8,9 +8,10 @@ import numpy as np
 import networkx as nx
 import time
 
-# Calculates distance in km from latitude and longitude of two points using
-# the Haversine formula,
-# see: https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
+"""
+    Get distance (in kilometers) of two points specified as longitude and
+    latitude information using the Haversine formula.
+"""
 def distance_from_gps(long1, lat1, long2, lat2):
     R = 6371
     p = pi / 180
@@ -26,11 +27,16 @@ class ManhattanEnv:
         various customers. The goal of the agent is to maximize finished orders (rewards) while avoiding
         delayed deliveries (penalty).
 
-        targets - labels of reachability targets / states of the mdp that provide orders for the agent
+        targets - list of state labels that specify the targets for periodic
+                   maintenance
 
         init_state - initial state of the agent
 
-        period - the cooldown on each customer order.
+        period - the amount of time until each target requests maintenance,
+                 the cooldown resets to period whenever an order is not
+                 accepted and to self.cooldown (default value 5) * period
+                 whenever an order is finished to incentivize exploring the
+                 environment
 
         capacity - the consumption capacity of the agent. Picking a direction results in a stochastic energy consumption
                    taken from the original AEVEnv benchmark. See https://arxiv.org/abs/2005.07227 - section 7.1.
@@ -41,8 +47,8 @@ class ManhattanEnv:
 
         cons_thd - the delay threshold on the orders, whenever an order is
                     accepted and the agent accumulates a penalty of >= cons_thd
-                    in the process of finishing the order, unit penalty is
-                    received
+                    in the process of finishing the order, 0.1 units of penalty
+                    is received
 
         radius - the distance limit on accepting orders in kilometers
     """
@@ -85,7 +91,7 @@ class ManhattanEnv:
         # order, once the delay exceeds cons_thd, receive unit penalty
         self.delay_of_targets = { t : 0 for t in self.targets }
 
-        # history of positions, used to animate the trajectory of the agent
+        # list of agents positions and state of targets, used to animate the trajectory of the agent
         self.history = []
 
         # maps indices to lengths of the history, used to remove simulated actions/states from history
@@ -93,7 +99,7 @@ class ManhattanEnv:
         self.histories = {}
 
         # graph with latitude and longitude information, used to evaluate
-        # distance from targets and plot an animation of the trajectory.
+        # distance from targets and plot the final animation of the trajectory.
         self.G = nx.MultiDiGraph(nx.read_graphml(self.env.mapfile))
         self.geo_data = self.G.nodes(data=True)
 
@@ -102,7 +108,7 @@ class ManhattanEnv:
         helper methods
 
         used mainly for converting between state representations of AEVEnv
-        and this class
+        and this class and interacting with the state of targets
     """
     # translate state names (json labels) to cmdp states used in AEVEnv
     def name_to_state(self, name):
@@ -158,7 +164,7 @@ class ManhattanEnv:
     def get_action(self, idx):
         return self.possible_actions()[idx]
 
-    # TODO: not implemented
+    # TODO: not implemented, but required for the C++ environment interface
     def outcome_probabilities(self, name, action):
         pass
 
@@ -192,7 +198,7 @@ class ManhattanEnv:
 
 
     """
-        Reloads all orders that have not been accepted (have state=0) to
+        Reloads all orders that have not been accepted to
         period.
     """
     def reload_ctrs(self):
@@ -213,9 +219,9 @@ class ManhattanEnv:
             if self.target_active(t) and self.delay_of_targets[t] < self.cons_thd:
                 self.delay_of_targets[t] += cons
 
-                # if delay is > threshold, cap it and receive penalty
+                # if delay is > threshold, cap it and receive 0.1 penalty
                 if ( self.delay_of_targets[t] >= self.cons_thd ):
-                    delayed_orders += 1
+                    delayed_orders += 0.1
                     self.delay_of_targets[t] = self.cons_thd
         return delayed_orders
 
@@ -257,18 +263,18 @@ class ManhattanEnv:
             # action is an index to targets
             if action != -1:
 
-                # incurs small negative reward for accepting order
-                # reward = -1e-4
-
                 # accept target
                 self.state_of_targets[self.targets[action]] = -1
             self.reload_ctrs()
 
             return (self.position, self.state_of_targets, self.decision_node), reward, 0, self.is_over()
 
-        # otherwise, proceed by moving in the underlying cmdp, recording
-        # reward/penalty and adjusting periods of orders, record the state into
-        # history as well as information about active orders
+        """
+            otherwise, proceed by moving in the underlying cmdp, recording
+            reward/penalty and adjusting periods of orders, 
+        """ 
+        
+        #record the state into history as well as information about active orders
         self.history.append( (self.position, [self.target_active(t) for t in self.targets ] ) )
 
         # get linked list of actions from cmdp
@@ -384,7 +390,7 @@ class ManhattanEnv:
         max_point =[max(global_lat), max(global_lon)]
         m = folium.Map(zoom_start=1)
 
-        # Add Stadia Stamen Terrain tiles to the map
+        # Add OpenStreetMap tile option to the map
         folium.TileLayer(
             tiles='https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
             attr='copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>.',

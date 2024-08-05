@@ -1,4 +1,3 @@
-
 import folium
 import networkx as nx
 
@@ -23,8 +22,8 @@ def plot_manhattan_map(mapfile, filename, init_state, targets):
     folium.CircleMarker(location=[G.nodes[init_state]['lat'], G.nodes[init_state]['lon']],
                     radius= 3,
                     popup = 'initial state',
-                    color='green',
-                    fill_color = 'green',
+                    color='black',
+                    fill_color = 'black',
                     fill_opacity=1,
                     fill=True).add_to(m)
 

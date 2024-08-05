@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     grid_desc = {
         'env': [ rats.envs.Manhattan ],
-        'c': [0, 1.5, 3.0, 4.5, 6.0],
+        'c': [0, 0.15, 0.30, 0.45, 0.60],
         'capacity' : [ 0 ],
         'period' : [ 50, 100 ],
         'cons_thd' : [ 10, 20 ],

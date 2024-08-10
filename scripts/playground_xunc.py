@@ -97,7 +97,7 @@ period = 100
 capacity = 10000
 
 
-data = ManhattanDataset("manhattan_dataset/dense_dataset.txt")
+data = ManhattanDataset("manhattan_dataset/MANHATTAN.txt")
 
 for name, env in data.get_maps():
     e = envs.Manhattan(**env, period=period, capacity=capacity, cons_thd=20.0, radius=0.5)

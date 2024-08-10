@@ -16,6 +16,14 @@ def plot_manhattan_map(mapfile, filename, init_state, targets):
     min_point = [min(global_lat), min(global_lon)]
     max_point =[max(global_lat), max(global_lon)]
     m = folium.Map(zoom_start=1, tiles='cartodbpositron')
+    # Add OpenStreetMap tile option to the map
+    folium.TileLayer(
+        tiles='https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        attr='copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>.',
+        name='OpenStreetMap.HOT'
+    ).add_to(m)
+
+    folium.LayerControl().add_to(m)
     m.fit_bounds([min_point, max_point])
 
     # add initial state, reload states and target states

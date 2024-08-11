@@ -39,7 +39,7 @@ class CMakeBuild(build_ext):
             os.makedirs(self.build_temp)
 
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp)
-        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+        subprocess.check_call(['cmake', '--build', '.'], cwd=self.build_temp)
 
     def get_python_executable(self):
         return os.environ.get('PYTHON_EXECUTABLE', sys.executable)

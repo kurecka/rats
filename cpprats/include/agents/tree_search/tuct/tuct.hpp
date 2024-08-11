@@ -260,7 +260,7 @@ void build_leaf_curve(SN* leaf) {
  * 2. Merge the action curves of the children of a state node
  */
 template<typename SN>
-void exact_pareto_propagate(SN* leaf) {
+void pareto_propagate(SN* leaf) {
     using state_node_t = SN;
     using S = typename SN::S;
     using action_node_t = typename SN::action_node_t;
@@ -400,15 +400,6 @@ public:
 
     std::string get_graphviz() const {
         return dot_tree;
-    }
-
-    std::string get_state_curve(S s) {
-        std::vector<float> thds = {0, 0.25, 0.5, 0.75, 1};
-        std::string curve_str = "";
-        for (float t : thds) {
-            curve_str += fmt::format("{} ", common_data.predictor.predict_value(t, s));
-        }
-        return curve_str;
     }
 
     /**

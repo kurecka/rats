@@ -30,7 +30,7 @@ def RolloutCCPOMCP(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    ray.init(address="auto")
+    ray.init()
 
     agents = [
         RolloutTUCT,
@@ -49,13 +49,13 @@ if __name__ == "__main__":
         instances += GridWorldDataset(dataset_path, base=len(instances)+1).get_maps()
     grid_desc = [
         {
-            'env': [rats.envs.Hallway],
+            'env': [rats.envs.Avoid],
             'c': [0, 0.15, 0.35],
             'trap_prob': [0.2, 0.5],
             'slide_prob': [0, 0.2],
             'instance': instances,
         }, {
-            'env': [rats.envs.ContHallway],
+            'env': [rats.envs.SoftAvoid],
             'c': [0, 0.15, 0.3, 0.45, 0.6, 0.75],
             'trap_prob': [0.2],
             'slide_prob': [0, 0.2],

@@ -12,8 +12,7 @@ void register_lambda_tuct(py::module &m, const T& agent_type, std::string name) 
         "num_sim"_a = 100, "sim_time_limit"_a = 0,
         "exploration_constant"_a = 5.0, "risk_exploration_ratio"_a = 1, "graphviz_depth"_a = -1,
         "use_predictor"_a = false, "lambda"_a = 50)
-        .def("get_graphviz", &ts::tuct<S, A, true>::get_graphviz)
-        .def("get_state_curve", &ts::tuct<S, A, true>::get_state_curve);
+        .def("get_graphviz", &ts::tuct<S, A, true>::get_graphviz);
 }
 
 } // end namespace rats::py

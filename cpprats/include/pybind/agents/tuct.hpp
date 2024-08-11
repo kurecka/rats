@@ -13,7 +13,6 @@ void register_tuct(py::module &m, const T& agent_type, std::string name) {
         "exploration_constant"_a = 5.0, "risk_exploration_ratio"_a = 1,
         "rollout"_a = false, "num_rollouts"_a = 10, "graphviz_depth"_a = -1)
         .def("get_graphviz", &ts::tuct<S, A>::get_graphviz)
-        .def("get_state_curve", &ts::tuct<S, A>::get_state_curve)
         .def("get_simulations_ran", &ts::tuct<S, A>::get_simulations_ran);
 }
 

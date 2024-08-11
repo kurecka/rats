@@ -8,13 +8,13 @@
 #include <cstdint>
 
 #include "envs/env.hpp"
-#include "envs/hallway.hpp"
+#include "envs/avoid.hpp"
 #include "rand.hpp"
 
 
 namespace rats { 
 
-class continuing_hallway : public environment<std::pair<int, uint64_t>, size_t> {
+class soft_avoid : public environment<std::pair<int, uint64_t>, size_t> {
 public:
     using action_t = size_t;
     using state_t = std::pair<int, uint64_t>;
@@ -28,7 +28,7 @@ private:
     float trap_prob;
     float slide_prob;
 public:
-    continuing_hallway(std::string, float trap_prob = 0.2f, float slide_prob=0.f);
+    soft_avoid(std::string, float trap_prob = 0.2f, float slide_prob=0.f);
 
     std::string name() const override { return "ContHallway"; }
     ConstraintType get_constraint_type() const override { return ConstraintType::CUMULATIVE; }
@@ -56,13 +56,13 @@ public:
     void reset() override;
 };
 
-continuing_hallway::continuing_hallway(std::string map_str, float trap_prob, float slide_prob)
+soft_avoid::soft_avoid(std::string map_str, float trap_prob, float slide_prob)
 : m(map_str), trap_prob(trap_prob), slide_prob(slide_prob)
 {
     reset();
 }
 
-outcome_t<typename continuing_hallway::state_t> continuing_hallway::play_action(size_t action) {
+outcome_t<typename soft_avoid::state_t> soft_avoid::play_action(size_t action) {
     if (over) {
         throw std::runtime_error("Cannot play action: environment is over");
     }
@@ -84,7 +84,7 @@ outcome_t<typename continuing_hallway::state_t> continuing_hallway::play_action(
 }
 
 
-std::pair<float, float> continuing_hallway::get_expected_reward( state_t state, action_t action, state_t succ ) const { 
+std::pair<float, float> soft_avoid::get_expected_reward( state_t state, action_t action, state_t succ ) const { 
     auto [old_pos, old_mask] = state;
     auto [new_pos, new_mask] = succ;
 
@@ -100,7 +100,7 @@ std::pair<float, float> continuing_hallway::get_expected_reward( state_t state, 
     return {reward, penalty};
 }
 
-void continuing_hallway::make_checkpoint(size_t id) {
+void soft_avoid::make_checkpoint(size_t id) {
     if (id == 0) {
         checkpoint = {position, gold_mask};
     } else {
@@ -108,7 +108,7 @@ void continuing_hallway::make_checkpoint(size_t id) {
     }
 }
 
-void continuing_hallway::restore_checkpoint(size_t id) {
+void soft_avoid::restore_checkpoint(size_t id) {
     if (id == 0) {
         std::tie(position, gold_mask) = checkpoint;
     } else {
@@ -117,23 +117,23 @@ void continuing_hallway::restore_checkpoint(size_t id) {
     over = gold_mask == 0;
 }
 
-void continuing_hallway::reset() {
+void soft_avoid::reset() {
     position = m.start;
     gold_mask = m.initial_gold_mask;
     over = false;
 }
 
-bool continuing_hallway::is_terminal( state_t s ) const {
+bool soft_avoid::is_terminal( state_t s ) const {
     auto [ pos, gold_mask ] = s;
     // terminal if died or collected all the gold
     return gold_mask == 0;
 }
 
-std::map<typename continuing_hallway::state_t, float> continuing_hallway::outcome_probabilities(typename continuing_hallway::state_t s, size_t a) const {
+std::map<typename soft_avoid::state_t, float> soft_avoid::outcome_probabilities(typename soft_avoid::state_t s, size_t a) const {
     auto [pos, gold_mask] = s;
     auto [new_pos, new_gold_mask, tile, hit] = m.move(a, pos, gold_mask);
 
-    std::map<typename continuing_hallway::state_t, float> outcomes;
+    std::map<typename soft_avoid::state_t, float> outcomes;
     size_t slide_action_1 = (a + 3) % 4;
     size_t slide_action_2 = (a + 5) % 4;
     auto [new_pos1, new_gold_mask1, tile1, hit1] = m.move(slide_action_1, new_pos, gold_mask);

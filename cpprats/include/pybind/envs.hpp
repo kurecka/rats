@@ -5,8 +5,8 @@
 #include "pybind/envs/investor_env.hpp"
 #include "pybind/envs/frozen_lake.hpp"
 #include "pybind/envs/manhattan.hpp"
-#include "pybind/envs/hallway.hpp"
-#include "pybind/envs/continuing_hallway.hpp"
+#include "pybind/envs/avoid.hpp"
+#include "pybind/envs/soft_avoid.hpp"
 #include "pybind/envs/ccpomcp_ex.hpp"
 
 
@@ -22,9 +22,9 @@ void register_environments(py::module& m) {
     register_ccpomcp_ex(m, env_type);
     register_frozen_lake(m, env_type);
     
-    auto hallway_type = register_environment<std::pair<int,uint64_t>, size_t>(m, "__<<int,uint64_t>, size_t>");
-    register_hallway(m, hallway_type);
-    register_continuing_hallway(m, hallway_type);
+    auto avoid_type = register_environment<std::pair<int,uint64_t>, size_t>(m, "__<<int,uint64_t>, size_t>");
+    register_avoid(m, avoid_type);
+    register_soft_avoid(m, avoid_type);
 }
 
 }  // namespace rats::py

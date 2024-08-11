@@ -1,6 +1,6 @@
 #pragma once
 #include "unittest.hpp"
-#include "agents/tree_search/pareto_uct/pareto_curves.hpp"
+#include "agents/tree_search/tuct/pareto_curves.hpp"
 
 #include <algorithm>
 

@@ -20,7 +20,7 @@ struct map_manager {
         TRAP = -3,
         GOLD = -4
     };
-    enum hallway_action {
+    enum gridworld_action {
         LEFT = 0,
         DOWN = 1,
         RIGHT = 2,
@@ -132,7 +132,7 @@ struct map_manager {
     }
 };
 
-class hallway : public environment<std::pair<int, uint64_t>, size_t> {
+class avoid : public environment<std::pair<int, uint64_t>, size_t> {
 public:
     using action_t = size_t;
     using state_t = std::pair<int, uint64_t>;
@@ -146,7 +146,7 @@ private:
     float trap_prob;
     float slide_prob;
 public:
-    hallway(std::string, float trap_prob = 0.2f, float slide_prob=0.f);
+    avoid(std::string, float trap_prob = 0.2f, float slide_prob=0.f);
 
     std::string name() const override { return "Hallway"; }
     ConstraintType get_constraint_type() const override { return ConstraintType::RISK; }
@@ -174,13 +174,13 @@ public:
     void reset() override;
 };
 
-hallway::hallway(std::string map_str, float trap_prob, float slide_prob)
+avoid::avoid(std::string map_str, float trap_prob, float slide_prob)
 : m(map_str), trap_prob(trap_prob), slide_prob(slide_prob)
 {
     reset();
 }
 
-outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
+outcome_t<typename avoid::state_t> avoid::play_action(size_t action) {
     if (over) {
         throw std::runtime_error("Cannot play action: environment is over");
     }
@@ -206,7 +206,7 @@ outcome_t<typename hallway::state_t> hallway::play_action(size_t action) {
 }
 
 
-std::pair<float, float> hallway::get_expected_reward( state_t state, action_t action, state_t succ ) const { 
+std::pair<float, float> avoid::get_expected_reward( state_t state, action_t action, state_t succ ) const { 
     auto [old_pos, old_mask] = state;
     auto [new_pos, new_mask] = succ;
 
@@ -223,7 +223,7 @@ std::pair<float, float> hallway::get_expected_reward( state_t state, action_t ac
     return {reward, penalty};
 }
 
-void hallway::make_checkpoint(size_t id) {
+void avoid::make_checkpoint(size_t id) {
     if (id == 0) {
         checkpoint = {position, gold_mask};
     } else {
@@ -231,7 +231,7 @@ void hallway::make_checkpoint(size_t id) {
     }
 }
 
-void hallway::restore_checkpoint(size_t id) {
+void avoid::restore_checkpoint(size_t id) {
     if (id == 0) {
         std::tie(position, gold_mask) = checkpoint;
     } else {
@@ -240,23 +240,23 @@ void hallway::restore_checkpoint(size_t id) {
     over = position == -1;
 }
 
-void hallway::reset() {
+void avoid::reset() {
     position = m.start;
     gold_mask = m.initial_gold_mask;
     over = false;
 }
 
-bool hallway::is_terminal( state_t s ) const {
+bool avoid::is_terminal( state_t s ) const {
     auto [ pos, gold_mask ] = s;
     // terminal if died or collected all the gold
     return ( pos == -1 ) || ( gold_mask == 0 );
 }
 
-std::map<typename hallway::state_t, float> hallway::outcome_probabilities(typename hallway::state_t s, size_t a) const {
+std::map<typename avoid::state_t, float> avoid::outcome_probabilities(typename avoid::state_t s, size_t a) const {
     auto [pos, gold_mask] = s;
     auto [new_pos, new_gold_mask, tile, hit] = m.move(a, pos, gold_mask);
 
-    std::map<typename hallway::state_t, float> outcomes;
+    std::map<typename avoid::state_t, float> outcomes;
     size_t slide_action_1 = (a + 3) % 4;
     size_t slide_action_2 = (a + 5) % 4;
     auto [new_pos1, new_gold_mask1, tile1, hit1] = m.move(slide_action_1, new_pos, gold_mask);

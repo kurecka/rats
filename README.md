@@ -16,19 +16,9 @@ This repository contains code base for development and testing of risk-aware tre
 
 
 ## Algorithms
-- randomized: Play random action
-- primal_uct: Simple tree search. Tries to achieve the threshold at each state.
-- pareto_uct: Pareto tree search.
-- dual_uct: Dual tree search. Implements the dual algorithm CC-POMCP.
-
-## Todo
-- [x] Pytorch binding
-- [x] Link LP library
-- [x] Implement insteraction with AI gym with [pybind11](https://pybind11.readthedocs.io/en/stable/advanced/embedding.html#executing-python-code)
-- [x] Ray distributed computing
-- [x] Evironment management
-- [x] Experiment configuration files
-- [x] CSV reporting
+- tuct: Threshold tree search. Implements the Pareto curve-based algorithm T-UCT.
+- ccpomcp: Dual tree search. Implements the dual algorithm CC-POMCP.
+- ramcp: Risk-aware POMCP. Implements the LP-based algorithm RAMCP.
 
 ## Building
 Build the docker image accoring to the specified Dockerfile.
@@ -44,10 +34,10 @@ pip install -e .
 ## Run experiment through ray
 If you have your own ray cluster running or want to run an experiment on a local machine, you can use the following command:
 ```
-python experiment.py -m +task=train_runs +agent=pareto_uct ++agent.exploration_constant=1,5,15 ++risk_thd=0,0.1,0.2,0.3,0.5 ++agent.sim_time_limit=10,50,200 +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01,0.1,1
+python experiment.py -m +task=train_runs +agent=tuct ++agent.exploration_constant=1,5,15 ++risk_thd=0,0.1,0.2,0.3,0.5 ++agent.sim_time_limit=10,50,200 +env=large_hw ++metadata.tag=predictors ++task.num_episodes=300 ++gamma=0.999 ++agent.risk_exploration_ratio=0.01,0.1,1
 ```
 
 If you want to run to the experiment on erinys cluster, you can connect to erinys02 and run a command similar to the following:
 ```
-ray job submit --no-wait -- sh -c 'cd /work/rats/pyrats && python experiment.py -m +task=indep_runs +agent=dual_uct ++agent.exploration_constant=0.1,1,5 ++agent.sim_time_limit=10,50,100 +env=slide_hw ++metadata.tag=dual-slide_hw ++task.num_episodes=30 ++gamma=0.99999 ++risk_thd=0,0.16,0.2'
+ray job submit --no-wait -- sh -c 'cd /work/rats/pyrats && python experiment.py -m +task=indep_runs +agent=ccpomcp ++agent.exploration_constant=0.1,1,5 ++agent.sim_time_limit=10,50,100 +env=slide_hw ++metadata.tag=dual-slide_hw ++task.num_episodes=30 ++gamma=0.99999 ++risk_thd=0,0.16,0.2'
 ```

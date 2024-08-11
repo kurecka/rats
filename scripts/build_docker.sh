@@ -1,4 +1,4 @@
-NAMESPACE="gitlab.fi.muni.cz:5050/risk-aware-decision-making"
+NAMESPACE="rats"
 TAG='latest'
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 COMMIT=$(git rev-parse --short HEAD)

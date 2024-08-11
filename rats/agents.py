@@ -23,13 +23,13 @@ class ConstantAgent(Agent):
 class RandomizedAgent(Agent):
     pass
 
-class DualUCT(Agent):
+class CCPOMCP(Agent):
     pass
 
 class PrimalUCT(Agent):
     pass
 
-class ParetoUCT(Agent):
+class TUCT(Agent):
     pass
 
 class RAMCP(Agent):
@@ -38,5 +38,5 @@ class RAMCP(Agent):
 class DualRAMCP(Agent):
     pass
 
-class LambdaParetoUCT(Agent):
+class LambdaTUCT(Agent):
     pass

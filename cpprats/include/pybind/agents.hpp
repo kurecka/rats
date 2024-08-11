@@ -3,9 +3,9 @@
 #include "pybind/agents/agent.hpp"
 #include "pybind/agents/constant_agent.hpp"
 #include "pybind/agents/randomized_agent.hpp"
-#include "pybind/agents/pareto_uct.hpp"
-#include "pybind/agents/lambda_pareto_uct.hpp"
-#include "pybind/agents/dual_uct.hpp"
+#include "pybind/agents/tuct.hpp"
+#include "pybind/agents/lambda_tuct.hpp"
+#include "pybind/agents/ccpomcp.hpp"
 #include "pybind/agents/dual_ramcp.hpp"
 #include "pybind/agents/primal_uct.hpp"
 #include "pybind/agents/ramcp.hpp"
@@ -18,11 +18,11 @@ void register_agents_t(py::module& m, std::string type) {
     auto agent_type = register_agent<S, A>(m, "Agent" + type);
     register_constant_agent<S, A>(m, agent_type, "ConstantAgent" + type);
     register_randomized_agent<S, A>(m, agent_type, "RandomizedAgent" + type);
-    register_dual_uct<S, A>(m, agent_type, "DualUCT" + type);
+    register_ccpomcp<S, A>(m, agent_type, "CCPOMCP" + type);
     register_dual_ramcp<S, A>(m, agent_type, "DualRAMCP" + type);
     register_primal_uct<S, A>(m, agent_type, "PrimalUCT" + type);
-    register_pareto_uct<S, A>(m, agent_type, "ParetoUCT" + type);
-    register_lambda_pareto_uct<S, A>(m, agent_type, "LambdaParetoUCT" + type);
+    register_tuct<S, A>(m, agent_type, "TUCT" + type);
+    register_lambda_tuct<S, A>(m, agent_type, "LambdaTUCT" + type);
     register_ramcp<S, A>(m, agent_type, "RAMCP" + type);
 }
 

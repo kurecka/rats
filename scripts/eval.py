@@ -170,6 +170,7 @@ def ramcp_time_correction(time_limit, c):
         scaling_power = 7/10
     return int(time_limit ** (scaling_power))
 
+
 async def eval_solvers(
         agent_list, time_limits, params_grid,
         agent_repetitions=100,

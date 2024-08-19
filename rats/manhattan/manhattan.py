@@ -271,9 +271,9 @@ class ManhattanEnv:
 
         """
             otherwise, proceed by moving in the underlying cmdp, recording
-            reward/penalty and adjusting periods of orders, 
-        """ 
-        
+            reward/penalty and adjusting periods of orders,
+        """
+
         #record the state into history as well as information about active orders
         self.history.append( (self.position, [self.target_active(t) for t in self.targets ] ) )
 
@@ -456,7 +456,7 @@ class ManhattanEnv:
                 order_data.append(dict({'coordinates':
                                        [self.G.nodes[target]['lon'], self.G.nodes[target]['lat']],
                                    'dates':
-                                        [time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(t+t_edge))],
+                                        [time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(t+t_edge+1))],
                                'color': color }))
                 i += 1
 

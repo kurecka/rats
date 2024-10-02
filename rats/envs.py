@@ -1,5 +1,5 @@
 import _rats
-from _rats import Hallway, ContHallway, InvestorEnv, CCPOMCP_EX1, CCPOMCP_EX2, Manhattan
+from _rats import Avoid, SoftAvoid, InvestorEnv, CCPOMCP_EX1, CCPOMCP_EX2, Manhattan
 
 
 class EnvironmentHandler:

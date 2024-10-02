@@ -13,7 +13,7 @@ namespace rats {
 namespace ts {
 
 template <typename S, typename A>
-struct pareto_uct_data {
+struct tuct_data {
     float risk_thd;
     float sample_risk_thd;
     float exploration_constant;
@@ -260,7 +260,7 @@ void build_leaf_curve(SN* leaf) {
  * 2. Merge the action curves of the children of a state node
  */
 template<typename SN>
-void exact_pareto_propagate(SN* leaf) {
+void pareto_propagate(SN* leaf) {
     using state_node_t = SN;
     using S = typename SN::S;
     using action_node_t = typename SN::action_node_t;
@@ -326,8 +326,8 @@ void exact_pareto_propagate(SN* leaf) {
 //  *********************************************************************/
 
 template <typename S, typename A, bool use_lambda = false>
-class pareto_uct : public agent<S, A> {
-    using data_t = pareto_uct_data<S, A>;
+class tuct : public agent<S, A> {
+    using data_t = tuct_data<S, A>;
     using v_t = pareto_value;
     using q_t = pareto_value;
     using state_node_t = state_node<S, A, data_t, v_t, q_t>;
@@ -338,7 +338,7 @@ class pareto_uct : public agent<S, A> {
     using descend_callback_t = descend_callback<state_node_t, false>;
     constexpr static auto descend_callback_f = descend_callback<state_node_t, true>();
     constexpr static auto select_leaf_f = select_leaf<state_node_t, select_action_t, descend_callback_t>;
-    constexpr static auto propagate_f = exact_pareto_propagate<state_node_t>;
+    constexpr static auto propagate_f = pareto_propagate<state_node_t>;
 private:
     int max_depth;
     int num_sim;
@@ -358,7 +358,7 @@ private:
 
     std::unique_ptr<state_node_t> root;
 public:
-    pareto_uct(
+    tuct(
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
@@ -402,15 +402,6 @@ public:
         return dot_tree;
     }
 
-    std::string get_state_curve(S s) {
-        std::vector<float> thds = {0, 0.25, 0.5, 0.75, 1};
-        std::string curve_str = "";
-        for (float t : thds) {
-            curve_str += fmt::format("{} ", common_data.predictor.predict_value(t, s));
-        }
-        return curve_str;
-    }
-
     /**
      * @brief Return number of executed simulations in last play() call.
      */
@@ -427,7 +418,7 @@ public:
      * 1. Selection: Select a leaf node using `select_action_pareto` and `descend_callback`
      * 2. Expansion: Expand the selected leaf node
      * 3. Rollout: Perform a rollout from the leaf node
-     * 4. Backpropagation: Propagate the values up the tree using `exact_pareto_propagate`
+     * 4. Backpropagation: Propagate the values up the tree using `pareto_propagate`
      * (5. End simulation: Call the end_sim callback)
      * 6. Perform a gradient step on the lambda parameter (if enabled)
      */
@@ -527,9 +518,9 @@ public:
 
     std::string name() const override {
         if constexpr (use_lambda) {
-            return "lambda_pareto_uct";
+            return "lambda_tuct";
         } else {
-            return "pareto_uct";    
+            return "tuct";    
         }
     }
 };

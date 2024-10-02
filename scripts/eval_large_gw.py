@@ -17,47 +17,47 @@ from eval import (
 )
 
 
-def RolloutParetoUCT(*args, **kwargs):
-    return rats.agents.ParetoUCT(*args, **kwargs, rollout=True)
+def RolloutTUCT(*args, **kwargs):
+    return rats.agents.TUCT(*args, **kwargs, rollout=True)
 
 
 def RolloutRAMCP(*args, **kwargs):
     return rats.agents.RAMCP(*args, **kwargs, rollout=True)
 
 
-def RolloutDualUCT(*args, **kwargs):
-    return rats.agents.DualUCT(*args, **kwargs, rollout=True)
+def RolloutCCPOMCP(*args, **kwargs):
+    return rats.agents.CCPOMCP(*args, **kwargs, rollout=True)
 
 
 if __name__ == "__main__":
-    ray.init(address="auto")
+    ray.init()
 
     agents = [
-        RolloutParetoUCT,
+        RolloutTUCT,
         RolloutRAMCP,
-        RolloutDualUCT,
+        RolloutCCPOMCP,
     ]
     agent_repetitions = 300
-    max_depth = 100
-    time_limits = [5, 10, 25]
+    max_depth = 200
+    time_limits = [10, 25, 50]
     dataset_paths = [
-        '/work/rats/scripts/gridworld_generator/HW_SMALL.txt',
-        '/work/rats/scripts/gridworld_generator/HW_OLD.txt',
+        '/work/rats/scripts/gridworld_generator/GW_LARGE.txt',
     ]
     instances = []
     for dataset_path in dataset_paths:
         instances += GridWorldDataset(dataset_path, base=len(instances)+1).get_maps()
     grid_desc = [
         {
-            'env': [rats.envs.Hallway],
-            'c': [0, 0.15, 0.35],
-            'trap_prob': [0.2, 0.5],
+            'env': [rats.envs.Avoid],
+            'c': [0, 0.15, 0.3],
+            'trap_prob': [0.02],
             'slide_prob': [0, 0.2],
             'instance': instances,
-        }, {
-            'env': [rats.envs.ContHallway],
-            'c': [0, 0.15, 0.3, 0.45, 0.6, 0.75],
-            'trap_prob': [0.2],
+        },
+        {
+            'env': [rats.envs.SoftAvoid],
+            'c': [0, 0.15, 0.3],
+            'trap_prob': [0.02],
             'slide_prob': [0, 0.2],
             'instance': instances,
         }
@@ -65,15 +65,12 @@ if __name__ == "__main__":
 
     params_grid = desc2grid(grid_desc)
 
-    # tag = ask_tag()
-    # if tag:
-    #     tag = '-' + tag
-    tag = 'HWSmall_Adjusted_Rollouts'
+    tag = 'GWLarge'
 
     output_dir = Path("/work/rats/outputs/" + time.strftime("%Y%m%d-%H%M%S") + tag)
     metadata = {
-            'agents': agents,
-            'agent_repetitions': agent_repetitions,
+        'agents': agents,
+        'agent_repetitions': agent_repetitions,
         'max_depth': max_depth,
         'time_limits': time_limits,
         'params_grid': desc2metadata(grid_desc),
@@ -89,7 +86,8 @@ if __name__ == "__main__":
         params_grid=params_grid,
         agent_repetitions=agent_repetitions,
         output_dir=output_dir,
+        run_lp=False,
         max_depth=max_depth,
-        gamma=0.99,
+        use_ramcp_heuristic=True,
     ))
     ray.shutdown()

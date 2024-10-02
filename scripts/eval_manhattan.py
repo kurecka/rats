@@ -17,25 +17,25 @@ from rats.utils import set_log_level
 from manhattan_dataset.manhattan_dataset import ManhattanDataset
 import asyncio
 
-def RolloutParetoUCT(*args, **kwargs):
-    return rats.agents.ParetoUCT(*args, **kwargs, rollout=True, num_rollouts=1)
+def RolloutTUCT(*args, **kwargs):
+    return rats.agents.TUCT(*args, **kwargs, rollout=True, num_rollouts=1)
 
 
 def RolloutRAMCP(*args, **kwargs):
     return rats.agents.RAMCP(*args, **kwargs, rollout=True, num_rollouts=1)
 
 
-def RolloutDualUCT(*args, **kwargs):
-    return rats.agents.DualUCT(*args, **kwargs, rollout=True, num_rollouts=1)
+def RolloutCCPOMCP(*args, **kwargs):
+    return rats.agents.CCPOMCP(*args, **kwargs, rollout=True, num_rollouts=1)
 
 
 if __name__ == "__main__":
-    ray.init(address="auto")
+    ray.init()
 
-    agents = [RolloutParetoUCT, RolloutRAMCP, RolloutDualUCT]
+    agents = [RolloutTUCT, RolloutRAMCP, RolloutCCPOMCP]
     agent_repetitions = 300
     max_depth = 200
-    time_limits = [100, 200, 500] # 1000, 2000]
+    time_limits = [100, 200, 500]
     dataset_path = '/work/rats/scripts/manhattan_dataset/MANHATTAN.txt'
     instances = ManhattanDataset(dataset_path).get_maps()
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     params_tuples = product(*[grid_desc[key] for key in grid_desc])
     params_grid = [dict(zip(grid_desc.keys(), values)) for values in params_tuples]
 
-    tag = "ManhattanFinalEval"
+    tag = "Manhattan"
     if tag:
         tag = '-' + tag
 

@@ -14,7 +14,6 @@ namespace rats::py {
             .def("change_env", &LP_solver<S,A>::change_env);
     }
 
-    // TODO: add solvers for other things except hallway
     void register_lp_solvers(py::module& m) {
         register_lp_solver<std::pair<int,uint64_t>, size_t>(m);
     }

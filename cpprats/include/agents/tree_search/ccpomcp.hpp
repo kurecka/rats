@@ -11,7 +11,7 @@ namespace rats {
 namespace ts {
 
 template <typename S, typename A>
-struct dual_uct_data {
+struct ccpomcp_data {
     float risk_thd;
     float lambda;
     float exploration_constant;
@@ -109,8 +109,8 @@ struct select_action_dual {
  *********************************************************************/
 
 template <typename S, typename A, bool use_lp = false>
-class dual_uct : public agent<S, A> {
-    using data_t = dual_uct_data<S, A>;
+class ccpomcp : public agent<S, A> {
+    using data_t = ccpomcp_data<S, A>;
     using v_t = std::pair<float, float>;
     using q_t = std::pair<float, float>;
     using state_node_t = state_node<S, A, data_t, v_t, q_t>;
@@ -142,7 +142,7 @@ private:
     lp::tree_lp_solver<state_node_t> solver;
     
 public:
-    dual_uct(
+    ccpomcp(
         environment_handler<S, A> _handler,
         int _max_depth, float _risk_thd, float _gamma, float _gammap = 1,
         int _num_sim = 100, int _sim_time_limit = 0,
@@ -322,7 +322,7 @@ public:
         if constexpr (use_lp) {
             return "dual_ramcp";
         } else {
-            return "dual_uct";
+            return "ccpomcp";
         }
     }
 };

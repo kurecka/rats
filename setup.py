@@ -1,44 +1,3 @@
-# from setuptools import setup
-# # from cmake_setuptools import *
-
-# setup(
-#       name='cpprats',
-#       description='',
-#       version='24.6.7',
-#       install_requires=[
-#         'cmake_setuptools'
-#       ],
-#       ext_modules=[CMakeExtension('cpprats', 'cpprats')],
-#       cmdclass={'build_ext': CMakeBuildExt}
-# )
-
-
-# from setuptools import setup, find_packages
-# from cmake_setuptools import *
-
-# setup(
-#     name='rats',
-#     version='24.6.7',
-#     description='',
-
-#     ext_modules=[
-#         CMakeExtension(
-#             '_rats', sourcedir='cpprats'
-#         ),
-#     ],
-#     cmdclass={'build_ext': CMakeBuildExt},
-#     packages=[
-#         '_rats',
-#     ],
-#     package_dir={'_rats':'cpprats'},
-#     #find_packages(), #include=['rats', 'rats.*']),
-# #     package_data={
-# #         'rats': ['*.so', '*.dll', '*.dylib'],  # Include shared libraries in the package
-# #     },
-#     include_package_data=True,
-#     zip_safe=False
-# )
-
 import os
 import subprocess
 from setuptools import setup, Extension
@@ -75,13 +34,12 @@ class CMakeBuild(build_ext):
             f'-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}',
             f'-DPYTHON_EXECUTABLE={self.get_python_executable()}'
         ]
-        build_args = ['--config', 'Release']
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
 
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp)
-        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+        subprocess.check_call(['cmake', '--build', '.'], cwd=self.build_temp)
 
     def get_python_executable(self):
         return os.environ.get('PYTHON_EXECUTABLE', sys.executable)
